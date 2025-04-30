@@ -1,254 +1,35 @@
-/* Only keeping minimal CSS that's not covered by MUI styling */
-
-/* Canvas styling for proper responsive behavior */
-canvas#waveform-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
+/* Minimal CSS that's not covered by MUI styling */
 
 /* For LaTeX-style equation display */
 .math-equation {
   font-family: 'Courier New', monospace;
   white-space: pre-wrap;
   word-break: break-word;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-.App {
-  text-align: center;
+.math-equation .katex {
+  font-size: 1.1em;
+  color: #eee;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+/* Ensure proper scrollbar styling for WebKit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-  color: white;
-  overflow-y: auto;
+::-webkit-scrollbar-thumb {
+  background: rgba(97, 218, 251, 0.3);
+  border-radius: 4px;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Controls styling */
-.controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 600px;
-  margin: 10px 0;
-  gap: 15px;
-}
-
-.toggle-button {
-  background-color: #61dafb;
-  color: #282c34;
-  font-size: 16px;
-  font-weight: bold;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  width: 200px;
-}
-
-.toggle-button:hover {
-  background-color: #4fa8d1;
-}
-
-.toggle-button.active {
-  background-color: #f44336;
-}
-
-.slider-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin: 10px 0;
-}
-
-.slider-container label {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  font-size: 16px;
-  margin-bottom: 5px;
-}
-
-.slider-container input[type="range"] {
-  width: 100%;
-  margin-top: 8px;
-}
-
-/* Harmonics styling */
-.harmonics-container {
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 20px;
-  padding-bottom: 40px;
-}
-
-.harmonics-container h3 {
-  margin: 10px 0;
-}
-
-.harmonic-slider {
-  background-color: rgba(97, 218, 251, 0.1);
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-}
-
-.harmonic-header {
-  font-size: 16px;
-  margin-bottom: 8px;
-  color: #61dafb;
-}
-
-.harmonic-slider label {
-  display: flex;
-  flex-direction: column;
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.harmonic-slider input[type="range"] {
-  width: 100%;
-  margin-top: 5px;
-}
-
-/* Visualization container styling */
-.visualization-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 800px;
-  gap: 20px;
-}
-
-/* Main content layout - for side-by-side display */
-.main-content {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 1200px;
-  gap: 20px;
-  justify-content: space-between;
-}
-
-/* Update harmonics container for the new layout */
-.harmonics-container {
-  width: 35%;
-  max-height: 600px;
-  overflow-y: auto;
-  padding-right: 10px;
-  margin-top: 0;
-}
-
-/* Equation box styling */
-.equation-box {
-  background-color: rgba(97, 218, 251, 0.1);
-  padding: 15px;
-  border-radius: 5px;
-  width: 100%;
-  max-width: 600px;
-  text-align: left;
-  margin-bottom: 20px;
-}
-
-.equation-box h3 {
-  margin-top: 0;
-  color: #61dafb;
-  text-align: center;
-  font-size: 18px;
-}
-
-.equation-display {
-  background-color: #1e2329;
-  padding: 15px;
-  border-radius: 5px;
-  overflow: auto;
-}
-
-.equation-display p {
-  font-size: 16px;
-  margin: 0 0 10px 0;
-  color: #cccccc;
-}
-
-.scrollable-equation {
-  font-family: 'Courier New', monospace;
-  white-space: pre-wrap;
-  word-break: break-word;
-  padding: 10px 0;
-  font-size: 16px;
-  color: #4CAF50;
-  line-height: 1.6;
-}
-
-/* Responsive layout for larger screens */
-@media (min-width: 1024px) {
-  .visualization-container {
-    width: 60%;
-  }
-}
-
-/* Responsive adjustments for the new layout */
-@media (max-width: 1024px) {
-  .main-content {
-    flex-direction: column;
-  }
-  
-  .visualization-container,
-  .harmonics-container {
-    width: 100%;
-    max-width: 600px;
-  }
-  
-  .harmonics-container {
-    max-height: none;
-    overflow-y: visible;
-  }
-}
-
-/* Responsive adjustments */
-@media (max-width: 700px) {
-  canvas {
-    width: 90% !important;
-    height: auto !important;
-  }
-  
-  .harmonics-container {
-    width: 90%;
-  }
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(97, 218, 251, 0.5);
 }
