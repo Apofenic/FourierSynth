@@ -2,12 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import "./App.css";
-
-// MUI imports
 import {
-  Container,
   Typography,
-  Button,
   Slider,
   Box,
   Paper,
@@ -17,11 +13,14 @@ import {
   createTheme,
   Stack,
   useMediaQuery,
-  PaperTypeMap,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import { PlayArrow as PlayIcon, Stop as StopIcon } from "@mui/icons-material";
-import { OverridableComponent } from "@mui/material/OverridableComponent";
+import {
+  calculateWaveform,
+  generateFourierEquation,
+  generateFullEquation,
+} from "./helperFunctions";
+
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
   ...theme.typography.body2,
@@ -32,7 +31,6 @@ const Item = styled(Paper)(({ theme }) => ({
     backgroundColor: "#1A2027",
   }),
 }));
-// Define interfaces for our state
 interface HarmonicParam {
   amplitude: number;
   phase: number;
@@ -45,7 +43,6 @@ interface KeyboardNote {
   isActive: boolean;
 }
 
-// Math equation component to render beautiful equations
 const MathEquation: React.FC<{ equation: string }> = ({ equation }) => {
   return (
     <Box className="math-equation">
@@ -54,7 +51,6 @@ const MathEquation: React.FC<{ equation: string }> = ({ equation }) => {
   );
 };
 
-// Create a dark theme for our application
 const theme = createTheme({
   palette: {
     mode: "dark",
@@ -113,27 +109,16 @@ const theme = createTheme({
 });
 
 function App() {
-  // Audio context and node references
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorNodeRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const filterNodeRef = useRef<BiquadFilterNode | null>(null);
-
-  // State for audio playing status
   const [isPlaying, setIsPlaying] = useState(false);
-
-  // Fundamental frequency
   const [frequency, setFrequency] = useState(220);
-
-  // Filter parameters
   const [cutoff, setCutoff] = useState(2000);
   const [resonance, setResonance] = useState(0);
-
-  // Keyboard state
-  const [keyboardEnabled, setKeyboardEnabled] = useState(false);
+  const [keyboardEnabled, setKeyboardEnabled] = useState(true);
   const [activeKey, setActiveKey] = useState<string | null>(null);
-
-  // Keyboard to note mapping (QWERTY keyboard layout maps to a musical keyboard)
   const [keyboardNotes, setKeyboardNotes] = useState<KeyboardNote[]>([
     { key: "a", note: "C3", frequency: 130.81, isActive: false },
     { key: "w", note: "C#3", frequency: 138.59, isActive: false },
@@ -153,93 +138,22 @@ function App() {
     { key: "p", note: "D#4", frequency: 311.13, isActive: false },
     { key: ";", note: "E4", frequency: 329.63, isActive: false },
   ]);
-
-  // Harmonics parameters (amplitude and phase for each harmonic)
   const [harmonics, setHarmonics] = useState<HarmonicParam[]>([
-    { amplitude: 1.0, phase: 0 }, // Fundamental
-    { amplitude: 0.5, phase: 0 }, // 2nd harmonic
-    { amplitude: 0.33, phase: 0 }, // 3rd harmonic
-    { amplitude: 0.25, phase: 0 }, // 4th harmonic
-    { amplitude: 0.2, phase: 0 }, // 5th harmonic
-    { amplitude: 0.16, phase: 0 }, // 6th harmonic
-    { amplitude: 0.14, phase: 0 }, // 7th harmonic
-    { amplitude: 0.125, phase: 0 }, // 8th harmonic
+    { amplitude: 1.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
+    { amplitude: 0.0, phase: 0 },
   ]);
-
-  // Custom waveform array (will store our Fourier series output)
+  // Custom waveform array (will store Fourier series output)
   const [waveform, setWaveform] = useState<Float32Array>(
     new Float32Array(2048).fill(0)
   );
 
-  // Check if screen is mobile
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  // Function to calculate waveform using Fourier series
-  const calculateWaveform = () => {
-    const newWaveform = new Float32Array(2048);
-    const TWO_PI = Math.PI * 2;
-
-    for (let i = 0; i < newWaveform.length; i++) {
-      const x = i / newWaveform.length;
-      let value = 0;
-
-      // Sum up the harmonic components using Fourier series
-      harmonics.forEach((harmonic, idx) => {
-        const harmonicNumber = idx + 1;
-        value +=
-          harmonic.amplitude *
-          Math.sin(TWO_PI * harmonicNumber * x + harmonic.phase);
-      });
-
-      // Normalize to the range [-1, 1]
-      newWaveform[i] = value;
-    }
-
-    // Normalize the waveform to prevent clipping
-    const maxAmplitude = Math.max(...Array.from(newWaveform).map(Math.abs));
-    if (maxAmplitude > 1) {
-      for (let i = 0; i < newWaveform.length; i++) {
-        newWaveform[i] /= maxAmplitude;
-      }
-    }
-
-    return newWaveform;
-  };
-
-  // Generate the Fourier series equation as a string
-  const generateFourierEquation = () => {
-    const activeHarmonics = harmonics.filter((h) => h.amplitude > 0.001);
-
-    if (activeHarmonics.length === 0) {
-      return "f(t) = 0";
-    }
-
-    return `f(t) = \\sum_{n=1}^{${harmonics.length}} A_n \\sin(n\\omega t + \\phi_n)`;
-  };
-
-  // Generate full equation with harmonics details for plain text display
-  const generateFullEquation = () => {
-    const activeHarmonics = harmonics.filter((h) => h.amplitude > 0.001);
-
-    if (activeHarmonics.length === 0) {
-      return "f(t) = 0";
-    }
-
-    let generalForm = `f(t) = \\sum_{n=1}^{${harmonics.length}} A_n \\sin(n\\omega t + \\phi_n)`;
-
-    generalForm += "\n\nWhere:";
-    activeHarmonics.forEach((harmonic, idx) => {
-      const n = idx + 1;
-      const amplitude = harmonic.amplitude.toFixed(2);
-      const phaseInPi = (harmonic.phase / Math.PI).toFixed(2);
-      const phaseSign = harmonic.phase >= 0 ? "+" : "";
-
-      generalForm += `\nA_${n} = ${amplitude}, \\phi_${n} = ${phaseSign}${phaseInPi}\\pi`;
-    });
-
-    return generalForm;
-  };
-
   // Toggle oscillator on/off
   const toggleOscillator = () => {
     if (isPlaying) {
@@ -267,7 +181,6 @@ function App() {
     setHarmonics(updatedHarmonics);
   };
 
-  // Handle keyboard input for playing notes
   const handleKeyDown = (event: KeyboardEvent) => {
     if (!keyboardEnabled) return;
 
@@ -332,15 +245,6 @@ function App() {
     }
   };
 
-  // Toggle keyboard mode
-  const toggleKeyboardMode = () => {
-    setKeyboardEnabled(!keyboardEnabled);
-    // If turning off keyboard mode, stop any active notes
-    if (keyboardEnabled && isPlaying) {
-      setIsPlaying(false);
-    }
-  };
-
   // Initialize or update the audio system
   useEffect(() => {
     if (isPlaying) {
@@ -390,7 +294,7 @@ function App() {
       oscillatorNode.frequency.value = frequency;
 
       // Generate and set custom waveform from Fourier series
-      const calculatedWaveform = calculateWaveform();
+      const calculatedWaveform = calculateWaveform(harmonics);
       setWaveform(calculatedWaveform);
 
       // Create a custom wave table from our calculated waveform
@@ -412,7 +316,6 @@ function App() {
       oscillatorNodeRef.current = oscillatorNode;
 
       return () => {
-        // Clean up
         if (oscillatorNodeRef.current) {
           oscillatorNodeRef.current.stop();
           oscillatorNodeRef.current.disconnect();
@@ -511,7 +414,7 @@ function App() {
           }}
         >
           {/* Button to start/stop the oscillator */}
-          <Grid size={3} sx={{ alignContent: "center" }}>
+          {/* <Grid size={3} sx={{ alignContent: "center" }}>
             <Button
               variant="contained"
               color={isPlaying ? "error" : "primary"}
@@ -521,9 +424,9 @@ function App() {
             >
               {isPlaying ? "Stop" : "Start"} Oscillator
             </Button>
-          </Grid>
+          </Grid> */}
           {/* Keyboard mode toggle button */}
-          <Grid size={3} sx={{ alignContent: "center" }}>
+          {/* <Grid size={12} sx={{ alignContent: "center" }}>
             <Button
               variant="contained"
               color={keyboardEnabled ? "secondary" : "primary"}
@@ -533,9 +436,9 @@ function App() {
             >
               {keyboardEnabled ? "Disable" : "Enable"} Keyboard
             </Button>
-          </Grid>
+          </Grid> */}
           {/* Frequency slider */}
-          <Grid container size={6} direction="column" alignItems={"center"}>
+          {/* <Grid container size={6} direction="column" alignItems={"center"}>
             <Grid>
               <Typography id="frequency-slider" gutterBottom>
                 Frequency: {frequency} Hz
@@ -550,12 +453,12 @@ function App() {
                 aria-labelledby="frequency-slider"
               />
             </Grid>
-          </Grid>
+          </Grid> */}
           {/* Waveform visualizer */}
           <Grid size={4}>
             <Paper sx={{ mb: 2, height: "100%" }}>
               <Typography variant="h3" align="center">
-                Waveform Visualization
+                Waveform isualization
               </Typography>
               <canvas
                 id="waveform-canvas"
@@ -584,7 +487,7 @@ function App() {
               >
                 Where ω = 2π · {frequency} Hz
               </Typography>
-              <MathEquation equation={generateFourierEquation()} />
+              <MathEquation equation={generateFourierEquation(harmonics)} />
             </Paper>
           </Grid>
           {/* Plain text format of the equation */}
@@ -593,7 +496,7 @@ function App() {
               <Typography variant="h3" align="center">
                 Plain Text Format
               </Typography>
-              {generateFullEquation()
+              {generateFullEquation(harmonics)
                 .replace(/\\sum_/g, "Σ")
                 .replace(/\\sin/g, "sin")
                 .replace(/\\phi/g, "φ")
@@ -748,7 +651,6 @@ function App() {
                     }}
                   />
                 </Box>
-
                 <Box
                   sx={{
                     mt: 4,
