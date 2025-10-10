@@ -3,8 +3,6 @@ import React, {
   useContext,
   useRef,
   useState,
-  useCallback,
-  useMemo,
   ReactNode,
 } from "react";
 
@@ -62,28 +60,28 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
   /**
    * Initialize audio context if not already created
    */
-  const initializeAudioContext = useCallback(() => {
+  const initializeAudioContext = () => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext ||
         (window as any).webkitAudioContext)();
     }
     return audioContextRef.current;
-  }, []);
+  };
 
   /**
    * Start audio playback
    * This is a placeholder - actual oscillator start logic will be handled
    * by the component consuming harmonics data
    */
-  const startAudio = useCallback(() => {
+  const startAudio = () => {
     initializeAudioContext();
     setIsPlaying(true);
-  }, [initializeAudioContext]);
+  };
 
   /**
    * Stop audio playback and cleanup audio nodes
    */
-  const stopAudio = useCallback(() => {
+  const stopAudio = () => {
     if (oscillatorNodeRef.current) {
       try {
         oscillatorNodeRef.current.stop();
@@ -97,13 +95,13 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
     filterNodeRef.current = null;
     gainNodeRef.current = null;
     setIsPlaying(false);
-  }, []);
+  };
 
   /**
    * Update the frequency of the oscillator
    * @param freq - New frequency in Hz
    */
-  const updateFrequency = useCallback((freq: number) => {
+  const updateFrequency = (freq: number) => {
     setFrequency(freq);
     // If oscillator is currently playing, update it in real-time
     if (oscillatorNodeRef.current && audioContextRef.current) {
@@ -112,14 +110,14 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
         audioContextRef.current.currentTime
       );
     }
-  }, []);
+  };
 
   /**
    * Update filter parameters in real-time
    * @param cutoff - Cutoff frequency in Hz
    * @param resonance - Q factor (resonance)
    */
-  const updateFilter = useCallback((cutoff: number, resonance: number) => {
+  const updateFilter = (cutoff: number, resonance: number) => {
     setCutoffFrequency(cutoff);
     setResonance(resonance);
 
@@ -131,44 +129,28 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
         cutoff,
         time + 0.01
       );
-      filterNodeRef.current.Q.linearRampToValueAtTime(
-        resonance,
-        time + 0.01
-      );
+      filterNodeRef.current.Q.linearRampToValueAtTime(resonance, time + 0.01);
     }
-  }, []);
-
-  // Memoize context value to prevent unnecessary re-renders
-  const contextValue = useMemo(
-    () => ({
-      audioContextRef,
-      oscillatorNodeRef,
-      gainNodeRef,
-      filterNodeRef,
-      isPlaying,
-      frequency,
-      cutoffFrequency,
-      resonance,
-      startAudio,
-      stopAudio,
-      updateFrequency,
-      updateFilter,
-      setIsPlaying,
-    }),
-    [
-      isPlaying,
-      frequency,
-      cutoffFrequency,
-      resonance,
-      startAudio,
-      stopAudio,
-      updateFrequency,
-      updateFilter,
-    ]
-  );
+  };
 
   return (
-    <AudioEngineContext.Provider value={contextValue}>
+    <AudioEngineContext.Provider
+      value={{
+        audioContextRef,
+        oscillatorNodeRef,
+        gainNodeRef,
+        filterNodeRef,
+        isPlaying,
+        frequency,
+        cutoffFrequency,
+        resonance,
+        startAudio,
+        stopAudio,
+        updateFrequency,
+        updateFilter,
+        setIsPlaying,
+      }}
+    >
       {children}
     </AudioEngineContext.Provider>
   );
