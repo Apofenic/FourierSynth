@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BlockMath } from "react-katex";
-import "katex/dist/katex.min.css";
 import "./App.css";
 import {
   Typography,
@@ -15,11 +13,10 @@ import {
   useMediaQuery,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
-import {
-  calculateWaveform,
-  generateFourierEquation,
-  generateFullEquation,
-} from "./helperFunctions";
+import { calculateWaveform } from "./helperFunctions";
+import { WaveformVisualizer } from "./components/WaveformVisualizer";
+import { EquationDisplay } from "./components/EquationDisplay";
+import { PlainTextEquation } from "./components/PlainTextEquation";
 
 const Item = styled(Paper)(({ theme }) => ({
   backgroundColor: "#fff",
@@ -139,25 +136,10 @@ function App() {
     { amplitude: 0.0, phase: 0.5 * Math.PI },
     { amplitude: 0.0, phase: 0.5 * Math.PI },
     { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
   ]);
-  // Custom waveform array (will store Fourier series output)
-  const [waveform, setWaveform] = useState<Float32Array>(
-    new Float32Array(2048).fill(0)
-  );
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  // Toggle oscillator on/off
-  const toggleOscillator = () => {
-    if (isPlaying) {
-      // Stop the oscillator
-      if (oscillatorNodeRef.current) {
-        oscillatorNodeRef.current.stop();
-        oscillatorNodeRef.current.disconnect();
-        oscillatorNodeRef.current = null;
-      }
-    }
-    setIsPlaying(!isPlaying);
-  };
 
   // Update a single harmonic parameter
   const updateHarmonic = (
@@ -287,7 +269,6 @@ function App() {
 
       // Generate and set custom waveform from Fourier series
       const calculatedWaveform = calculateWaveform(harmonics);
-      setWaveform(calculatedWaveform);
 
       // Create a custom wave table from our calculated waveform
       const waveTable = audioContext.createPeriodicWave(
@@ -317,48 +298,6 @@ function App() {
       };
     }
   }, [isPlaying, frequency, harmonics, cutoff, resonance]);
-
-  // Draw the waveform on canvas
-  useEffect(() => {
-    const canvas = document.getElementById(
-      "waveform-canvas"
-    ) as HTMLCanvasElement;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Clear the canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        const centerY = canvas.height / 2;
-        const scaleY = (canvas.height / 2) * 0.9; // 90% of half-height for padding
-
-        // Draw center line (zero axis)
-        ctx.beginPath();
-        ctx.strokeStyle = "#666";
-        ctx.lineWidth = 1;
-        ctx.moveTo(0, centerY);
-        ctx.lineTo(canvas.width, centerY);
-        ctx.stroke();
-
-        // Draw waveform
-        ctx.beginPath();
-        ctx.strokeStyle = "#4CAF50";
-        ctx.lineWidth = 2;
-
-        // Start the path at the first point
-        ctx.moveTo(0, centerY - waveform[0] * scaleY);
-
-        // Connect all subsequent points
-        for (let i = 1; i < waveform.length; i++) {
-          const x = (i / waveform.length) * canvas.width;
-          const y = centerY - waveform[i] * scaleY;
-          ctx.lineTo(x, y);
-        }
-
-        ctx.stroke();
-      }
-    }
-  }, [waveform]);
 
   // Setup keyboard event listeners
   useEffect(() => {
@@ -405,111 +344,17 @@ function App() {
             padding: "2rem",
           }}
         >
-          {/* Button to start/stop the oscillator */}
-          {/* <Grid size={3} sx={{ alignContent: "center" }}>
-            <Button
-              variant="contained"
-              color={isPlaying ? "error" : "primary"}
-              fullWidth
-              startIcon={isPlaying ? <StopIcon /> : <PlayIcon />}
-              onClick={toggleOscillator}
-            >
-              {isPlaying ? "Stop" : "Start"} Oscillator
-            </Button>
-          </Grid> */}
-          {/* Keyboard mode toggle button */}
-          {/* <Grid size={12} sx={{ alignContent: "center" }}>
-            <Button
-              variant="contained"
-              color={keyboardEnabled ? "secondary" : "primary"}
-              fullWidth
-              onClick={toggleKeyboardMode}
-              sx={{ ml: 2 }}
-            >
-              {keyboardEnabled ? "Disable" : "Enable"} Keyboard
-            </Button>
-          </Grid> */}
-          {/* Frequency slider */}
-          {/* <Grid container size={6} direction="column" alignItems={"center"}>
-            <Grid>
-              <Typography id="frequency-slider" gutterBottom>
-                Frequency: {frequency} Hz
-              </Typography>
-            </Grid>
-            <Grid size={12}>
-              <Slider
-                value={frequency}
-                min={20}
-                max={2000}
-                onChange={(_, value) => setFrequency(value as number)}
-                aria-labelledby="frequency-slider"
-              />
-            </Grid>
-          </Grid> */}
           {/* Waveform visualizer */}
           <Grid size={4}>
-            <Paper sx={{ mb: 2, height: "100%" }}>
-              <Typography variant="h3" align="center">
-                Waveform isualization
-              </Typography>
-              <canvas
-                id="waveform-canvas"
-                style={{
-                  width: "100%",
-                  height: "90%",
-                  border: "1px solid #333",
-                  display: "block",
-                }}
-              />
-            </Paper>
+            <WaveformVisualizer />
           </Grid>
           {/* Equation Display */}
           <Grid size={4}>
-            <Paper sx={{ display: "grid" }}>
-              <Typography variant="h3" align="center">
-                Fourier Series Equation
-              </Typography>
-              <Grid>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontStyle: "italic",
-                    color: "text.secondary",
-                  }}
-                >
-                  Where ω = 2π · {frequency} Hz
-                </Typography>
-              </Grid>
-              <Grid>
-                <BlockMath math={generateFourierEquation(harmonics)} />
-              </Grid>
-            </Paper>
+            <EquationDisplay />
           </Grid>
           {/* Plain text format of the equation */}
           <Grid size={4}>
-            <Paper>
-              <Typography variant="h3" align="center">
-                Plain Text Format
-              </Typography>
-              {generateFullEquation(harmonics)
-                .replace(/\\sum_/g, "Σ")
-                .replace(/\\sin/g, "sin")
-                .replace(/\\phi/g, "φ")
-                .replace(/\\_/g, "_")
-                .replace(/\\\{/g, "{")
-                .replace(/\\\}/g, "}")
-                .replace(/\\\(/g, "(")
-                .replace(/\\\)/g, ")")
-                .replace(/\\\[/g, "[")
-                .replace(/\\\]/g, "]")
-                .replace(/\\\\/g, "\\")
-                .split("\n")
-                .map((line, i) => (
-                  <Box key={i} component="div">
-                    {line}
-                  </Box>
-                ))}
-            </Paper>
+            <PlainTextEquation />
           </Grid>
           {/* Harmonics control panel */}
           <Grid size={6}>
