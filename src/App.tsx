@@ -43,14 +43,6 @@ interface KeyboardNote {
   isActive: boolean;
 }
 
-const MathEquation: React.FC<{ equation: string }> = ({ equation }) => {
-  return (
-    <Box className="math-equation">
-      <BlockMath math={equation} />
-    </Box>
-  );
-};
-
 const theme = createTheme({
   palette: {
     mode: "dark",
@@ -139,14 +131,14 @@ function App() {
     { key: ";", note: "E4", frequency: 329.63, isActive: false },
   ]);
   const [harmonics, setHarmonics] = useState<HarmonicParam[]>([
-    { amplitude: 1.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
-    { amplitude: 0.0, phase: 0 },
+    { amplitude: 1.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
+    { amplitude: 0.0, phase: 0.5 * Math.PI },
   ]);
   // Custom waveform array (will store Fourier series output)
   const [waveform, setWaveform] = useState<Float32Array>(
@@ -473,21 +465,24 @@ function App() {
           </Grid>
           {/* Equation Display */}
           <Grid size={4}>
-            <Paper>
+            <Paper sx={{ display: "grid" }}>
               <Typography variant="h3" align="center">
                 Fourier Series Equation
               </Typography>
-              <Typography
-                variant="body2"
-                sx={{
-                  mb: 1,
-                  fontStyle: "italic",
-                  color: "text.secondary",
-                }}
-              >
-                Where ω = 2π · {frequency} Hz
-              </Typography>
-              <MathEquation equation={generateFourierEquation(harmonics)} />
+              <Grid>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontStyle: "italic",
+                    color: "text.secondary",
+                  }}
+                >
+                  Where ω = 2π · {frequency} Hz
+                </Typography>
+              </Grid>
+              <Grid>
+                <BlockMath math={generateFourierEquation(harmonics)} />
+              </Grid>
             </Paper>
           </Grid>
           {/* Plain text format of the equation */}

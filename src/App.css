@@ -1,18 +1,18 @@
 /* Minimal CSS that's not covered by MUI styling */
 
 /* For LaTeX-style equation display */
-.math-equation {
+/* .math-equation {
   font-family: 'Courier New', monospace;
   white-space: pre-wrap;
   word-break: break-word;
   max-width: 100%;
   overflow-x: hidden;
-}
+} */
 
-.math-equation .katex {
+/* .math-equation .katex {
   font-size: 1.1em;
   color: #eee;
-}
+} */
 
 /* Ensure proper scrollbar styling for WebKit browsers */
 ::-webkit-scrollbar {
