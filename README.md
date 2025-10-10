@@ -21,7 +21,7 @@ A web-based synthesizer and visualization tool built with React. FourierSynth le
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/yourusername/FourierSynth.git
+git clone https://github.com/Apofenic/FourierSynth.git
 cd FourierSynth
 npm install
 ```
@@ -34,11 +34,9 @@ Start the development server:
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to use the app.
+Open [http://localhost:5847](http://localhost:5847) in your browser to use the app.
 
-## Development
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> **Note:** The app runs on port 5847 by default (configured in `.env`). You can change this by modifying the `PORT` value in your `.env` file.
 
 ### Available Scripts
 
@@ -46,12 +44,6 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 - `npm test` – Launch the test runner
 - `npm run build` – Build the app for production
 - `npm run eject` – Eject configuration (not recommended unless necessary)
-
-See the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started) for more details.
-
-## Contributing
-
-Contributions are welcome! Please open issues or submit pull requests for new features, bug fixes, or improvements.
 
 ## License
 

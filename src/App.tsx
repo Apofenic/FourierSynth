@@ -1,44 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import "./App.css";
 import {
   Typography,
-  Slider,
-  Box,
-  Paper,
   Grid,
   CssBaseline,
   ThemeProvider,
   createTheme,
-  Stack,
-  useMediaQuery,
 } from "@mui/material";
-import { styled } from "@mui/material/styles";
 import { calculateWaveform } from "./helperFunctions";
 import { WaveformVisualizer } from "./components/WaveformVisualizer";
 import { EquationDisplay } from "./components/EquationDisplay";
 import { PlainTextEquation } from "./components/PlainTextEquation";
-
-const Item = styled(Paper)(({ theme }) => ({
-  backgroundColor: "#fff",
-  ...theme.typography.body2,
-  padding: theme.spacing(1),
-  textAlign: "center",
-  color: theme.palette.text.secondary,
-  ...theme.applyStyles("dark", {
-    backgroundColor: "#1A2027",
-  }),
-}));
-interface HarmonicParam {
-  amplitude: number;
-  phase: number;
-}
-
-interface KeyboardNote {
-  key: string;
-  note: string;
-  frequency: number;
-  isActive: boolean;
-}
+import { HarmonicsControl } from "./components/HarmonicsControl";
+import { SubtractiveControls } from "./components/SubtractiveControls";
+import { KeyboardControls } from "./components/KeyboardControls";
+import { useAudioEngine } from "./contexts/AudioEngineContext";
+import { useSynthControls } from "./contexts/SynthControlsContext";
 
 const theme = createTheme({
   palette: {
@@ -98,126 +75,19 @@ const theme = createTheme({
 });
 
 function App() {
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const oscillatorNodeRef = useRef<OscillatorNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
-  const filterNodeRef = useRef<BiquadFilterNode | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [frequency, setFrequency] = useState(220);
-  const [cutoff, setCutoff] = useState(2000);
-  const [resonance, setResonance] = useState(0);
-  const [keyboardEnabled, setKeyboardEnabled] = useState(true);
-  const [activeKey, setActiveKey] = useState<string | null>(null);
-  const [keyboardNotes, setKeyboardNotes] = useState<KeyboardNote[]>([
-    { key: "a", note: "C3", frequency: 130.81, isActive: false },
-    { key: "w", note: "C#3", frequency: 138.59, isActive: false },
-    { key: "s", note: "D3", frequency: 146.83, isActive: false },
-    { key: "e", note: "D#3", frequency: 155.56, isActive: false },
-    { key: "d", note: "E3", frequency: 164.81, isActive: false },
-    { key: "f", note: "F3", frequency: 174.61, isActive: false },
-    { key: "t", note: "F#3", frequency: 185.0, isActive: false },
-    { key: "g", note: "G3", frequency: 196.0, isActive: false },
-    { key: "y", note: "G#3", frequency: 207.65, isActive: false },
-    { key: "h", note: "A3", frequency: 220.0, isActive: false },
-    { key: "u", note: "A#3", frequency: 233.08, isActive: false },
-    { key: "j", note: "B3", frequency: 246.94, isActive: false },
-    { key: "k", note: "C4", frequency: 261.63, isActive: false },
-    { key: "o", note: "C#4", frequency: 277.18, isActive: false },
-    { key: "l", note: "D4", frequency: 293.66, isActive: false },
-    { key: "p", note: "D#4", frequency: 311.13, isActive: false },
-    { key: ";", note: "E4", frequency: 329.63, isActive: false },
-  ]);
-  const [harmonics, setHarmonics] = useState<HarmonicParam[]>([
-    { amplitude: 1.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-    { amplitude: 0.0, phase: 0.5 * Math.PI },
-  ]);
+  // Get state and refs from contexts
+  const {
+    audioContextRef,
+    oscillatorNodeRef,
+    gainNodeRef,
+    filterNodeRef,
+    isPlaying,
+    frequency,
+    cutoffFrequency,
+    resonance,
+  } = useAudioEngine();
 
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  // Update a single harmonic parameter
-  const updateHarmonic = (
-    index: number,
-    paramType: "amplitude" | "phase",
-    value: number
-  ) => {
-    const updatedHarmonics = [...harmonics];
-    updatedHarmonics[index] = {
-      ...updatedHarmonics[index],
-      [paramType]: value,
-    };
-    setHarmonics(updatedHarmonics);
-  };
-
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (!keyboardEnabled) return;
-
-    // Ignore repeated keydown events (key held down)
-    if (event.repeat) return;
-
-    // Find the matching note for this key
-    const keyPressed = event.key.toLowerCase();
-    const noteIndex = keyboardNotes.findIndex(
-      (note) => note.key === keyPressed
-    );
-
-    if (noteIndex !== -1) {
-      // Update keyboard notes state to show active key
-      const updatedKeyboardNotes = [...keyboardNotes];
-      updatedKeyboardNotes[noteIndex].isActive = true;
-      setKeyboardNotes(updatedKeyboardNotes);
-      setActiveKey(keyPressed);
-
-      // Set the frequency to the note's frequency
-      setFrequency(keyboardNotes[noteIndex].frequency);
-
-      // Start the oscillator if it's not already playing
-      if (!isPlaying) {
-        setIsPlaying(true);
-      } else if (oscillatorNodeRef.current) {
-        // Update frequency if already playing
-        oscillatorNodeRef.current.frequency.setValueAtTime(
-          keyboardNotes[noteIndex].frequency,
-          audioContextRef.current?.currentTime || 0
-        );
-      }
-    }
-  };
-
-  const handleKeyUp = (event: KeyboardEvent) => {
-    if (!keyboardEnabled) return;
-
-    const keyReleased = event.key.toLowerCase();
-    const noteIndex = keyboardNotes.findIndex(
-      (note) => note.key === keyReleased
-    );
-
-    if (noteIndex !== -1) {
-      // Update keyboard notes state to show inactive key
-      const updatedKeyboardNotes = [...keyboardNotes];
-      updatedKeyboardNotes[noteIndex].isActive = false;
-      setKeyboardNotes(updatedKeyboardNotes);
-
-      // Only stop the oscillator if the released key was the active key
-      if (keyReleased === activeKey) {
-        setActiveKey(null);
-        // Check if any other keys are still active
-        const anyKeysActive = updatedKeyboardNotes.some(
-          (note) => note.isActive
-        );
-        if (!anyKeysActive && isPlaying) {
-          // Stop the oscillator if no keys are active
-          setIsPlaying(false);
-        }
-      }
-    }
-  };
+  const { harmonics, keyboardEnabled } = useSynthControls();
 
   // Initialize or update the audio system
   useEffect(() => {
@@ -239,25 +109,25 @@ function App() {
       // First BiquadFilter
       const filter1 = audioContext.createBiquadFilter();
       filter1.type = "lowpass";
-      filter1.frequency.value = cutoff;
+      filter1.frequency.value = cutoffFrequency;
       filter1.Q.value = resonance;
 
       // Second BiquadFilter to cascade (creating a 4-pole/24dB per octave filter)
       const filter2 = audioContext.createBiquadFilter();
       filter2.type = "lowpass";
-      filter2.frequency.value = cutoff;
+      filter2.frequency.value = cutoffFrequency;
       filter2.Q.value = resonance * 0.7; // Slightly reduce resonance on subsequent filters
 
       // Third BiquadFilter
       const filter3 = audioContext.createBiquadFilter();
       filter3.type = "lowpass";
-      filter3.frequency.value = cutoff;
+      filter3.frequency.value = cutoffFrequency;
       filter3.Q.value = resonance * 0.4;
 
       // Fourth BiquadFilter
       const filter4 = audioContext.createBiquadFilter();
       filter4.type = "lowpass";
-      filter4.frequency.value = cutoff;
+      filter4.frequency.value = cutoffFrequency;
       filter4.Q.value = resonance * 0.2;
 
       // Store the first filter for parameter updates
@@ -297,32 +167,17 @@ function App() {
         filterNodeRef.current = null;
       };
     }
-  }, [isPlaying, frequency, harmonics, cutoff, resonance]);
-
-  // Setup keyboard event listeners
-  useEffect(() => {
-    if (keyboardEnabled) {
-      window.addEventListener("keydown", handleKeyDown);
-      window.addEventListener("keyup", handleKeyUp);
-    }
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, [keyboardEnabled, keyboardNotes]);
-
-  // Initialize keyboard dependencies dependency
-  useEffect(() => {
-    // When keyboard mode is enabled, show a notification and ensure the audio context is initialized
-    if (keyboardEnabled) {
-      // Initialize audio context if needed when switching to keyboard mode
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
-      }
-    }
-  }, [keyboardEnabled]);
+  }, [
+    isPlaying,
+    frequency,
+    harmonics,
+    cutoffFrequency,
+    resonance,
+    audioContextRef,
+    oscillatorNodeRef,
+    gainNodeRef,
+    filterNodeRef,
+  ]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -358,218 +213,16 @@ function App() {
           </Grid>
           {/* Harmonics control panel */}
           <Grid size={6}>
-            <Paper sx={{ height: "100%", overflow: "hidden" }}>
-              <Typography variant="h3" align="center">
-                Harmonic Components
-              </Typography>
-              <Stack spacing={1.5}>
-                {harmonics.map((harmonic, idx) => (
-                  <Paper
-                    key={idx}
-                    sx={{
-                      bgcolor: "rgba(97, 218, 251, 0.1)",
-                      p: 1,
-                      borderRadius: 1,
-                    }}
-                  >
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ mb: 0.5, color: "primary.main" }}
-                    >
-                      H{idx + 1} ({(idx + 1) * frequency} Hz)
-                    </Typography>
-                    <Grid container spacing={2}>
-                      <Grid size={6}>
-                        <Typography
-                          variant="caption"
-                          id={`amplitude-slider-${idx}`}
-                        >
-                          A (amplitude): {harmonic.amplitude.toFixed(2)}
-                        </Typography>
-                        <Slider
-                          size="small"
-                          value={harmonic.amplitude}
-                          min={0}
-                          max={1}
-                          step={0.01}
-                          onChange={(_, value) =>
-                            updateHarmonic(idx, "amplitude", value as number)
-                          }
-                          aria-labelledby={`amplitude-slider-${idx}`}
-                        />
-                      </Grid>
-                      <Grid size={6}>
-                        <Typography
-                          variant="caption"
-                          id={`phase-slider-${idx}`}
-                        >
-                          φ (phase): {(harmonic.phase / Math.PI).toFixed(2)}π
-                        </Typography>
-                        <Slider
-                          size="small"
-                          value={harmonic.phase}
-                          min={-Math.PI}
-                          max={Math.PI}
-                          step={0.01}
-                          onChange={(_, value) =>
-                            updateHarmonic(idx, "phase", value as number)
-                          }
-                          aria-labelledby={`phase-slider-${idx}`}
-                        />
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                ))}
-              </Stack>
-            </Paper>
+            <HarmonicsControl />
           </Grid>
           <Grid size={6}>
-            <Paper>
-              <Typography variant="h3" align="center">
-                Subtractive Controls
-              </Typography>
-              <Box sx={{ p: 2 }}>
-                <Typography variant="h6" gutterBottom>
-                  4-Pole (24dB/oct) Low-Pass Filter
-                </Typography>
-
-                {/* Cutoff frequency control */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography
-                    variant="subtitle2"
-                    color="primary.main"
-                    gutterBottom
-                  >
-                    Cutoff Frequency: {cutoff} Hz
-                  </Typography>
-                  <Slider
-                    value={cutoff}
-                    min={20}
-                    max={20000}
-                    step={1}
-                    scale={(x) => Math.pow(x, 2) / 20000} // Logarithmic scale for more natural frequency control
-                    onChange={(_, value) => {
-                      setCutoff(value as number);
-                      // Update filter cutoff in real time if playing
-                      if (filterNodeRef.current && audioContextRef.current) {
-                        const time = audioContextRef.current.currentTime;
-                        // Apply slight smoothing to avoid clicks
-                        filterNodeRef.current.frequency.exponentialRampToValueAtTime(
-                          value as number,
-                          time + 0.01
-                        );
-                      }
-                    }}
-                  />
-                </Box>
-
-                {/* Resonance control */}
-                <Box sx={{ mt: 3 }}>
-                  <Typography
-                    variant="subtitle2"
-                    color="primary.main"
-                    gutterBottom
-                  >
-                    Resonance: {resonance.toFixed(2)}
-                  </Typography>
-                  <Slider
-                    value={resonance}
-                    min={0}
-                    max={20}
-                    step={0.1}
-                    onChange={(_, value) => {
-                      setResonance(value as number);
-                      // Update filter resonance in real time if playing
-                      if (filterNodeRef.current && audioContextRef.current) {
-                        const time = audioContextRef.current.currentTime;
-                        // Apply slight smoothing to avoid clicks
-                        filterNodeRef.current.Q.linearRampToValueAtTime(
-                          value as number,
-                          time + 0.01
-                        );
-                      }
-                    }}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    mt: 4,
-                    p: 2,
-                    bgcolor: "rgba(97, 218, 251, 0.1)",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography variant="body2">
-                    This is a 4-pole (24dB/octave) low-pass filter achieved by
-                    cascading four 2-pole filters. Adjust the cutoff to remove
-                    high frequencies, and increase resonance for a more
-                    pronounced filter effect.
-                  </Typography>
-                </Box>
-              </Box>
-            </Paper>
+            <SubtractiveControls />
           </Grid>
 
           {/* Visual Keyboard Component */}
           {keyboardEnabled && (
             <Grid size={12}>
-              <Paper sx={{ p: 2, mt: 2 }}>
-                <Typography variant="h3" align="center" gutterBottom>
-                  Keyboard Controls
-                </Typography>
-                <Typography variant="body2" align="center" gutterBottom>
-                  Press keys on your keyboard to play notes. Active note:{" "}
-                  {activeKey
-                    ? keyboardNotes.find((note) => note.key === activeKey)?.note
-                    : "None"}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    justifyContent: "center",
-                    gap: 0.5,
-                    my: 2,
-                  }}
-                >
-                  {keyboardNotes.map((note, index) => (
-                    <Paper
-                      key={index}
-                      sx={{
-                        p: 1,
-                        minWidth: "40px",
-                        textAlign: "center",
-                        bgcolor: note.isActive
-                          ? "secondary.main"
-                          : note.note.includes("#")
-                          ? "#333"
-                          : "#fff",
-                        color: note.note.includes("#") ? "#fff" : "#000",
-                        border: "1px solid #666",
-                        boxShadow: note.isActive ? 4 : 1,
-                        transition: "all 0.1s ease",
-                        position: note.note.includes("#")
-                          ? "relative"
-                          : "static",
-                        zIndex: note.note.includes("#") ? 1 : "auto",
-                        transform: note.isActive ? "translateY(2px)" : "none",
-                      }}
-                    >
-                      <Typography variant="caption" display="block">
-                        {note.key}
-                      </Typography>
-                      <Typography variant="body2">{note.note}</Typography>
-                      <Typography variant="caption" display="block">
-                        {note.frequency.toFixed(0)} Hz
-                      </Typography>
-                    </Paper>
-                  ))}
-                </Box>
-                <Typography variant="caption" align="center" display="block">
-                  Keyboard layout follows a piano layout (A-K keys for white
-                  notes, W-P for black notes)
-                </Typography>
-              </Paper>
+              <KeyboardControls />
             </Grid>
           )}
         </Grid>

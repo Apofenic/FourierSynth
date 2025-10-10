@@ -135,9 +135,7 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
    */
   const updateKeyboardNoteState = (key: string, isActive: boolean) => {
     setKeyboardNotes((prevNotes) =>
-      prevNotes.map((note) =>
-        note.key === key ? { ...note, isActive } : note
-      )
+      prevNotes.map((note) => (note.key === key ? { ...note, isActive } : note))
     );
   };
 
