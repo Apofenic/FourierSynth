@@ -12,7 +12,7 @@ export const HarmonicsControl: React.FC = () => {
   const { frequency } = useAudioEngine();
 
   return (
-    <Paper sx={{ height: "100%", overflow: "hidden" }}>
+    <Paper sx={{ height: "100%", overflow: "auto", p: 2 }}>
       <Typography variant="h3" align="center">
         Harmonic Components
       </Typography>

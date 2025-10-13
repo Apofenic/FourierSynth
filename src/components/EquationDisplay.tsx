@@ -35,52 +35,75 @@ export const EquationDisplay: React.FC = () => {
     .split("\n");
 
   return (
-    <Paper sx={{ display: "grid" }}>
-      <Typography variant="h3" align="center">
+    <Paper
+      sx={{
+        height: "100%",
+        overflow: "auto",
+        p: 2,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
+      <Typography variant="h3" align="center" gutterBottom>
         Fourier Series Equation
       </Typography>
-      <Grid>
-        <Typography
-          variant="body2"
-          sx={{
-            fontStyle: "italic",
-            color: "text.secondary",
-          }}
-        >
-          Where ω = 2π · {frequency} Hz
-        </Typography>
-      </Grid>
-      <Grid>
-        <BlockMath math={generateFourierEquation(harmonics)} />
-      </Grid>
-
-      <Divider sx={{ mx: 2, my: 2 }} />
-
-      <Box
-        sx={{
-          p: 2,
-          bgcolor: "rgba(97, 218, 251, 0.05)",
-        }}
-      >
-        <Typography variant="subtitle2" color="primary.main" gutterBottom>
-          Plain Text Format:
-        </Typography>
-        {plainTextEquation.map((line, i) => (
+      <Grid container spacing={2} sx={{ flex: 1 }}>
+        {/* Fourier Equation - Left Side */}
+        <Grid size={6} sx={{ display: "flex" }}>
           <Box
-            key={i}
-            component="div"
             sx={{
-              fontFamily: "monospace",
-              fontSize: "0.9rem",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              lineHeight: 1.6,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              width: "100%",
             }}
           >
-            {line}
+            <BlockMath math={generateFourierEquation(harmonics)} />
+            <Typography
+              variant="body2"
+              sx={{
+                fontStyle: "italic",
+                color: "text.secondary",
+              }}
+            >
+              Where ω = 2π · {frequency} Hz
+            </Typography>
           </Box>
-        ))}
-      </Box>
+        </Grid>
+
+        {/* Plain Text Format - Right Side */}
+        <Grid size={6} sx={{ display: "flex" }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 2,
+              bgcolor: "rgba(97, 218, 251, 0.05)",
+              borderRadius: 1,
+            }}
+          >
+            <Typography variant="subtitle2" color="primary.main" gutterBottom>
+              Plain Text Format:
+            </Typography>
+            {plainTextEquation.map((line, i) => (
+              <Box
+                key={i}
+                component="div"
+                sx={{
+                  fontFamily: "monospace",
+                  fontSize: "0.9rem",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  lineHeight: 1.6,
+                }}
+              >
+                {line}
+              </Box>
+            ))}
+          </Box>
+        </Grid>
+      </Grid>
     </Paper>
   );
 };

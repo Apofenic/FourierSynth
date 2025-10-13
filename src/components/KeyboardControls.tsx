@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
-import { Paper, Typography, Box } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Paper, Typography, Box, IconButton, Collapse } from "@mui/material";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
 import { useAudioEngine } from "../contexts/AudioEngineContext";
 import { useSynthControls } from "../contexts/SynthControlsContext";
 
@@ -10,6 +11,7 @@ import { useSynthControls } from "../contexts/SynthControlsContext";
  */
 export const KeyboardControls: React.FC = () => {
   const { isPlaying, setIsPlaying, updateFrequency } = useAudioEngine();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const {
     keyboardNotes,

@@ -4,6 +4,9 @@ declare module "*.css" {
   export default content;
 }
 
+// Allow side-effect CSS imports
+declare module "*.css";
+
 declare module "*.scss" {
   const content: { [className: string]: string };
   export default content;
