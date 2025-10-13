@@ -9,13 +9,7 @@ import { useSynthControls } from "../contexts/SynthControlsContext";
  * Handles keydown/keyup events to trigger notes
  */
 export const KeyboardControls: React.FC = () => {
-  const {
-    isPlaying,
-    setIsPlaying,
-    updateFrequency,
-    oscillatorNodeRef,
-    audioContextRef,
-  } = useAudioEngine();
+  const { isPlaying, setIsPlaying, updateFrequency } = useAudioEngine();
 
   const {
     keyboardNotes,
@@ -36,22 +30,16 @@ export const KeyboardControls: React.FC = () => {
     const note = keyboardNotes.find((n) => n.key === keyPressed);
 
     if (note) {
-      // Update keyboard notes state to show active key
+      // Update frequency immediately (this will update the oscillator if playing)
+      updateFrequency(note.frequency);
+
+      // Update visual state
       updateKeyboardNoteState(keyPressed, true);
       setActiveKey(keyPressed);
-
-      // Set the frequency to the note's frequency
-      updateFrequency(note.frequency);
 
       // Start the oscillator if it's not already playing
       if (!isPlaying) {
         setIsPlaying(true);
-      } else if (oscillatorNodeRef.current) {
-        // Update frequency if already playing
-        oscillatorNodeRef.current.frequency.setValueAtTime(
-          note.frequency,
-          audioContextRef.current?.currentTime || 0
-        );
       }
     }
   };
@@ -66,15 +54,19 @@ export const KeyboardControls: React.FC = () => {
       // Update keyboard notes state to show inactive key
       updateKeyboardNoteState(keyReleased, false);
 
-      // Only stop the oscillator if the released key was the active key
+      // Clear active key if this was it
       if (keyReleased === activeKey) {
         setActiveKey(null);
-        // Check if any other keys are still active
-        const anyKeysActive = keyboardNotes.some((note) => note.isActive);
-        if (!anyKeysActive && isPlaying) {
-          // Stop the oscillator if no keys are active
-          setIsPlaying(false);
-        }
+      }
+
+      // Check if any other keys are still active (excluding the one we just released)
+      const anyKeysActive = keyboardNotes.some(
+        (n) => n.isActive && n.key !== keyReleased
+      );
+
+      // Stop the oscillator if no keys are active, regardless of which key was released
+      if (!anyKeysActive && isPlaying) {
+        setIsPlaying(false);
       }
     }
   };

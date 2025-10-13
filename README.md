@@ -1,13 +1,52 @@
 # FourierSynth
 
-A web-based synthesizer and visualization tool built with React. FourierSynth lets you explore sound synthesis, Fourier transforms, and waveform visualization in real time.
+A web-based Fourier series synthesizer and visualization tool built with React and TypeScript. FourierSynth demonstrates how complex waveforms can be constructed from simple sine waves using Fourier series, with real-time audio synthesis and visualization.
 
 ## Features
 
-- Interactive sound synthesis using the Web Audio API
-- Real-time waveform and spectrum visualization
-- Customizable oscillator parameters
-- User-friendly interface for audio experimentation
+- **Interactive Fourier Series Synthesis**: Adjust up to 8 harmonics with amplitude and phase control
+- **Real-time Audio Playback**: Web Audio API-based synthesis with 4-pole lowpass filter
+- **Waveform Visualization**: Canvas-based real-time waveform display
+- **Mathematical Equation Display**: LaTeX-rendered Fourier series equation with fallback
+- **Visual Keyboard**: Computer keyboard-to-note mapping with visual feedback
+- **Subtractive Synthesis**: Adjustable filter cutoff and resonance controls
+
+## Architecture
+
+FourierSynth uses a modern React architecture with Context API for state management:
+
+### Project Structure
+
+```text
+src/
+├── components/          # UI Components
+│   ├── EquationDisplay.tsx       # LaTeX equation renderer
+│   ├── PlainTextEquation.tsx     # Text fallback equation
+│   ├── WaveformVisualizer.tsx    # Canvas waveform display
+│   ├── HarmonicsControl.tsx      # Harmonic amplitude/phase sliders
+│   ├── SubtractiveControls.tsx   # Filter cutoff/resonance controls
+│   └── KeyboardControls.tsx      # Musical keyboard interface
+├── contexts/            # State Management
+│   ├── AudioEngineContext.tsx    # Web Audio API state & methods
+│   └── SynthControlsContext.tsx  # Synthesis parameters & keyboard state
+├── hooks/               # Custom Hooks
+│   └── useAudioInitializer.ts    # Audio system initialization
+├── types/               # TypeScript Definitions
+└── helperFunctions.ts   # Waveform calculation utilities
+```
+
+### Context API
+
+- **AudioEngineContext**: Manages Web Audio API nodes, playback state, and real-time parameter updates
+- **SynthControlsContext**: Manages harmonics, keyboard state, and waveform data generation
+
+### Key Technologies
+
+- React 18+ with TypeScript
+- Web Audio API for synthesis
+- Material-UI (MUI) for UI components
+- KaTeX for mathematical equation rendering
+- Canvas API for waveform visualization
 
 ## Getting Started
 

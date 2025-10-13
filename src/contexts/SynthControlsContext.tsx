@@ -4,6 +4,8 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useCallback,
+  useMemo,
 } from "react";
 import { calculateWaveform } from "../helperFunctions";
 
@@ -113,39 +115,43 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
    * @param paramType - Type of parameter ("amplitude" or "phase")
    * @param value - New value for the parameter
    */
-  const updateHarmonic = (
-    index: number,
-    paramType: "amplitude" | "phase",
-    value: number
-  ) => {
-    setHarmonics((prevHarmonics) => {
-      const updatedHarmonics = [...prevHarmonics];
-      updatedHarmonics[index] = {
-        ...updatedHarmonics[index],
-        [paramType]: value,
-      };
-      return updatedHarmonics;
-    });
-  };
+  const updateHarmonic = useCallback(
+    (index: number, paramType: "amplitude" | "phase", value: number) => {
+      setHarmonics((prevHarmonics) => {
+        const updatedHarmonics = [...prevHarmonics];
+        updatedHarmonics[index] = {
+          ...updatedHarmonics[index],
+          [paramType]: value,
+        };
+        return updatedHarmonics;
+      });
+    },
+    []
+  );
 
   /**
    * Update the active state of a keyboard note
    * @param key - The keyboard key
    * @param isActive - Whether the key is currently active
    */
-  const updateKeyboardNoteState = (key: string, isActive: boolean) => {
-    setKeyboardNotes((prevNotes) =>
-      prevNotes.map((note) => (note.key === key ? { ...note, isActive } : note))
-    );
-  };
+  const updateKeyboardNoteState = useCallback(
+    (key: string, isActive: boolean) => {
+      setKeyboardNotes((prevNotes) =>
+        prevNotes.map((note) =>
+          note.key === key ? { ...note, isActive } : note
+        )
+      );
+    },
+    []
+  );
 
   /**
    * Clear the active key (set to null)
    * @param key - The key to clear (validates it's the current active key)
    */
-  const clearActiveKey = (key: string) => {
+  const clearActiveKey = useCallback((key: string) => {
     setActiveKey((currentKey) => (currentKey === key ? null : currentKey));
-  };
+  }, []);
 
   /**
    * Recalculate waveform whenever harmonics change
@@ -155,21 +161,34 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
     setWaveformData(calculatedWaveform);
   }, [harmonics]);
 
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({
+      harmonics,
+      updateHarmonic,
+      keyboardNotes,
+      activeKey,
+      setActiveKey,
+      clearActiveKey,
+      updateKeyboardNoteState,
+      waveformData,
+      keyboardEnabled,
+      setKeyboardEnabled,
+    }),
+    [
+      harmonics,
+      updateHarmonic,
+      keyboardNotes,
+      activeKey,
+      clearActiveKey,
+      updateKeyboardNoteState,
+      waveformData,
+      keyboardEnabled,
+    ]
+  );
+
   return (
-    <SynthControlsContext.Provider
-      value={{
-        harmonics,
-        updateHarmonic,
-        keyboardNotes,
-        activeKey,
-        setActiveKey,
-        clearActiveKey,
-        updateKeyboardNoteState,
-        waveformData,
-        keyboardEnabled,
-        setKeyboardEnabled,
-      }}
-    >
+    <SynthControlsContext.Provider value={contextValue}>
       {children}
     </SynthControlsContext.Provider>
   );
