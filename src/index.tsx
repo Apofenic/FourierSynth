@@ -11,11 +11,11 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <React.StrictMode>
-    <AudioEngineProvider>
-      <SynthControlsProvider>
+    <SynthControlsProvider>
+      <AudioEngineProvider>
         <App />
-      </SynthControlsProvider>
-    </AudioEngineProvider>
+      </AudioEngineProvider>
+    </SynthControlsProvider>
   </React.StrictMode>
 );
 
