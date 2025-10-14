@@ -18,8 +18,9 @@ export const WaveformVisualizer: React.FC = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Clear the canvas with dark gray background
+    ctx.fillStyle = "#1a1a1a";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const centerY = canvas.height / 2;
     const scaleY = (canvas.height / 2) * 0.9; // 90% of half-height for padding
