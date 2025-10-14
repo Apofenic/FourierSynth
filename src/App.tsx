@@ -5,30 +5,32 @@ import {
   CssBaseline,
   ThemeProvider,
   Paper,
-  Divider,
   Box,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Tabs,
   Tab,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { WaveformVisualizer } from "./components/WaveformVisualizer";
-import { EquationDisplay } from "./components/EquationDisplay";
-import { HarmonicsControl } from "./components/HarmonicsControl";
-import { SubtractiveControls } from "./components/SubtractiveControls";
-import { KeyboardControls } from "./components/KeyboardControls";
+import {
+  WaveformVisualizer,
+  EquationDisplay,
+  HarmonicsControl,
+  SubtractiveControls,
+  KeyboardControls,
+  Mixer,
+  OscControls,
+} from "./components";
 import { useSynthControls } from "./contexts/SynthControlsContext";
 import { theme } from "./theme";
 
 function App() {
-  // Get keyboard state from context
-  const { keyboardEnabled } = useSynthControls();
   const [activeTab, setActiveTab] = React.useState(0);
+  const [activeOsc, setActiveOsc] = React.useState(0);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleOscChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveOsc(newValue);
   };
 
   return (
@@ -38,7 +40,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1.5fr 2fr auto",
+          gridTemplateRows: "auto 1.5fr 2fr",
           gap: 2,
           padding: "1rem",
           height: "100vh",
@@ -51,70 +53,102 @@ function App() {
             Fourier Series Synthesizer
           </Typography>
         </Box>
-
-        {/* Waveform visualizer and Equation Display - Row 2, spans all 12 columns */}
-
+        {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
         <Paper
           sx={{
             gridColumn: "1 / -1",
             gridRow: 2,
-            display: "flex",
-            flexDirection: "row",
+            display: "grid",
+            gridTemplateColumns: "2fr 1fr",
             gap: 2,
-            p: 2,
-            overflow: "auto",
+            padding: 1,
+            overflow: "hidden",
             minHeight: 0,
           }}
         >
-          <Box sx={{ flex: 1 }}>
-            <WaveformVisualizer />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              overflow: "hidden",
+              height: "100%",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                height: "100%",
+                overflow: "hidden",
+              }}
+            >
+              <Tabs
+                value={activeOsc}
+                onChange={handleOscChange}
+                aria-label="oscillator tabs"
+                sx={{ flexShrink: 0 }}
+              >
+                <Tab label="Osc 1" />
+                <Tab label="Osc 2" />
+                <Tab label="Osc 3" />
+                <Tab label="Osc 4" />
+              </Tabs>
+              <Box sx={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
+                {activeOsc === 0 && <OscControls />}
+                {activeOsc === 1 && <OscControls />}
+                {activeOsc === 2 && <OscControls />}
+                {activeOsc === 3 && <OscControls />}
+              </Box>
+            </Box>
           </Box>
-          <Divider orientation="vertical" flexItem />
-          <Box sx={{ flex: 1 }}>
-            <EquationDisplay />
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              minHeight: 0,
+              overflow: "hidden",
+              height: "100%",
+            }}
+          >
+            <Mixer />
           </Box>
         </Paper>
-
-        {/* Harmonics and Subtractive Controls - Row 3, spans all 12 columns */}
+        {/* Controls Section - Row 3, spans all 12 columns */}
         <Paper
           sx={{
             gridColumn: "1 / -1",
             gridRow: 3,
-            overflow: "auto",
+            display: "grid",
+            gridTemplateRows: "auto 1fr",
+            overflow: "hidden",
             minHeight: 0,
+            height: "100%",
           }}
         >
           <Tabs
             value={activeTab}
             onChange={handleTabChange}
             aria-label="control tabs"
+            sx={{ gridRow: 1 }}
           >
-            <Tab label="Harmonics Control" />
             <Tab label="Subtractive Controls" />
+            <Tab label="Partials Controls" />
+            <Tab label="Keyboard Layout" />
           </Tabs>
-          <Box sx={{ p: 2 }}>
-            {activeTab === 0 && <HarmonicsControl />}
-            {activeTab === 1 && <SubtractiveControls />}
+          <Box
+            sx={{
+              gridRow: 2,
+              minHeight: 0,
+              overflow: "hidden",
+            }}
+          >
+            {activeTab === 0 && <SubtractiveControls />}
+            {activeTab === 1 && <HarmonicsControl />}
+            {activeTab === 2 && <KeyboardControls />}
           </Box>
         </Paper>
-
-        {/* Visual Keyboard Component - Row 4, spans all 12 columns */}
-        {keyboardEnabled && (
-          <Box sx={{ gridColumn: "1 / -1", gridRow: 4 }}>
-            <Accordion>
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls="keyboard-controls-content"
-                id="keyboard-controls-header"
-              >
-                <Typography variant="h3">Keyboard Controls</Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <KeyboardControls />
-              </AccordionDetails>
-            </Accordion>
-          </Box>
-        )}
       </Box>
     </ThemeProvider>
   );
