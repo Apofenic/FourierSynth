@@ -75,7 +75,7 @@ export const EquationDisplay: React.FC = () => {
 
         {/* Plain Text Format - Right Side */}
         <Grid size={6} sx={{ display: "flex" }}>
-          <Box
+          {/* <Box
             sx={{
               flex: 1,
               p: 2,
@@ -101,7 +101,7 @@ export const EquationDisplay: React.FC = () => {
                 {line}
               </Box>
             ))}
-          </Box>
+          </Box> */}
         </Grid>
       </Grid>
     </Paper>

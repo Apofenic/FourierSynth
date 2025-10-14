@@ -7,7 +7,7 @@ export const OscControls: React.FC = () => {
     <Paper
       sx={{
         display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
+        gridTemplateColumns: "1fr 2fr",
         gridTemplateRows: "3.5fr 1fr",
         gap: 1,
         padding: 1,

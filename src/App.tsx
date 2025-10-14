@@ -40,7 +40,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1.5fr 2fr",
+          gridTemplateRows: "auto 1fr 1fr",
           gap: 2,
           padding: "1rem",
           height: "100vh",
@@ -50,7 +50,7 @@ function App() {
         {/* Header Section - Row 1, spans all 12 columns */}
         <Box sx={{ gridColumn: "1 / -1", gridRow: 1 }}>
           <Typography variant="h1" align="center" gutterBottom>
-            Fourier Series Synthesizer
+            FourierSynth
           </Typography>
         </Box>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
@@ -59,7 +59,7 @@ function App() {
             gridColumn: "1 / -1",
             gridRow: 2,
             display: "grid",
-            gridTemplateColumns: "2fr 1fr",
+            gridTemplateColumns: "3fr 1fr",
             gap: 2,
             padding: 1,
             overflow: "hidden",
