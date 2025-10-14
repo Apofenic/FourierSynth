@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import "./App.css";
 import {
   Typography,
@@ -19,11 +19,93 @@ import {
   OscControls,
 } from "./components";
 import { useSynthControls } from "./contexts/SynthControlsContext";
+import { useAudioEngine } from "./contexts/AudioEngineContext";
 import { theme } from "./theme";
 
 function App() {
   const [activeTab, setActiveTab] = React.useState(0);
   const [activeOsc, setActiveOsc] = React.useState(0);
+
+  const { isPlaying, setIsPlaying, updateFrequency } = useAudioEngine();
+  const {
+    keyboardNotes,
+    keyboardEnabled,
+    activeKey,
+    setActiveKey,
+    updateKeyboardNoteState,
+  } = useSynthControls();
+
+  // Use refs to access the latest state without triggering effect re-runs
+  const keyboardNotesRef = useRef(keyboardNotes);
+  const isPlayingRef = useRef(isPlaying);
+  const activeKeyRef = useRef(activeKey);
+  const keyboardEnabledRef = useRef(keyboardEnabled);
+
+  // Update refs when state changes
+  useEffect(() => {
+    keyboardNotesRef.current = keyboardNotes;
+    isPlayingRef.current = isPlaying;
+    activeKeyRef.current = activeKey;
+    keyboardEnabledRef.current = keyboardEnabled;
+  }, [keyboardNotes, isPlaying, activeKey, keyboardEnabled]);
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!keyboardEnabledRef.current) return;
+      if (event.repeat) return;
+
+      const keyPressed = event.key.toLowerCase();
+      const note = keyboardNotesRef.current.find((n) => n.key === keyPressed);
+
+      if (note) {
+        updateFrequency(note.frequency);
+        updateKeyboardNoteState(keyPressed, true);
+        setActiveKey(keyPressed);
+
+        if (!isPlayingRef.current) {
+          setIsPlaying(true);
+        }
+      }
+    },
+    [updateFrequency, updateKeyboardNoteState, setActiveKey, setIsPlaying]
+  );
+
+  const handleKeyUp = useCallback(
+    (event: KeyboardEvent) => {
+      if (!keyboardEnabledRef.current) return;
+
+      const keyReleased = event.key.toLowerCase();
+      const note = keyboardNotesRef.current.find((n) => n.key === keyReleased);
+
+      if (note) {
+        updateKeyboardNoteState(keyReleased, false);
+
+        if (keyReleased === activeKeyRef.current) {
+          setActiveKey(null);
+        }
+
+        const anyKeysActive = keyboardNotesRef.current.some(
+          (n) => n.isActive && n.key !== keyReleased
+        );
+
+        if (!anyKeysActive && isPlayingRef.current) {
+          setIsPlaying(false);
+        }
+      }
+    },
+    [updateKeyboardNoteState, setActiveKey, setIsPlaying]
+  );
+
+  // Global keyboard event listeners
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [handleKeyDown, handleKeyUp]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);

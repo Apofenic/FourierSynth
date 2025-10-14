@@ -1,11 +1,25 @@
 import React from "react";
-import { Box, Typography, Paper, Slider, Stack } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Paper,
+  Slider,
+  Stack,
+  Switch,
+  FormControlLabel,
+} from "@mui/material";
+import { useSynthControls } from "../contexts/SynthControlsContext";
 
 export const Mixer: React.FC = () => {
   const [masterVolume, setMasterVolume] = React.useState<number>(75);
+  const { keyboardEnabled, setKeyboardEnabled } = useSynthControls();
 
   const handleVolumeChange = (event: Event, newValue: number | number[]) => {
     setMasterVolume(newValue as number);
+  };
+
+  const handleKeyboardToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setKeyboardEnabled(event.target.checked);
   };
 
   return (
@@ -34,6 +48,16 @@ export const Mixer: React.FC = () => {
           Mixer Controls
         </Typography>
         <Stack spacing={2}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={keyboardEnabled}
+                onChange={handleKeyboardToggle}
+                color="primary"
+              />
+            }
+            label="Enable Keyboard"
+          />
           <Typography variant="body1">Master Volume</Typography>
           <Slider
             value={masterVolume}
