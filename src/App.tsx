@@ -141,7 +141,7 @@ function App() {
             gridColumn: "1 / -1",
             gridRow: 2,
             display: "grid",
-            gridTemplateColumns: "3fr 1fr",
+            gridTemplateColumns: "4fr 1fr",
             gap: 2,
             padding: 1,
             overflow: "hidden",
