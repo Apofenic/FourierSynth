@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useEffect,
-  useMemo,
-} from "react";
+import React, { createContext, useContext, useReducer, useEffect } from "react";
 import {
   EquationBuilderState,
   VariableConfig,
