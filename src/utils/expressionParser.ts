@@ -11,7 +11,7 @@ import {
   CompiledFunction,
   ValidationResult,
   VariableConfig
-} from '../types/equationBuilder';
+} from '../types/equationBuilderTypes';
 
 /**
  * Reserved variable names that cannot be used as user variables

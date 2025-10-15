@@ -146,3 +146,32 @@ export interface Symbol {
   /** Tooltip description */
   description: string;
 }
+
+export type EquationBuilderAction =
+  | { type: "SET_EXPRESSION"; payload: string }
+  | { type: "SET_PARSED_EXPRESSION"; payload: ParsedExpression | null }
+  | { type: "SET_COMPILED_FUNCTION"; payload: CompiledFunction | null }
+  | { type: "SET_VARIABLES"; payload: Record<string, VariableConfig> }
+  | { type: "UPDATE_VARIABLE"; payload: { name: string; value: number } }
+  | {
+      type: "UPDATE_VARIABLE_CONFIG";
+      payload: { name: string; config: Partial<VariableConfig> };
+    }
+  | { type: "RESET_VARIABLE"; payload: string }
+  | { type: "RESET_ALL_VARIABLES" }
+  | { type: "SET_LATEX"; payload: string }
+  | { type: "SET_VALIDATION"; payload: ValidationResult }
+  | { type: "SET_WAVEFORM"; payload: number[] }
+  | { type: "LOAD_TEMPLATE"; payload: EquationTemplate };
+
+/**
+ * Context value interface including state and methods
+ */
+export interface EquationBuilderContextValue extends EquationBuilderState {
+  updateExpression: (newExpression: string) => void;
+  updateVariable: (name: string, value: number) => void;
+  updateVariableConfig: (name: string, config: Partial<VariableConfig>) => void;
+  resetVariable: (name: string) => void;
+  resetAllVariables: () => void;
+  loadTemplate: (template: EquationTemplate) => void;
+}

@@ -11,7 +11,7 @@ import {
   createDefaultVariableConfig,
   isReservedVariable,
   getReservedVariables
-} from './expressionParser';
+} from '../utils/expressionParser';
 
 describe('parseExpression', () => {
   it('should parse a valid simple expression', () => {
