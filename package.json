@@ -38,7 +38,8 @@
     ],
     "moduleNameMapper": {
       "^react-dnd$": "<rootDir>/src/tests/__mocks__/react-dnd.ts",
-      "^react-dnd-html5-backend$": "<rootDir>/src/tests/__mocks__/react-dnd-html5-backend.ts"
+      "^react-dnd-html5-backend$": "<rootDir>/src/tests/__mocks__/react-dnd-html5-backend.ts",
+      "\\.(css|less|scss|sass)$": "identity-obj-proxy"
     }
   },
   "eslintConfig": {
@@ -58,5 +59,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "identity-obj-proxy": "^3.0.0"
   }
 }

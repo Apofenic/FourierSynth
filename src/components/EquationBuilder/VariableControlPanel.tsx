@@ -1,6 +1,6 @@
 /**
  * Variable Control Panel Component
- * 
+ *
  * Dynamically generates controls for variables detected in the equation.
  * Each variable gets:
  * - A slider for continuous control
@@ -9,7 +9,7 @@
  * - A reset button to restore default value
  */
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -23,12 +23,12 @@ import {
   Button,
   Stack,
   Tooltip,
-} from '@mui/material';
-import SettingsIcon from '@mui/icons-material/Settings';
-import UndoIcon from '@mui/icons-material/Undo';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import { useEquationBuilder } from '../../contexts/EquationBuilderContext';
-import { VariableConfig } from '../../types/equationBuilderTypes';
+} from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
+import UndoIcon from "@mui/icons-material/Undo";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
+import { VariableConfig } from "../../types/equationBuilderTypes";
 
 interface ConfigDialogState {
   open: boolean;
@@ -38,7 +38,7 @@ interface ConfigDialogState {
 
 /**
  * VariableControlPanel Component
- * 
+ *
  * Renders dynamic controls for all variables in the current equation.
  * Variables are automatically detected and controls are created on-the-fly.
  */
@@ -112,24 +112,29 @@ export function VariableControlPanel() {
   /**
    * Handle slider value change
    */
-  const handleSliderChange = (name: string) => (_: Event, value: number | number[]) => {
-    if (typeof value === 'number') {
-      updateVariable(name, value);
-    }
-  };
+  const handleSliderChange =
+    (name: string) => (_: Event, value: number | number[]) => {
+      if (typeof value === "number") {
+        updateVariable(name, value);
+      }
+    };
 
   /**
    * Handle text input value change
    */
-  const handleInputChange = (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(event.target.value);
-    if (!isNaN(value)) {
-      const variable = variables[name];
-      // Clamp value to min/max range
-      const clampedValue = Math.max(variable.min, Math.min(variable.max, value));
-      updateVariable(name, clampedValue);
-    }
-  };
+  const handleInputChange =
+    (name: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = parseFloat(event.target.value);
+      if (!isNaN(value)) {
+        const variable = variables[name];
+        // Clamp value to min/max range
+        const clampedValue = Math.max(
+          variable.min,
+          Math.min(variable.max, value)
+        );
+        updateVariable(name, clampedValue);
+      }
+    };
 
   /**
    * Handle reset individual variable
@@ -144,14 +149,14 @@ export function VariableControlPanel() {
       <Box
         sx={{
           padding: 3,
-          textAlign: 'center',
-          color: 'text.secondary',
+          textAlign: "center",
+          color: "text.secondary",
         }}
       >
         <Typography variant="body2">
           No variables detected. Add variables to your equation.
         </Typography>
-        <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+        <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
           Variables are single letters (a-z, A-Z) excluding reserved: t, i, e
         </Typography>
       </Box>
@@ -162,9 +167,9 @@ export function VariableControlPanel() {
     <Box sx={{ padding: 2 }}>
       <Box
         sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
           mb: 2,
         }}
       >
@@ -188,19 +193,19 @@ export function VariableControlPanel() {
             <Box
               key={name}
               sx={{
-                display: 'grid',
-                gridTemplateColumns: '80px 1fr 100px 40px 40px',
+                display: "grid",
+                gridTemplateColumns: "80px 1fr 100px 40px 40px",
                 gap: 1,
-                alignItems: 'center',
+                alignItems: "center",
               }}
             >
               {/* Variable name label */}
               <Typography
                 variant="body1"
                 sx={{
-                  fontFamily: 'monospace',
-                  fontWeight: 'bold',
-                  fontSize: '1.1rem',
+                  fontFamily: "monospace",
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
                 }}
               >
                 {name}:
@@ -228,11 +233,11 @@ export function VariableControlPanel() {
                   min: variable.min,
                   max: variable.max,
                   step: variable.step,
-                  style: { textAlign: 'right' },
+                  style: { textAlign: "right" },
                 }}
                 sx={{
-                  '& input': {
-                    fontFamily: 'monospace',
+                  "& input": {
+                    fontFamily: "monospace",
                   },
                 }}
               />
@@ -250,10 +255,7 @@ export function VariableControlPanel() {
 
               {/* Settings button */}
               <Tooltip title="Configure min/max/step">
-                <IconButton
-                  size="small"
-                  onClick={() => handleOpenConfig(name)}
-                >
+                <IconButton size="small" onClick={() => handleOpenConfig(name)}>
                   <SettingsIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -263,7 +265,12 @@ export function VariableControlPanel() {
       </Stack>
 
       {/* Configuration Dialog */}
-      <Dialog open={configDialog.open} onClose={handleCloseConfig} maxWidth="sm" fullWidth>
+      <Dialog
+        open={configDialog.open}
+        onClose={handleCloseConfig}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
           Configure Variable: {configDialog.variableName}
         </DialogTitle>
@@ -273,7 +280,9 @@ export function VariableControlPanel() {
               label="Minimum Value"
               type="number"
               value={configDialog.config.min ?? 0}
-              onChange={(e) => handleConfigChange('min', parseFloat(e.target.value))}
+              onChange={(e) =>
+                handleConfigChange("min", parseFloat(e.target.value))
+              }
               fullWidth
               helperText="Minimum allowed value for the slider"
             />
@@ -281,7 +290,9 @@ export function VariableControlPanel() {
               label="Maximum Value"
               type="number"
               value={configDialog.config.max ?? 2}
-              onChange={(e) => handleConfigChange('max', parseFloat(e.target.value))}
+              onChange={(e) =>
+                handleConfigChange("max", parseFloat(e.target.value))
+              }
               fullWidth
               helperText="Maximum allowed value for the slider"
             />
@@ -289,7 +300,9 @@ export function VariableControlPanel() {
               label="Step Size"
               type="number"
               value={configDialog.config.step ?? 0.01}
-              onChange={(e) => handleConfigChange('step', parseFloat(e.target.value))}
+              onChange={(e) =>
+                handleConfigChange("step", parseFloat(e.target.value))
+              }
               fullWidth
               helperText="Increment size for the slider (e.g., 0.01 for fine control)"
               inputProps={{ min: 0.001, max: 1, step: 0.001 }}
@@ -298,7 +311,11 @@ export function VariableControlPanel() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseConfig}>Cancel</Button>
-          <Button onClick={handleSaveConfig} variant="contained" color="primary">
+          <Button
+            onClick={handleSaveConfig}
+            variant="contained"
+            color="primary"
+          >
             Save
           </Button>
         </DialogActions>
