@@ -8,3 +8,7 @@ export { OscControls } from "./OscControls";
 export { Mixer } from "./Mixer";
 export { FilterControls } from "./FilterControls";
 export { EnvelopeControls } from "./EnvelopeControls";
+
+// Equation Builder Components
+export { SymbolPalette } from "./EquationBuilder/SymbolPalette";
+export { EquationInput } from "./EquationBuilder/EquationInput";
