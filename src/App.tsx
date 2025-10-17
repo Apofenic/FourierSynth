@@ -18,6 +18,7 @@ import {
   Mixer,
   OscControls,
 } from "./components";
+import EquationBuilder from "./components/Osc/EquationBuilder";
 import { useSynthControls } from "./contexts/SynthControlsContext";
 import { useAudioEngine } from "./contexts/AudioEngineContext";
 import { theme } from "./theme";
@@ -122,7 +123,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1fr 1fr",
+          gridTemplateRows: "auto 1.5fr 1fr",
           gap: 2,
           padding: "1rem",
           height: "100vh",
@@ -141,9 +142,10 @@ function App() {
             gridColumn: "1 / -1",
             gridRow: 2,
             display: "grid",
-            gridTemplateColumns: "4fr 1fr",
-            gap: 2,
+            gridTemplateColumns: "8fr 1fr",
+            gap: 1,
             padding: 1,
+            paddingLeft: 0,
             overflow: "hidden",
             minHeight: 0,
           }}
@@ -160,8 +162,9 @@ function App() {
             <Box
               sx={{
                 display: "flex",
-                flexDirection: "column",
+                flexDirection: "row",
                 minHeight: 0,
+                paddingLeft: 0,
                 height: "100%",
                 overflow: "hidden",
               }}
@@ -170,7 +173,17 @@ function App() {
                 value={activeOsc}
                 onChange={handleOscChange}
                 aria-label="oscillator tabs"
-                sx={{ flexShrink: 0 }}
+                orientation="vertical"
+                sx={{
+                  paddingTop: "1rem",
+                  flexShrink: 0,
+                  "& .MuiTabs-indicator": {
+                    display: "none",
+                  },
+                  "& .MuiTab-root.Mui-selected": {
+                    backgroundColor: "#45505A",
+                  },
+                }}
               >
                 <Tab label="Osc 1" />
                 <Tab label="Osc 2" />
@@ -217,6 +230,7 @@ function App() {
           >
             <Tab label="Subtractive Controls" />
             <Tab label="Partials Controls" />
+            <Tab label="Equation Builder" />
             <Tab label="Keyboard Layout" />
           </Tabs>
           <Box
@@ -228,7 +242,8 @@ function App() {
           >
             {activeTab === 0 && <SubtractiveControls />}
             {activeTab === 1 && <HarmonicsControl />}
-            {activeTab === 2 && <KeyboardControls />}
+            {activeTab === 2 && <EquationBuilder />}
+            {activeTab === 3 && <KeyboardControls />}
           </Box>
         </Paper>
       </Box>

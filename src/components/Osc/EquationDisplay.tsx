@@ -2,12 +2,12 @@ import React from "react";
 import { Paper, Typography, Grid, Box, Divider } from "@mui/material";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
-import { useSynthControls } from "../contexts/SynthControlsContext";
-import { useAudioEngine } from "../contexts/AudioEngineContext";
+import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { useAudioEngine } from "../../contexts/AudioEngineContext";
 import {
   generateFourierEquation,
   generateFullEquation,
-} from "../utils/helperFunctions";
+} from "../../utils/helperFunctions";
 
 /**
  * EquationDisplay component

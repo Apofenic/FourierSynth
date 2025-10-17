@@ -1,4 +1,4 @@
-import { createTheme } from "@mui/material";
+import { createTheme, Theme } from "@mui/material";
 
 /**
  * FourierSynth application theme
@@ -55,6 +55,23 @@ export const theme = createTheme({
         },
         rail: {
           opacity: 0.5,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          color: "#61dafb",
+          fontWeight: 500,
+          textTransform: "none",
+          minWidth: 0,
+          paddingRight: "6px",
+
+          paddingLeft: "4px",
+          minHeight: 48,
+          "&:hover": {
+            backgroundColor: "rgba(97, 218, 251, 0.1)",
+          },
         },
       },
     },

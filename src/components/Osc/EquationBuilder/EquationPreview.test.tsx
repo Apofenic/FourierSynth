@@ -13,7 +13,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { EquationPreview } from "./EquationPreview";
-import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
+import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 
 // Mock the context
 jest.mock("../../contexts/EquationBuilderContext");

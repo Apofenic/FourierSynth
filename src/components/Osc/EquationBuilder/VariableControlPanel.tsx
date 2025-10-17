@@ -27,8 +27,8 @@ import {
 import SettingsIcon from "@mui/icons-material/Settings";
 import UndoIcon from "@mui/icons-material/Undo";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
-import { VariableConfig } from "../../types/equationBuilderTypes";
+import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
+import { VariableConfig } from "../../../types/equationBuilderTypes";
 
 interface ConfigDialogState {
   open: boolean;

@@ -13,6 +13,8 @@ import React, {
   useState,
   useRef,
   useEffect,
+  forwardRef,
+  useImperativeHandle,
   ChangeEvent,
   MouseEvent,
   KeyboardEvent,
@@ -22,7 +24,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { useDrop } from "react-dnd";
-import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
+import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 
 /**
  * Props for EquationInput component
@@ -33,9 +35,19 @@ interface EquationInputProps {
 }
 
 /**
+ * Methods exposed via ref
+ */
+export interface EquationInputHandle {
+  insertAtCursor: (text: string) => void;
+}
+
+/**
  * Equation input field with drop target and validation
  */
-export const EquationInput = ({ maxLength = 200 }: EquationInputProps) => {
+export const EquationInput = forwardRef<
+  EquationInputHandle,
+  EquationInputProps
+>(({ maxLength = 200 }, ref) => {
   const { expression, validationResult, updateExpression } =
     useEquationBuilder();
 
@@ -101,6 +113,11 @@ export const EquationInput = ({ maxLength = 200 }: EquationInputProps) => {
       }
     }, 0);
   };
+
+  // Expose insertAtCursor method via ref
+  useImperativeHandle(ref, () => ({
+    insertAtCursor,
+  }));
 
   /**
    * Handle text input changes
@@ -302,6 +319,8 @@ export const EquationInput = ({ maxLength = 200 }: EquationInputProps) => {
       )}
     </Box>
   );
-};
+});
+
+EquationInput.displayName = "EquationInput";
 
 export default EquationInput;

@@ -17,12 +17,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useDrag } from "react-dnd";
-import { Symbol } from "../../types/equationBuilderTypes";
+import { Symbol } from "../../../types/equationBuilderTypes";
 import {
   getSymbolsByCategory,
   getCategories,
   getCategoryDisplayName,
-} from "../../data/symbols";
+} from "../../../data/symbols";
 
 /**
  * Props for SymbolPalette component
@@ -114,9 +114,15 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
     >
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-        <Typography variant="h6" component="h2">
-          Symbol Palette
-        </Typography>
+        <Tooltip
+          title="💡 Tip: Reserved variables are t (time), i (imaginary), and e (Euler's number)"
+          placement="top"
+          arrow
+        >
+          <Typography variant="h6" component="h2">
+            Symbol Palette
+          </Typography>
+        </Tooltip>
         <Typography variant="caption" color="text.secondary">
           Click or drag symbols to insert
         </Typography>
@@ -191,21 +197,6 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
             </Typography>
           </Box>
         )}
-      </Box>
-
-      {/* Help text at bottom */}
-      <Box
-        sx={{
-          p: 1.5,
-          borderTop: 1,
-          borderColor: "divider",
-          backgroundColor: "action.hover",
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
-          💡 Tip: Reserved variables are t (time), i (imaginary), and e (Euler's
-          number)
-        </Typography>
       </Box>
     </Paper>
   );

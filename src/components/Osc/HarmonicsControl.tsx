@@ -1,7 +1,7 @@
 import React from "react";
 import { Paper, Typography, Stack, Grid, Slider } from "@mui/material";
-import { useSynthControls } from "../contexts/SynthControlsContext";
-import { useAudioEngine } from "../contexts/AudioEngineContext";
+import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { useAudioEngine } from "../../contexts/AudioEngineContext";
 
 /**
  * HarmonicsControl component

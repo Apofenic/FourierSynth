@@ -1,7 +1,7 @@
 import React from "react";
 import { Paper, Typography, Box } from "@mui/material";
-import { useSynthControls } from "../contexts/SynthControlsContext";
-import { generateFullEquation } from "../utils/helperFunctions";
+import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { generateFullEquation } from "../../utils/helperFunctions";
 
 /**
  * PlainTextEquation component

@@ -6,7 +6,7 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { SymbolPalette } from "../components/EquationBuilder/SymbolPalette";
+import { SymbolPalette } from "../components/Osc/EquationBuilder/SymbolPalette";
 
 /**
  * Wrapper for DnD provider

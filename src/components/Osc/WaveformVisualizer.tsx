@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Paper, Typography } from "@mui/material";
-import { useSynthControls } from "../contexts/SynthControlsContext";
+import { useSynthControls } from "../../contexts/SynthControlsContext";
 
 /**
  * WaveformVisualizer component

@@ -7,7 +7,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { EquationInput } from "./EquationInput";
-import { EquationBuilderProvider } from "../../contexts/EquationBuilderContext";
+import { EquationBuilderProvider } from "../../../contexts/EquationBuilderContext";
 
 // Helper to render with providers
 const renderWithProviders = (component: React.ReactElement) => {

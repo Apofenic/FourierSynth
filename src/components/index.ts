@@ -1,14 +1,15 @@
-export { EquationDisplay } from "./EquationDisplay";
-export { HarmonicsControl } from "./HarmonicsControl";
+export { EquationDisplay } from "./Osc/EquationDisplay";
+export { HarmonicsControl } from "./Osc/HarmonicsControl";
 export { KeyboardControls } from "./KeyboardControls";
-export { PlainTextEquation } from "./PlainTextEquation";
-export { SubtractiveControls } from "./SubtractiveControls";
-export { WaveformVisualizer } from "./WaveformVisualizer";
-export { OscControls } from "./OscControls";
+export { PlainTextEquation } from "./Osc/PlainTextEquation";
+export { SubtractiveControls } from "./Shaping/SubtractiveControls";
+export { WaveformVisualizer } from "./Osc/WaveformVisualizer";
+export { OscControls } from "./Osc/OscControls";
 export { Mixer } from "./Mixer";
-export { FilterControls } from "./FilterControls";
-export { EnvelopeControls } from "./EnvelopeControls";
+export { FilterControls } from "./Shaping/FilterControls";
+export { EnvelopeControls } from "./Shaping/EnvelopeControls";
+export { TunerControls } from "./Osc/TunerControls";
 
 // Equation Builder Components
-export { SymbolPalette } from "./EquationBuilder/SymbolPalette";
-export { EquationInput } from "./EquationBuilder/EquationInput";
+export { SymbolPalette } from "./Osc/EquationBuilder/SymbolPalette";
+export { EquationInput } from "./Osc/EquationBuilder/EquationInput";

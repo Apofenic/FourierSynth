@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
+import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 
 /**
  * EquationPreview component displays the LaTeX-rendered equation

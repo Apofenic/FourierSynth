@@ -10,7 +10,7 @@ import { VariableControlPanel } from "./VariableControlPanel";
 import {
   EquationBuilderProvider,
   useEquationBuilder,
-} from "../../contexts/EquationBuilderContext";
+} from "../../../contexts/EquationBuilderContext";
 
 // Helper component to set expression programmatically
 function TestHarness({ expression }: { expression?: string }) {
