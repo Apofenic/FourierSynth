@@ -1,9 +1,27 @@
 import React from "react";
-import { WaveformVisualizer, EquationDisplay } from "..";
-import { Box, Typography, Paper, Slider, Stack } from "@mui/material";
+import {
+  WaveformVisualizer,
+  EquationDisplay,
+  SubtractiveControls,
+  HarmonicsControl,
+} from "..";
+import {
+  Box,
+  Typography,
+  Paper,
+  Slider,
+  Stack,
+  Tabs,
+  Tab,
+} from "@mui/material";
 import { TunerControls } from "./TunerControls";
 import { EquationBuilder } from "./EquationBuilder";
+
 export const OscControls: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState(0);
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
   return (
     <Paper
       sx={{
@@ -28,9 +46,59 @@ export const OscControls: React.FC = () => {
         <WaveformVisualizer />
         <TunerControls />
       </Box>
-      <Box sx={{ overflow: "hidden", minHeight: 0 }}>
-        {/* <EquationDisplay /> */}
-        <EquationBuilder />
+      <Box
+        sx={{
+          overflow: "hidden",
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
+      >
+        <Paper
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="control tabs"
+            sx={{
+              paddingLeft: "1rem",
+              flexShrink: 0,
+              "& .MuiTabs-indicator": {
+                display: "none",
+              },
+              "& .MuiTab-root": {
+                padding: "1rem 1.5rem",
+              },
+              "& .MuiTab-root.Mui-selected": {
+                backgroundColor: "#60727D",
+                borderTopLeftRadius: "8px",
+                borderTopRightRadius: "8px",
+              },
+            }}
+          >
+            <Tab label="Equation Builder" />
+            <Tab label="Partial controller" />
+          </Tabs>
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {activeTab === 0 && <EquationBuilder />}
+            {activeTab === 1 && <HarmonicsControl />}
+          </Box>
+        </Paper>
       </Box>
     </Paper>
   );

@@ -9,6 +9,7 @@ export { Mixer } from "./Mixer";
 export { FilterControls } from "./Shaping/FilterControls";
 export { EnvelopeControls } from "./Shaping/EnvelopeControls";
 export { TunerControls } from "./Osc/TunerControls";
+export { Dial } from "./Dial";
 
 // Equation Builder Components
 export { SymbolPalette } from "./Osc/EquationBuilder/SymbolPalette";

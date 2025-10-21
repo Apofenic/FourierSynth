@@ -229,8 +229,6 @@ function App() {
             sx={{ gridRow: 1 }}
           >
             <Tab label="Subtractive Controls" />
-            <Tab label="Partials Controls" />
-            <Tab label="Equation Builder" />
             <Tab label="Keyboard Layout" />
           </Tabs>
           <Box
@@ -241,8 +239,6 @@ function App() {
             }}
           >
             {activeTab === 0 && <SubtractiveControls />}
-            {activeTab === 1 && <HarmonicsControl />}
-            {activeTab === 2 && <EquationBuilder />}
             {activeTab === 3 && <KeyboardControls />}
           </Box>
         </Paper>
