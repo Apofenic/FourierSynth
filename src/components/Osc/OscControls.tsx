@@ -16,12 +16,15 @@ import {
 } from "@mui/material";
 import { TunerControls } from "./TunerControls";
 import { EquationBuilder } from "./EquationBuilder";
+import { useSynthControls } from "../../contexts/SynthControlsContext";
 
 export const OscControls: React.FC = () => {
-  const [activeTab, setActiveTab] = React.useState(0);
+  const { activeTab, setActiveTab } = useSynthControls();
+  
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
+    setActiveTab(newValue === 0 ? 'equation' : 'harmonic');
   };
+  
   return (
     <Paper
       sx={{
@@ -65,7 +68,7 @@ export const OscControls: React.FC = () => {
           }}
         >
           <Tabs
-            value={activeTab}
+            value={activeTab === 'equation' ? 0 : 1}
             onChange={handleTabChange}
             aria-label="control tabs"
             sx={{
@@ -96,8 +99,8 @@ export const OscControls: React.FC = () => {
               flexDirection: "column",
             }}
           >
-            {activeTab === 0 && <EquationBuilder />}
-            {activeTab === 1 && <HarmonicsControl />}
+            {activeTab === 'equation' && <EquationBuilder />}
+            {activeTab === 'harmonic' && <HarmonicsControl />}
           </Box>
         </Paper>
       </Box>

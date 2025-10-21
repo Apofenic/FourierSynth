@@ -43,4 +43,8 @@ export interface SynthControlsContextType {
   // Keyboard enabled state
   keyboardEnabled: boolean;
   setKeyboardEnabled: (enabled: boolean) => void;
+
+  // Tab state for UI navigation (equation builder vs harmonic controls)
+  activeTab: 'equation' | 'harmonic';
+  setActiveTab: (tab: 'equation' | 'harmonic') => void;
 }
