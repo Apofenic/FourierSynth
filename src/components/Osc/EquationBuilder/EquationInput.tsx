@@ -19,10 +19,25 @@ import React, {
   MouseEvent,
   KeyboardEvent,
 } from "react";
-import { TextField, Box, IconButton, Typography, Alert } from "@mui/material";
+import {
+  TextField,
+  Box,
+  IconButton,
+  Typography,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Divider,
+} from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CloseIcon from "@mui/icons-material/Close";
 import { useDrop } from "react-dnd";
 import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 
@@ -53,6 +68,7 @@ export const EquationInput = forwardRef<
 
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [localExpression, setLocalExpression] = useState<string>(expression);
+  const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -203,120 +219,221 @@ export const EquationInput = forwardRef<
   const isApproachingLimit = localExpression.length >= maxLength * 0.8;
 
   return (
-    <Box ref={drop as any}>
-      <Box
-        sx={{
-          position: "relative",
-          border: 2,
-          borderColor: isOver && canDrop ? "primary.main" : "transparent",
-          borderRadius: 1,
-          backgroundColor: isOver && canDrop ? "action.hover" : "transparent",
-          transition: "all 0.2s ease",
-        }}
-      >
-        <TextField
-          inputRef={inputRef}
-          value={localExpression}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onClick={handleClick}
-          placeholder="Enter equation: e.g., a*sin(b*t + c)"
-          fullWidth
-          multiline
-          rows={2}
-          variant="outlined"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              fontFamily: "monospace",
-              fontSize: "1.1rem",
-              "& fieldset": {
-                borderColor: getBorderColor(),
-                borderWidth: getBorderColor() ? 2 : 1,
-              },
-            },
-            "& .MuiInputBase-input": {
-              fontFamily: "monospace",
-            },
-          }}
-          slotProps={{
-            input: {
-              endAdornment: (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {/* Validation indicator */}
-                  {localExpression &&
-                    (validationResult.isValid ? (
-                      <CheckCircleOutlineIcon
-                        color="success"
-                        fontSize="small"
-                      />
-                    ) : (
-                      <ErrorOutlineIcon color="error" fontSize="small" />
-                    ))}
-
-                  {/* Clear button */}
-                  {localExpression && (
-                    <IconButton
-                      size="small"
-                      onClick={handleClear}
-                      aria-label="Clear expression"
-                      title="Clear expression"
-                    >
-                      <ClearIcon />
-                    </IconButton>
-                  )}
-                </Box>
-              ),
-            },
-          }}
-        />
-
-        {/* Character counter */}
-        <Box
-          sx={{
-            position: "absolute",
-            bottom: 8,
-            left: 14,
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
+    <Box>
+      {/* Title with help icon */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 600, color: "text.secondary" }}
         >
-          <Typography
-            variant="caption"
-            color={isApproachingLimit ? "warning.main" : "text.secondary"}
-          >
-            {localExpression.length} / {maxLength}
-          </Typography>
-        </Box>
+          Expression Input
+        </Typography>
+        <IconButton
+          size="small"
+          onClick={() => setHelpModalOpen(true)}
+          sx={{ color: "text.secondary" }}
+          aria-label="Help"
+        >
+          <HelpOutlineIcon fontSize="small" />
+        </IconButton>
       </Box>
 
-      {/* Validation error display */}
-      {!validationResult.isValid && validationResult.errors.length > 0 && (
-        <Alert severity="error" icon={<ErrorOutlineIcon />} sx={{ mt: 1 }}>
-          {validationResult.errors.map((error, index) => (
-            <Typography key={index} variant="body2">
-              {error}
-            </Typography>
-          ))}
-        </Alert>
-      )}
-
-      {/* Drop zone hint */}
-      {isOver && canDrop && (
-        <Box
+      {/* Help Modal */}
+      <Dialog
+        open={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+        maxWidth="sm"
+        sx={{
+          "& .MuiDialog-container": {
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          "& .MuiDialog-paper": {
+            backgroundColor: "#1e1e1e",
+            backgroundImage: "none",
+            margin: "auto",
+            width: "auto",
+            minWidth: "400px",
+            maxWidth: "600px",
+            maxHeight: "90vh",
+            height: "auto",
+          },
+        }}
+      >
+        <DialogTitle
           sx={{
-            mt: 1,
-            p: 1,
-            backgroundColor: "primary.light",
-            borderRadius: 1,
-            opacity: 0.7,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "#1e1e1e",
           }}
         >
-          <Typography variant="caption" color="primary.contrastText">
-            Release to insert symbol
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <InfoOutlinedIcon />
+            <Typography variant="h6">How to Use Equation Builder</Typography>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={() => setHelpModalOpen(false)}
+            sx={{ color: "text.secondary" }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent
+          dividers
+          sx={{
+            backgroundColor: "#1e1e1e",
+          }}
+        >
+          <Typography variant="body2" component="ul" sx={{ pl: 2, m: 0 }}>
+            <li>Type or drag symbols to build your equation</li>
+            <li>
+              Use single-letter variables (a, b, c, etc.) - they'll be
+              auto-detected
+            </li>
+            <li>Reserved: t (time), i (imaginary unit), e (Euler's number)</li>
+            <li>Adjust variable sliders to hear changes in real-time</li>
+            <li>
+              Example: <code>a*sin(b*t + c)</code> creates an
+              amplitude-modulated sine wave
+            </li>
           </Typography>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+            Available Functions:
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary" }}>
+            sin, cos, tan, exp, log, abs, sqrt, pow, asin, acos, atan, sinh,
+            cosh, tanh, ceil, floor, round, sign
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            backgroundColor: "#1e1e1e",
+          }}
+        >
+          <Button onClick={() => setHelpModalOpen(false)} variant="contained">
+            Got it
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Box ref={drop as any}>
+        <Box
+          sx={{
+            position: "relative",
+            border: 2,
+            borderColor: isOver && canDrop ? "primary.main" : "transparent",
+            borderRadius: 1,
+            backgroundColor: isOver && canDrop ? "action.hover" : "transparent",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <TextField
+            inputRef={inputRef}
+            value={localExpression}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onClick={handleClick}
+            placeholder="Enter equation: e.g., a*sin(b*t + c)"
+            fullWidth
+            multiline
+            rows={2}
+            variant="outlined"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                fontFamily: "monospace",
+                fontSize: "1.1rem",
+                "& fieldset": {
+                  borderColor: getBorderColor(),
+                  borderWidth: getBorderColor() ? 2 : 1,
+                },
+              },
+              "& .MuiInputBase-input": {
+                fontFamily: "monospace",
+              },
+            }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    {/* Validation indicator */}
+                    {localExpression &&
+                      (validationResult.isValid ? (
+                        <CheckCircleOutlineIcon
+                          color="success"
+                          fontSize="small"
+                        />
+                      ) : (
+                        <ErrorOutlineIcon color="error" fontSize="small" />
+                      ))}
+
+                    {/* Clear button */}
+                    {localExpression && (
+                      <IconButton
+                        size="small"
+                        onClick={handleClear}
+                        aria-label="Clear expression"
+                        title="Clear expression"
+                      >
+                        <ClearIcon />
+                      </IconButton>
+                    )}
+                  </Box>
+                ),
+              },
+            }}
+          />
+
+          {/* Character counter */}
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 8,
+              left: 14,
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Typography
+              variant="caption"
+              color={isApproachingLimit ? "warning.main" : "text.secondary"}
+            >
+              {localExpression.length} / {maxLength}
+            </Typography>
+          </Box>
         </Box>
-      )}
+
+        {/* Validation error display */}
+        {!validationResult.isValid && validationResult.errors.length > 0 && (
+          <Alert severity="error" icon={<ErrorOutlineIcon />} sx={{ mt: 1 }}>
+            {validationResult.errors.map((error, index) => (
+              <Typography key={index} variant="body2">
+                {error}
+              </Typography>
+            ))}
+          </Alert>
+        )}
+
+        {/* Drop zone hint */}
+        {isOver && canDrop && (
+          <Box
+            sx={{
+              mt: 1,
+              p: 1,
+              backgroundColor: "primary.light",
+              borderRadius: 1,
+              opacity: 0.7,
+            }}
+          >
+            <Typography variant="caption" color="primary.contrastText">
+              Release to insert symbol
+            </Typography>
+          </Box>
+        )}
+      </Box>
     </Box>
   );
 });

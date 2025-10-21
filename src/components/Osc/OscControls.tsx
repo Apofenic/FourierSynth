@@ -58,6 +58,7 @@ export const OscControls: React.FC = () => {
         <Paper
           sx={{
             display: "flex",
+            padding: 1,
             flexDirection: "column",
             height: "100%",
             overflow: "hidden",
