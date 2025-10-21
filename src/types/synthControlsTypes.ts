@@ -39,6 +39,7 @@ export interface SynthControlsContextType {
 
   // Waveform data for visualization
   waveformData: Float32Array;
+  setWaveformData: (data: Float32Array) => void;
 
   // Keyboard enabled state
   keyboardEnabled: boolean;

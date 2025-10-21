@@ -20,13 +20,19 @@ import { equationBuilderReducer } from "../reducers/equationBuilderReducer";
 
 /**
  * Initial state for the equation builder
+ * Starts with sin(t) to match the default harmonic state (first harmonic = sine wave)
  */
+const initialExpression = "sin(t)";
+const initialParsed = parseExpression(initialExpression);
+const initialCompiled = compileExpression(initialParsed);
+const initialLatex = generateLatex(initialExpression);
+
 const initialState: EquationBuilderState = {
-  expression: "",
-  parsedExpression: null,
-  compiledFunction: null,
+  expression: initialExpression,
+  parsedExpression: initialParsed,
+  compiledFunction: initialCompiled,
   variables: {},
-  latexExpression: "",
+  latexExpression: initialLatex,
   validationResult: { isValid: true, errors: [] },
   waveformData: [],
 };

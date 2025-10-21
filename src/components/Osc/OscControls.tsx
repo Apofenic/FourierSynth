@@ -16,15 +16,16 @@ import {
 } from "@mui/material";
 import { TunerControls } from "./TunerControls";
 import { EquationBuilder } from "./EquationBuilder";
+import { HybridWaveformSync } from "./HybridWaveformSync";
 import { useSynthControls } from "../../contexts/SynthControlsContext";
 
 export const OscControls: React.FC = () => {
   const { activeTab, setActiveTab } = useSynthControls();
-  
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue === 0 ? 'equation' : 'harmonic');
+    setActiveTab(newValue === 0 ? "equation" : "harmonic");
   };
-  
+
   return (
     <Paper
       sx={{
@@ -37,6 +38,9 @@ export const OscControls: React.FC = () => {
         height: "100%",
       }}
     >
+      {/* Hybrid waveform sync component - combines equation + harmonics */}
+      <HybridWaveformSync />
+
       <Box
         sx={{
           gap: 1,
@@ -68,7 +72,7 @@ export const OscControls: React.FC = () => {
           }}
         >
           <Tabs
-            value={activeTab === 'equation' ? 0 : 1}
+            value={activeTab === "equation" ? 0 : 1}
             onChange={handleTabChange}
             aria-label="control tabs"
             sx={{
@@ -99,8 +103,8 @@ export const OscControls: React.FC = () => {
               flexDirection: "column",
             }}
           >
-            {activeTab === 'equation' && <EquationBuilder />}
-            {activeTab === 'harmonic' && <HarmonicsControl />}
+            {activeTab === "equation" && <EquationBuilder />}
+            {activeTab === "harmonic" && <HarmonicsControl />}
           </Box>
         </Paper>
       </Box>

@@ -3,12 +3,9 @@ import React, {
   useContext,
   useState,
   ReactNode,
-  useEffect,
   useCallback,
   useMemo,
 } from "react";
-import { calculateWaveform, calculateWaveformFromExpression } from "../utils/helperFunctions";
-import { useEquationBuilder } from "./EquationBuilderContext";
 import type {
   HarmonicParam,
   KeyboardNote,
@@ -65,15 +62,14 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
   ]);
 
   // Tab state for UI navigation (equation builder vs harmonic controls)
-  const [activeTab, setActiveTab] = useState<'equation' | 'harmonic'>('equation');
+  const [activeTab, setActiveTab] = useState<"equation" | "harmonic">(
+    "equation"
+  );
 
   // Waveform data for visualization
   const [waveformData, setWaveformData] = useState<Float32Array>(
     new Float32Array(2048).fill(0)
   );
-
-  // Access equation builder context for hybrid waveform generation
-  const equationBuilder = useEquationBuilder();
 
   /**
    * Update a single harmonic parameter (amplitude or phase)
@@ -119,44 +115,8 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
     setActiveKey((currentKey) => (currentKey === key ? null : currentKey));
   }, []);
 
-  /**
-   * Recalculate waveform using hybrid approach:
-   * - Equation builder provides base layer (if valid)
-   * - Harmonics add partials on top
-   * - Both contribute to final waveform simultaneously
-   */
-  useEffect(() => {
-    // Generate base layer from equation (if equation exists and is valid)
-    let baseWaveform: number[] = [];
-    if (equationBuilder.compiledFunction && equationBuilder.validationResult.isValid) {
-      baseWaveform = calculateWaveformFromExpression(
-        equationBuilder.compiledFunction,
-        equationBuilder.variables,
-        2048
-      );
-    }
-    
-    // Generate harmonic layer (additive partials)
-    const harmonicWaveform = calculateWaveform(harmonics);
-    
-    // Combine layers: base + harmonics
-    const combinedWaveform = new Float32Array(2048);
-    for (let i = 0; i < 2048; i++) {
-      const base = baseWaveform[i] || 0;
-      const harmonic = harmonicWaveform[i] || 0;
-      combinedWaveform[i] = base + harmonic;
-    }
-    
-    // Normalize combined waveform to prevent clipping
-    const maxAmplitude = Math.max(...Array.from(combinedWaveform).map(Math.abs));
-    if (maxAmplitude > 1e-10) {
-      for (let i = 0; i < combinedWaveform.length; i++) {
-        combinedWaveform[i] /= maxAmplitude;
-      }
-    }
-    
-    setWaveformData(combinedWaveform);
-  }, [harmonics, equationBuilder.compiledFunction, equationBuilder.variables, equationBuilder.validationResult.isValid]);
+  // NOTE: Waveform calculation is now handled by HybridWaveformSync component
+  // which combines both equation builder and harmonic controls
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -169,6 +129,7 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
       clearActiveKey,
       updateKeyboardNoteState,
       waveformData,
+      setWaveformData,
       keyboardEnabled,
       setKeyboardEnabled,
       activeTab,
