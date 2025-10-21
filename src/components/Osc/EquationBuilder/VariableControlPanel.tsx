@@ -269,7 +269,22 @@ export function VariableControlPanel() {
         open={configDialog.open}
         onClose={handleCloseConfig}
         maxWidth="sm"
-        fullWidth
+        sx={{
+          "& .MuiDialog-container": {
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          "& .MuiDialog-paper": {
+            backgroundColor: "#1e1e1e",
+            backgroundImage: "none",
+            margin: "auto",
+            width: "auto",
+            minWidth: "400px",
+            maxWidth: "600px",
+            maxHeight: "90vh",
+            height: "auto",
+          },
+        }}
       >
         <DialogTitle>
           Configure Variable: {configDialog.variableName}
