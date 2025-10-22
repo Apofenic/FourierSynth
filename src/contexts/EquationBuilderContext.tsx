@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useReducer, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useRef,
+} from "react";
 import {
   EquationBuilderState,
   VariableConfig,
@@ -15,15 +21,17 @@ import {
   generateLatex,
   createDefaultVariableConfig,
 } from "../utils/expressionParser";
+import { calculateWaveformFromExpression } from "../utils/helperFunctions";
 import { EquationBuilderAction, EquationBuilderContextValue } from "../types";
 import { equationBuilderReducer } from "../reducers/equationBuilderReducer";
 
 /**
  * Initial state for the equation builder
- * Starts with sin(t) to match the default harmonic state (first harmonic = sine wave)
+ * Starts with sin(i*t) to create a proper Fourier series with harmonic index
  * Always includes 'i' and 'n' variables for summation support
+ * When n=1, shows only fundamental; when n>1, shows partial series sum
  */
-const initialExpression = "sin(t)";
+const initialExpression = "sin(i*t)";
 const initialParsed = parseExpression(initialExpression);
 const initialCompiled = compileExpression(initialParsed);
 const initialLatex = generateLatex(initialExpression);
@@ -31,7 +39,7 @@ const initialLatex = generateLatex(initialExpression);
 // Create initial variables with i and n for summation
 const initialVariables: Record<string, VariableConfig> = {
   i: {
-    name: 'i',
+    name: "i",
     value: 1,
     min: 1,
     max: 20,
@@ -39,7 +47,7 @@ const initialVariables: Record<string, VariableConfig> = {
     defaultValue: 1,
   },
   n: {
-    name: 'n',
+    name: "n",
     value: 1,
     min: 1,
     max: 20,
@@ -58,21 +66,6 @@ const initialState: EquationBuilderState = {
   waveformData: [],
 };
 
-/**
- * Stub function for waveform calculation
- * Will be implemented in PR #8
- */
-function calculateWaveformFromExpression(
-  compiledFunction: CompiledFunction,
-  variables: Record<string, VariableConfig>,
-  sampleCount: number
-): number[] {
-  // Temporary stub - returns empty array
-  // This will be properly implemented in PR #8
-  console.log("Waveform calculation stub called - to be implemented in PR #8");
-  return [];
-}
-
 const EquationBuilderContext =
   createContext<EquationBuilderContextValue | null>(null);
 
@@ -82,6 +75,7 @@ export function EquationBuilderProvider({
   children: React.ReactNode;
 }) {
   const [state, dispatch] = useReducer(equationBuilderReducer, initialState);
+  const prevParsedExpressionRef = useRef<ParsedExpression | null>(null);
 
   const updateExpression = (newExpression: string) => {
     dispatch({ type: "SET_EXPRESSION", payload: newExpression });
@@ -153,13 +147,19 @@ export function EquationBuilderProvider({
    * ALWAYS keeps 'i' and 'n' variables for summation support
    */
   useEffect(() => {
+    // Only run if parsed expression actually changed
+    if (prevParsedExpressionRef.current === state.parsedExpression) {
+      return;
+    }
+    prevParsedExpressionRef.current = state.parsedExpression;
+
     // Don't clear variables if we're waiting for parsing (expression exists but not parsed yet)
     if (!state.parsedExpression) {
       // Keep i and n even if expression is empty
       if (!state.expression) {
         const summationVars: Record<string, VariableConfig> = {
           i: state.variables.i || {
-            name: 'i',
+            name: "i",
             value: 1,
             min: 1,
             max: 20,
@@ -167,7 +167,7 @@ export function EquationBuilderProvider({
             defaultValue: 1,
           },
           n: state.variables.n || {
-            name: 'n',
+            name: "n",
             value: 1,
             min: 1,
             max: 20,
@@ -181,9 +181,9 @@ export function EquationBuilderProvider({
     }
 
     const detectedVars = extractVariables(state.expression);
-    
+
     // Always include 'i' and 'n' for summation, even if not detected in expression
-    const requiredVars = new Set([...detectedVars, 'i', 'n']);
+    const requiredVars = new Set([...detectedVars, "i", "n"]);
     const currentVarNames = Object.keys(state.variables);
 
     // Check if variables have changed
@@ -206,7 +206,7 @@ export function EquationBuilderProvider({
       } else {
         // Create new configuration with defaults
         // Special defaults for summation variables
-        if (varName === 'i' || varName === 'n') {
+        if (varName === "i" || varName === "n") {
           newVariables[varName] = {
             name: varName,
             value: 1,
@@ -222,11 +222,11 @@ export function EquationBuilderProvider({
     });
 
     dispatch({ type: "SET_VARIABLES", payload: newVariables });
-  }, [state.parsedExpression, state.expression, state.variables]);
+  }, [state.parsedExpression, state.expression, state.variables]); // Safe to include all now with ref check
 
   /**
    * Effect: Generate waveform when compiled function or variables change
-   * Will be properly implemented in PR #8
+   * Uses calculateWaveformFromExpression from helperFunctions.ts
    */
   useEffect(() => {
     if (!state.compiledFunction || !state.validationResult.isValid) {

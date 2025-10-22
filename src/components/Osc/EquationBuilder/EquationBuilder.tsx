@@ -16,7 +16,6 @@ import React, { useRef, useCallback } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { Box, Paper, Grid, Divider } from "@mui/material";
-import { EquationBuilderProvider } from "../../../contexts/EquationBuilderContext";
 import SymbolPalette from "./SymbolPalette";
 import EquationInput, { EquationInputHandle } from "./EquationInput";
 import { EquationPreview } from "./EquationPreview";
@@ -78,64 +77,69 @@ const EquationBuilderInner: React.FC = () => {
                 borderColor: "divider",
               }}
             >
-              <SymbolPalette 
-                onSymbolClick={handleSymbolClick}
-              />
+              <SymbolPalette onSymbolClick={handleSymbolClick} />
             </Grid>
 
-              {/* Right Panel - Input, Preview, Variables (70% width) */}
-              <Grid
-                size={{ xs: 12, md: 8, lg: 6 }}
+            {/* Right Panel - Input, Preview, Variables (70% width) */}
+            <Grid
+              size={{ xs: 12, md: 8, lg: 6 }}
+              sx={{
+                height: { xs: "auto", md: "100%" },
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Box
                 sx={{
-                  height: { xs: "auto", md: "100%" },
-                  overflow: "auto",
+                  flex: 1,
                   display: "flex",
                   flexDirection: "column",
+                  p: 1,
+                  paddingBottom: 0,
+                  gap: 1,
+                  minHeight: 0,
                 }}
               >
-                  <Box
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      flexDirection: "column",
-                      p: 1,
-                      paddingBottom: 0,
-                      gap: 1,
-                      minHeight: 0,
-                    }}
-                  >
-                    {/* Equation Input */}
-                    <Box>
-                      <EquationInput ref={inputRef} maxLength={200} />
-                    </Box>
-
-                    <Divider />
-
-                    {/* Equation Preview */}
-                    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-                      <EquationPreview />
-                    </Box>
-
-                    {/* Variable Controls */}
-                  </Box>
-              </Grid>
-              <Grid
-                size={{ xs: 12, md: 8, lg: 4 }}
-                sx={{
-                  height: { xs: "auto", md: "100%" },
-                  overflow: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                }}
-              >
-                <Box sx={{ flex: 1, minHeight: 0 }}>
-                  <VariableControlPanel />
+                {/* Equation Input */}
+                <Box>
+                  <EquationInput ref={inputRef} maxLength={200} />
                 </Box>
-              </Grid>
+
+                <Divider />
+
+                {/* Equation Preview */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <EquationPreview />
+                </Box>
+
+                {/* Variable Controls */}
+              </Box>
             </Grid>
-          </Box>
-        </Paper>
-      </DndProvider>
+            <Grid
+              size={{ xs: 12, md: 8, lg: 4 }}
+              sx={{
+                height: { xs: "auto", md: "100%" },
+                overflow: "auto",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <Box sx={{ flex: 1, minHeight: 0 }}>
+                <VariableControlPanel />
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </Paper>
+    </DndProvider>
   );
 };
 
@@ -144,13 +148,11 @@ const EquationBuilderInner: React.FC = () => {
  *
  * Provides a complete interface for building custom mathematical equations
  * for audio synthesis.
+ *
+ * Note: Relies on EquationBuilderProvider being available in parent component tree
  */
 export const EquationBuilder: React.FC = () => {
-  return (
-    <EquationBuilderProvider>
-      <EquationBuilderInner />
-    </EquationBuilderProvider>
-  );
+  return <EquationBuilderInner />;
 };
 
 export default EquationBuilder;

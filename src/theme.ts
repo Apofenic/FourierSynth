@@ -36,10 +36,30 @@ export const theme = createTheme({
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundColor: "rgba(97, 218, 251, 0.05)",
-          padding: "16px",
+          // Don't apply to elevation papers (menus, dialogs, etc)
+          "&:not(.MuiMenu-paper):not(.MuiDialog-paper):not(.MuiPopover-paper)": {
+            backgroundColor: "rgba(97, 218, 251, 0.05)",
+            padding: "16px",
+          },
           borderRadius: "8px",
-          height: "100%",
+          // Note: height removed to prevent modals/dropdowns from being full-height
+          // Apply height: "100%" directly to specific components that need it
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#2d3748",
+          backgroundImage: "none",
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: "#1e1e1e",
+          backgroundImage: "none",
         },
       },
     },

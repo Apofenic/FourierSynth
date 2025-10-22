@@ -9,7 +9,6 @@ import { useSynthControls } from "../../contexts/SynthControlsContext";
 export const WaveformVisualizer: React.FC = () => {
   const { waveformData } = useSynthControls();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   // Draw the waveform on canvas whenever waveformData changes
   useEffect(() => {
     const canvas = canvasRef.current;

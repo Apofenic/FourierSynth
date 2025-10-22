@@ -31,6 +31,10 @@ import {
   DialogActions,
   Button,
   Divider,
+  Select,
+  FormControl,
+  InputLabel,
+  MenuItem,
 } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
@@ -165,11 +169,15 @@ export const EquationInput = forwardRef<
    * Handle key down events
    */
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // Allow default behavior for most keys
-    // Can add custom shortcuts here if needed
-  };
-
-  /**
+    // On Enter key (without Shift for multiline), immediately update the expression
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // Prevent newline in multiline field
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      updateExpression(localExpression);
+    }
+  }; /**
    * Handle click events to update cursor position
    */
   const handleClick = (e: MouseEvent<HTMLInputElement>) => {
@@ -226,7 +234,7 @@ export const EquationInput = forwardRef<
           variant="subtitle2"
           sx={{ fontWeight: 600, color: "text.secondary" }}
         >
-          Expression Input
+          Equation Input
         </Typography>
         <IconButton
           size="small"
@@ -236,6 +244,20 @@ export const EquationInput = forwardRef<
         >
           <HelpOutlineIcon fontSize="small" />
         </IconButton>
+        <FormControl size="small" fullWidth>
+          <InputLabel>Preset Equations</InputLabel>
+          <Select
+            labelId="demo-simple-select-label"
+            id="demo-simple-select"
+            value={10}
+            label="Preset Equations"
+            onChange={() => {}}
+          >
+            <MenuItem value={10}>Sine</MenuItem>
+            <MenuItem value={20}>Sawtooth</MenuItem>
+            <MenuItem value={30}>Square</MenuItem>
+          </Select>
+        </FormControl>
       </Box>
 
       {/* Help Modal */}
@@ -286,18 +308,71 @@ export const EquationInput = forwardRef<
             backgroundColor: "#1e1e1e",
           }}
         >
-          <Typography variant="body2" component="ul" sx={{ pl: 2, m: 0 }}>
-            <li>Type or drag symbols to build your equation</li>
-            <li>
-              Use single-letter variables (a, b, c, etc.) - they'll be
-              auto-detected
-            </li>
-            <li>Reserved: t (time), i (imaginary unit), e (Euler's number)</li>
-            <li>Adjust variable sliders to hear changes in real-time</li>
-            <li>
-              Example: <code>a*sin(b*t + c)</code> creates an
-              amplitude-modulated sine wave
-            </li>
+          <Typography variant="body2" component="div" sx={{ m: 0 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              How Summations Work:
+            </Typography>
+            <ul style={{ paddingLeft: "1.5rem", margin: "0 0 1rem 0" }}>
+              <li>
+                <strong>i</strong> = harmonic index (1, 2, 3, ...) -
+                automatically included in every equation
+              </li>
+              <li>
+                <strong>n</strong> = number of harmonics - control with slider
+                to add more terms to the sum
+              </li>
+              <li>
+                Your equation is automatically summed: Σ(i=1 to n) [your
+                expression]
+              </li>
+            </ul>
+
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Examples:
+            </Typography>
+            <Box
+              component="ul"
+              sx={{ paddingLeft: "1.5rem", margin: "0 0 1rem 0" }}
+            >
+              <li>
+                <code style={{ backgroundColor: "#333", padding: "2px 6px" }}>
+                  sin(i*t)
+                </code>{" "}
+                - Fourier series (fundamental + harmonics)
+              </li>
+              <li>
+                <code style={{ backgroundColor: "#333", padding: "2px 6px" }}>
+                  (1/i)*sin(i*t)
+                </code>{" "}
+                - Sawtooth wave (amplitude decreases with i)
+              </li>
+              <li>
+                <code style={{ backgroundColor: "#333", padding: "2px 6px" }}>
+                  (a/pi)*(1/i)*sin(i*pi*t/l)
+                </code>{" "}
+                - Classic sawtooth with amplitude (a) and period (l)
+              </li>
+              <li>
+                <code style={{ backgroundColor: "#333", padding: "2px 6px" }}>
+                  a*sin(i*t) + b*cos(i*t)
+                </code>{" "}
+                - Sine + cosine harmonics
+              </li>
+            </Box>
+
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              Variables:
+            </Typography>
+            <ul style={{ paddingLeft: "1.5rem", margin: "0 0 1rem 0" }}>
+              <li>
+                Use single letters (a, b, c, etc.) - sliders auto-generated
+              </li>
+              <li>
+                Reserved: <strong>t</strong> (time), <strong>i</strong>{" "}
+                (harmonic index), <strong>e</strong> (Euler's number),{" "}
+                <strong>n</strong> (harmonic count)
+              </li>
+            </ul>
           </Typography>
           <Divider sx={{ my: 2 }} />
           <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
@@ -336,7 +411,7 @@ export const EquationInput = forwardRef<
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onClick={handleClick}
-            placeholder="Enter equation: e.g., a*sin(b*t + c)"
+            placeholder="e.g., (1/i)*sin(i*t) for sawtooth, or sin(i*t) for Fourier series. Σ(i=1 to n) applied automatically"
             fullWidth
             multiline
             rows={2}

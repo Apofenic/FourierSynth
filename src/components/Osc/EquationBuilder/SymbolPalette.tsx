@@ -9,12 +9,15 @@
 import React, { useState } from "react";
 import {
   Paper,
-  Tabs,
-  Tab,
   Box,
   Button,
   Tooltip,
   Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from "@mui/material";
 import { useDrag } from "react-dnd";
 import { Symbol } from "../../../types/equationBuilderTypes";
@@ -72,8 +75,9 @@ function DraggableSymbol({ symbol, onClick }: DraggableSymbolProps) {
           sx={{
             minWidth: "48px",
             minHeight: "48px",
-            fontSize: "1.2rem",
+            fontSize: ".875rem",
             fontWeight: "bold",
+            color: "text.primary",
             "&:hover": {
               backgroundColor: "action.hover",
               transform: "scale(1.05)",
@@ -99,6 +103,10 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
     setActiveTab(newValue);
   };
 
+  const handleCategorySelect = (event: SelectChangeEvent<number>) => {
+    setActiveTab(Number(event.target.value));
+  };
+
   const currentCategory = categories[activeTab];
   const currentSymbols = getSymbolsByCategory(currentCategory);
 
@@ -113,9 +121,9 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
       }}
     >
       {/* Header */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+      <Box sx={{ p: 2 }}>
         <Tooltip
-          title="💡 Tip: Reserved variables are t (time), i (imaginary), and e (Euler's number)"
+          title="💡 Tip: Use 'i' for harmonic index (1,2,3...), 'n' for total harmonics, 't' for time. Example: sin(i*t) creates a Fourier series."
           placement="top"
           arrow
         >
@@ -127,32 +135,22 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
           Click or drag symbols to insert
         </Typography>
       </Box>
-
-      {/* Category Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        orientation="horizontal"
-        sx={{
-          borderBottom: 1,
-          borderColor: "divider",
-          "& .MuiTab-root": {
-            minWidth: "auto",
-            fontSize: "0.75rem",
-          },
-        }}
-      >
-        {categories.map((category) => (
-          <Tab
-            key={category}
-            label={getCategoryDisplayName(category)}
-            id={`symbol-tab-${category}`}
-            aria-controls={`symbol-panel-${category}`}
-          />
-        ))}
-      </Tabs>
+      <FormControl size="small" fullWidth sx={{ mt: 1, mb: 1 }}>
+        <InputLabel id="symbol-category-select-label">Categories</InputLabel>
+        <Select
+          labelId="symbol-category-select-label"
+          id="symbol-category-select"
+          value={activeTab}
+          label="Categories"
+          onChange={handleCategorySelect}
+        >
+          {categories.map((category, idx) => (
+            <MenuItem key={category} value={idx}>
+              {getCategoryDisplayName(category)}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
       {/* Symbol Grid */}
       <Box
