@@ -8,8 +8,8 @@
  */
 
 // Main component (default export)
-export { default } from "./EquationBuilder";
-export { default as EquationBuilder } from "./EquationBuilder";
+// export { default } from "./EquationBuilder";
+export {EquationBuilder } from "./EquationBuilder";
 
 // Child components (named exports)
 export { EquationInput } from "./EquationInput";

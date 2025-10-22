@@ -1,21 +1,16 @@
 import React from "react";
 import {
   WaveformVisualizer,
-  EquationDisplay,
-  SubtractiveControls,
   HarmonicsControl,
 } from "..";
+import { EquationBuilder } from "./EquationBuilder";
 import {
   Box,
-  Typography,
   Paper,
-  Slider,
-  Stack,
   Tabs,
   Tab,
 } from "@mui/material";
 import { TunerControls } from "./TunerControls";
-import { EquationBuilder } from "./EquationBuilder";
 import { HybridWaveformSync } from "./HybridWaveformSync";
 import { useSynthControls } from "../../contexts/SynthControlsContext";
 

@@ -14,10 +14,58 @@ import {
 } from '../types/equationBuilderTypes';
 
 /**
+ * Create a custom math.js instance with summation support
+ */
+const mathWithSum = math.create(math.all);
+
+/**
+ * Custom summation function for math.js
+ * Implements: sum(expression, indexVar, start, end)
+ * Example: sum(sin(i*t), i, 1, n) = sin(1*t) + sin(2*t) + ... + sin(n*t)
+ * 
+ * The expression parameter should be a MathNode that will be evaluated
+ * for each value of the index variable.
+ */
+function createSumFunction() {
+  return function sum(expr: any, indexVar: string, start: number, end: number, scope?: Record<string, any>): number {
+    let result = 0;
+    const roundedStart = Math.round(start);
+    const roundedEnd = Math.round(end);
+    
+    // If expression is not a node, return 0
+    if (!expr || typeof expr.evaluate !== 'function') {
+      return 0;
+    }
+    
+    for (let iterIndex = roundedStart; iterIndex <= roundedEnd; iterIndex++) {
+      try {
+        // Create a new scope with the index variable
+        const iterationScope = { ...(scope || {}), [indexVar]: iterIndex };
+        
+        // Evaluate the expression with the current index
+        const value = expr.evaluate(iterationScope);
+        result += typeof value === 'number' && isFinite(value) ? value : 0;
+      } catch (error) {
+        // Skip iterations that fail to evaluate
+        continue;
+      }
+    }
+    
+    return result;
+  };
+}
+
+// Register the custom sum function
+mathWithSum.import({
+  sum: createSumFunction()
+}, { override: true });
+
+/**
  * Reserved variable names that cannot be used as user variables
  * - t: time variable (always present in waveform functions)
- * - i: imaginary unit
+ * - i: used for summation index and imaginary unit
  * - e: Euler's number
+ * - n: commonly used for summation upper bound
  */
 const RESERVED_VARIABLES = new Set(['t', 'i', 'e']);
 
@@ -36,7 +84,7 @@ const RESERVED_VARIABLES = new Set(['t', 'i', 'e']);
  */
 export function parseExpression(expression: string): ParsedExpression {
   try {
-    const node = math.parse(expression);
+    const node = mathWithSum.parse(expression);
     return {
       node,
       expression
@@ -190,17 +238,18 @@ export function validateExpression(expression: string): ValidationResult {
 
 /**
  * Generate LaTeX representation of an expression
+ * Automatically wraps the expression in summation notation
  * 
  * Converts a mathematical expression string into LaTeX format for
  * pretty rendering. Uses math.js built-in toTex() method.
  * 
  * @param expression - The mathematical expression string
- * @returns LaTeX string representation
+ * @returns LaTeX string representation with summation
  * 
  * @example
  * ```typescript
- * generateLatex('sin(t)'); // '\\sin\\left(t\\right)'
- * generateLatex('a*sin(b*t + c)'); // 'a\\cdot\\sin\\left(b\\cdot t+c\\right)'
+ * generateLatex('sin(t)'); // '\\sum_{i=1}^{n} \\sin\\left(t\\right)'
+ * generateLatex('a*sin(b*t + c)'); // '\\sum_{i=1}^{n} a\\cdot\\sin\\left(b\\cdot t+c\\right)'
  * ```
  */
 export function generateLatex(expression: string): string {
@@ -209,11 +258,14 @@ export function generateLatex(expression: string): string {
       return '';
     }
     
-    const node = math.parse(expression);
-    return node.toTex();
+    const node = mathWithSum.parse(expression);
+    const innerLatex = node.toTex();
+    
+    // Wrap in summation notation
+    return `\\sum_{i=1}^{n} ${innerLatex}`;
   } catch (error) {
-    // Return the original expression if LaTeX generation fails
-    return expression;
+    // Return the original expression wrapped in summation if LaTeX generation fails
+    return `\\sum_{i=1}^{n} ${expression}`;
   }
 }
 

@@ -10,15 +10,11 @@ import {
   Tab,
 } from "@mui/material";
 import {
-  WaveformVisualizer,
-  EquationDisplay,
-  HarmonicsControl,
   SubtractiveControls,
   KeyboardControls,
   Mixer,
   OscControls,
 } from "./components";
-import EquationBuilder from "./components/Osc/EquationBuilder";
 import { useSynthControls } from "./contexts/SynthControlsContext";
 import { useAudioEngine } from "./contexts/AudioEngineContext";
 import { theme } from "./theme";

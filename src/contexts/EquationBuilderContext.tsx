@@ -21,17 +21,38 @@ import { equationBuilderReducer } from "../reducers/equationBuilderReducer";
 /**
  * Initial state for the equation builder
  * Starts with sin(t) to match the default harmonic state (first harmonic = sine wave)
+ * Always includes 'i' and 'n' variables for summation support
  */
 const initialExpression = "sin(t)";
 const initialParsed = parseExpression(initialExpression);
 const initialCompiled = compileExpression(initialParsed);
 const initialLatex = generateLatex(initialExpression);
 
+// Create initial variables with i and n for summation
+const initialVariables: Record<string, VariableConfig> = {
+  i: {
+    name: 'i',
+    value: 1,
+    min: 1,
+    max: 20,
+    step: 1,
+    defaultValue: 1,
+  },
+  n: {
+    name: 'n',
+    value: 1,
+    min: 1,
+    max: 20,
+    step: 1,
+    defaultValue: 1,
+  },
+};
+
 const initialState: EquationBuilderState = {
   expression: initialExpression,
   parsedExpression: initialParsed,
   compiledFunction: initialCompiled,
-  variables: {},
+  variables: initialVariables,
   latexExpression: initialLatex,
   validationResult: { isValid: true, errors: [] },
   waveformData: [],
@@ -129,25 +150,47 @@ export function EquationBuilderProvider({
   /**
    * Effect: Detect and update variables when parsed expression changes
    * Adds new variables with defaults, removes obsolete ones, preserves existing configurations
+   * ALWAYS keeps 'i' and 'n' variables for summation support
    */
   useEffect(() => {
     // Don't clear variables if we're waiting for parsing (expression exists but not parsed yet)
     if (!state.parsedExpression) {
-      // Only clear variables if there's also no expression (completely empty state)
-      if (!state.expression && Object.keys(state.variables).length > 0) {
-        dispatch({ type: "SET_VARIABLES", payload: {} });
+      // Keep i and n even if expression is empty
+      if (!state.expression) {
+        const summationVars: Record<string, VariableConfig> = {
+          i: state.variables.i || {
+            name: 'i',
+            value: 1,
+            min: 1,
+            max: 20,
+            step: 1,
+            defaultValue: 1,
+          },
+          n: state.variables.n || {
+            name: 'n',
+            value: 1,
+            min: 1,
+            max: 20,
+            step: 1,
+            defaultValue: 1,
+          },
+        };
+        dispatch({ type: "SET_VARIABLES", payload: summationVars });
       }
       return;
     }
 
     const detectedVars = extractVariables(state.expression);
+    
+    // Always include 'i' and 'n' for summation, even if not detected in expression
+    const requiredVars = new Set([...detectedVars, 'i', 'n']);
     const currentVarNames = Object.keys(state.variables);
 
     // Check if variables have changed
     const varsChanged =
-      detectedVars.length !== currentVarNames.length ||
-      detectedVars.some((name) => !state.variables[name]) ||
-      currentVarNames.some((name) => !detectedVars.includes(name));
+      requiredVars.size !== currentVarNames.length ||
+      Array.from(requiredVars).some((name) => !state.variables[name]) ||
+      currentVarNames.some((name) => !requiredVars.has(name));
 
     if (!varsChanged) {
       return;
@@ -156,13 +199,25 @@ export function EquationBuilderProvider({
     const newVariables: Record<string, VariableConfig> = {};
 
     // Add new variables, preserve ALL existing configuration (including values from templates)
-    detectedVars.forEach((varName) => {
+    Array.from(requiredVars).forEach((varName) => {
       if (state.variables[varName]) {
         // Keep complete existing configuration
         newVariables[varName] = state.variables[varName];
       } else {
         // Create new configuration with defaults
-        newVariables[varName] = createDefaultVariableConfig(varName);
+        // Special defaults for summation variables
+        if (varName === 'i' || varName === 'n') {
+          newVariables[varName] = {
+            name: varName,
+            value: 1,
+            min: 1,
+            max: 20,
+            step: 1,
+            defaultValue: 1,
+          };
+        } else {
+          newVariables[varName] = createDefaultVariableConfig(varName);
+        }
       }
     });
 

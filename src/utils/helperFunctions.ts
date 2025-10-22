@@ -93,39 +93,52 @@ export const calculateWaveformFromExpression = (
     scope[varName] = variables[varName].value;
   }
   
+  // Get summation bounds (default to 1,1 for no summation)
+  const nValue = scope.n ?? 1;
+  const startValue = 1;
+  
   // Track min/max for normalization
   let minValue = Infinity;
   let maxValue = -Infinity;
   
   // Generate waveform samples over time range [0, 2π]
-  for (let i = 0; i < sampleCount; i++) {
+  for (let sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++) {
     // Calculate time value
-    const t = (i / sampleCount) * TWO_PI;
+    const t = (sampleIndex / sampleCount) * TWO_PI;
     scope.t = t;
     
     try {
-      // Evaluate expression with current scope
-      let value = compiledFunction(scope);
+      // Evaluate summation: sum from i=1 to n
+      let sumValue = 0;
+      for (let i = startValue; i <= nValue; i++) {
+        scope.i = i;
+        const termValue = compiledFunction(scope);
+        
+        // Handle edge cases for each term
+        if (isFinite(termValue)) {
+          sumValue += termValue;
+        }
+      }
       
-      // Handle edge cases
+      // Handle edge cases for final sum
+      let value = sumValue;
       if (!isFinite(value)) {
-        // Replace NaN or Infinity with 0
         value = 0;
       } else {
         // Clamp very large values to prevent audio artifacts
         value = Math.max(-1000, Math.min(1000, value));
       }
       
-      output[i] = value;
+      output[sampleIndex] = value;
       
       // Track range for normalization
       if (value < minValue) minValue = value;
       if (value > maxValue) maxValue = value;
     } catch (error) {
       // On evaluation error, use silent sample
-      output[i] = 0;
+      output[sampleIndex] = 0;
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`Expression evaluation error at sample ${i}:`, error);
+        console.warn(`Expression evaluation error at sample ${sampleIndex}:`, error);
       }
     }
   }

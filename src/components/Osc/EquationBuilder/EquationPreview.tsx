@@ -26,17 +26,10 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 
-/**
- * EquationPreview component displays the LaTeX-rendered equation
- * with copy functionality and variable values
- */
 export function EquationPreview() {
   const { latexExpression, variables, expression } = useEquationBuilder();
   const [copySuccess, setCopySuccess] = useState(false);
 
-  /**
-   * Copy LaTeX expression to clipboard
-   */
   const handleCopyLatex = async () => {
     try {
       await navigator.clipboard.writeText(latexExpression);
@@ -46,16 +39,10 @@ export function EquationPreview() {
     }
   };
 
-  /**
-   * Handle Snackbar close
-   */
   const handleCloseSnackbar = () => {
     setCopySuccess(false);
   };
 
-  /**
-   * Render the LaTeX expression with error handling
-   */
   const renderLatex = () => {
     // Empty expression case
     if (!expression || !latexExpression) {
@@ -91,9 +78,6 @@ export function EquationPreview() {
     );
   };
 
-  /**
-   * Render variable values list
-   */
   const renderVariableValues = () => {
     const varEntries = Object.entries(variables);
 
@@ -123,15 +107,17 @@ export function EquationPreview() {
     <Paper
       elevation={2}
       sx={{
-        padding: 3,
+        padding: 1,
         backgroundColor: "background.paper",
         border: "1px solid",
         borderColor: "divider",
         borderRadius: 2,
-        minHeight: 120,
-        display: "flex",
-        flexDirection: "column",
-        position: "relative",
+    minHeight: 120,
+    display: "flex",
+    flexDirection: "column",
+    position: "relative",
+    height: '100%',
+    flexGrow: 1,
       }}
     >
       {/* Header with title and actions */}
