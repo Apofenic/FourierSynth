@@ -157,12 +157,12 @@ export const EquationInput = forwardRef<
     setCursorPosition(target.selectionStart || 0);
 
     // Debounced context update
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      updateExpression(newValue);
-    }, 300);
+    // if (debounceTimerRef.current) {
+    //   clearTimeout(debounceTimerRef.current);
+    // }
+    // debounceTimerRef.current = setTimeout(() => {
+    //   updateExpression(newValue);
+    // }, 300);
   };
 
   /**
@@ -309,6 +309,14 @@ export const EquationInput = forwardRef<
           }}
         >
           <Typography variant="body2" component="div" sx={{ m: 0 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              - Type or Drag Symbols from the symbol palette side bar into the
+              Input Field.
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+              - Hit "Enter" to apply changes.
+            </Typography>
+            <Divider sx={{ my: 2 }} />
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               How Summations Work:
             </Typography>

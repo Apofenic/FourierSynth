@@ -122,18 +122,12 @@ export function SymbolPalette({ onSymbolClick }: SymbolPaletteProps) {
     >
       {/* Header */}
       <Box sx={{ p: 2 }}>
-        <Tooltip
-          title="💡 Tip: Use 'i' for harmonic index (1,2,3...), 'n' for total harmonics, 't' for time. Example: sin(i*t) creates a Fourier series."
-          placement="top"
-          arrow
-        >
+        <Tooltip title="Click or drag symbols to insert." placement="top" arrow>
           <Typography variant="h6" component="h2">
             Symbol Palette
           </Typography>
         </Tooltip>
-        <Typography variant="caption" color="text.secondary">
-          Click or drag symbols to insert
-        </Typography>
+        <Typography variant="caption" color="text.secondary"></Typography>
       </Box>
       <FormControl size="small" fullWidth sx={{ mt: 1, mb: 1 }}>
         <InputLabel id="symbol-category-select-label">Categories</InputLabel>

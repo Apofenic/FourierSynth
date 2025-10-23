@@ -246,7 +246,6 @@ export function EquationBuilderProvider({
       dispatch({ type: "SET_WAVEFORM", payload: [] });
     }
   }, [state.compiledFunction, state.variables, state.validationResult.isValid]);
-
   const value = {
     ...state,
     updateExpression,
