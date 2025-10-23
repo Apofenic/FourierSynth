@@ -37,10 +37,11 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           // Don't apply to elevation papers (menus, dialogs, etc)
-          "&:not(.MuiMenu-paper):not(.MuiDialog-paper):not(.MuiPopover-paper)": {
-            backgroundColor: "rgba(97, 218, 251, 0.05)",
-            padding: "16px",
-          },
+          "&:not(.MuiMenu-paper):not(.MuiDialog-paper):not(.MuiPopover-paper)":
+            {
+              backgroundColor: "rgba(97, 218, 251, 0.05)",
+              padding: "8px", // Reduced padding
+            },
           borderRadius: "8px",
           // Note: height removed to prevent modals/dropdowns from being full-height
           // Apply height: "100%" directly to specific components that need it

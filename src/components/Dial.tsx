@@ -14,6 +14,10 @@ interface DialProps {
   backgroundColor?: string;
   textColor?: string;
   sensitivity?: number; // pixels per unit value
+  disableOuterRing?: boolean; // disables the outer progress ring if true
+  labelBelow?: boolean; // if true, label is rendered below the dial
+  numberFontSize?: number; // font size for the number in the center (in px)
+  minMaxFontSize?: number; // font size for the min and max numbers (in px)
 }
 
 export const Dial: React.FC<DialProps> = ({
@@ -29,6 +33,10 @@ export const Dial: React.FC<DialProps> = ({
   backgroundColor = "#2a2e35",
   textColor = "#ffffff",
   sensitivity = 2,
+  disableOuterRing = false,
+  labelBelow = false,
+  numberFontSize,
+  minMaxFontSize,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
@@ -157,7 +165,8 @@ export const Dial: React.FC<DialProps> = ({
         userSelect: "none",
       }}
     >
-      {label && (
+      {/* Label above the dial (default) */}
+      {!labelBelow && label && (
         <Typography variant="caption" sx={{ color: textColor, opacity: 0.7 }}>
           {label}
         </Typography>
@@ -187,27 +196,31 @@ export const Dial: React.FC<DialProps> = ({
             </radialGradient>
           </defs>
 
-          {/* Background track (unfilled portion of progress ring) */}
-          <path
-            d={describeArc(startAngle, endAngle)}
-            fill="none"
-            stroke="rgba(255, 255, 255, 0.1)"
-            strokeWidth={strokeWidth}
-            strokeLinecap="round"
-          />
-
-          {/* Progress arc */}
-          {progress > 0 && (
-            <path
-              d={describeArc(startAngle, currentAngle)}
-              fill="none"
-              stroke={ringColor}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              style={{
-                transition: isDragging ? "none" : "d 0.1s ease-out",
-              }}
-            />
+          {/* Outer ring (background + progress arc) */}
+          {!disableOuterRing && (
+            <>
+              {/* Background track (unfilled portion of progress ring) */}
+              <path
+                d={describeArc(startAngle, endAngle)}
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.1)"
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+              />
+              {/* Progress arc */}
+              {progress > 0 && (
+                <path
+                  d={describeArc(startAngle, currentAngle)}
+                  fill="none"
+                  stroke={ringColor}
+                  strokeWidth={strokeWidth}
+                  strokeLinecap="round"
+                  style={{
+                    transition: isDragging ? "none" : "d 0.1s ease-out",
+                  }}
+                />
+              )}
+            </>
           )}
 
           {/* Center circle (knob background with gradient) */}
@@ -246,7 +259,9 @@ export const Dial: React.FC<DialProps> = ({
             textAnchor="middle"
             dominantBaseline="middle"
             fill={textColor}
-            fontSize={size * 0.15}
+            fontSize={
+              numberFontSize !== undefined ? numberFontSize : size * 0.15
+            }
             fontWeight="300"
             fontFamily="'Roboto', sans-serif"
             style={{ pointerEvents: "none" }}
@@ -254,37 +269,51 @@ export const Dial: React.FC<DialProps> = ({
             {Math.round(currentValue)}
           </text>
 
-          {/* Min label - positioned outside ring at start angle */}
-          <text
-            x={polarToCartesian(startAngle).x - strokeWidth * 1.5}
-            y={polarToCartesian(startAngle).y + strokeWidth * 0.8}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill={textColor}
-            fontSize={size * 0.08}
-            fontWeight="500"
-            fontFamily="'Roboto', sans-serif"
-            style={{ pointerEvents: "none" }}
-          >
-            {min}
-          </text>
-
-          {/* Max label - positioned outside ring at end angle */}
-          <text
-            x={polarToCartesian(endAngle).x + strokeWidth * 1.5}
-            y={polarToCartesian(endAngle).y + strokeWidth * 0.8}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill={textColor}
-            fontSize={size * 0.08}
-            fontWeight="500"
-            fontFamily="'Roboto', sans-serif"
-            style={{ pointerEvents: "none" }}
-          >
-            {max}
-          </text>
+          {/* Min and Max labels - only show if outer ring is enabled */}
+          {!disableOuterRing && (
+            <>
+              {/* Min label - positioned outside ring at start angle */}
+              <text
+                x={polarToCartesian(startAngle).x - strokeWidth * 1.5}
+                y={polarToCartesian(startAngle).y + strokeWidth * 0.8}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill={textColor}
+                fontSize={
+                  minMaxFontSize !== undefined ? minMaxFontSize : size * 0.08
+                }
+                fontWeight="500"
+                fontFamily="'Roboto', sans-serif"
+                style={{ pointerEvents: "none" }}
+              >
+                {min}
+              </text>
+              {/* Max label - positioned outside ring at end angle */}
+              <text
+                x={polarToCartesian(endAngle).x + strokeWidth * 1.5}
+                y={polarToCartesian(endAngle).y + strokeWidth * 0.8}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill={textColor}
+                fontSize={
+                  minMaxFontSize !== undefined ? minMaxFontSize : size * 0.08
+                }
+                fontWeight="500"
+                fontFamily="'Roboto', sans-serif"
+                style={{ pointerEvents: "none" }}
+              >
+                {max}
+              </text>
+            </>
+          )}
         </svg>
       </Box>
+      {/* Label below the dial */}
+      {labelBelow && label && (
+        <Typography variant="caption" sx={{ color: textColor, opacity: 0.7 }}>
+          {label}
+        </Typography>
+      )}
     </Box>
   );
 };
