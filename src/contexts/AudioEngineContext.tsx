@@ -9,32 +9,9 @@ import React, {
   ReactNode,
 } from "react";
 import { useSynthControls } from "./SynthControlsContext";
-import { calculateWaveform } from "../helperFunctions";
-
-/**
- * Type definition for the AudioEngine context value
- * Provides access to Web Audio API nodes, playback state, and control methods
- */
-interface AudioEngineContextType {
-  // Audio node references
-  audioContextRef: React.MutableRefObject<AudioContext | null>;
-  oscillatorNodeRef: React.MutableRefObject<OscillatorNode | null>;
-  gainNodeRef: React.MutableRefObject<GainNode | null>;
-  filterNodeRef: React.MutableRefObject<BiquadFilterNode | null>;
-
-  // Playback state
-  isPlaying: boolean;
-  frequency: number;
-  cutoffFrequency: number;
-  resonance: number;
-
-  // Control methods
-  startAudio: () => void;
-  stopAudio: () => void;
-  updateFrequency: (freq: number) => void;
-  updateFilter: (cutoff: number, resonance: number) => void;
-  setIsPlaying: (playing: boolean) => void;
-}
+import { useEquationBuilder } from "./EquationBuilderContext";
+import { calculateWaveform } from "../utils/helperFunctions";
+import type { AudioEngineContextType } from "../types";
 
 /**
  * Context for managing Web Audio API state and operations
@@ -51,6 +28,7 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   // Get harmonics from SynthControlsContext
+  const { waveformData } = useEquationBuilder();
   const { harmonics } = useSynthControls();
 
   // Audio node refs
@@ -106,21 +84,31 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
   }, []);
 
   /**
-   * Update the frequency of the oscillator
+   * Update the frequency of the audio source
    * @param freq - New frequency in Hz
    */
-  const updateFrequency = useCallback((freq: number) => {
-    setFrequency(freq);
-    // If oscillator is currently playing, update it in real-time with minimal ramp for smooth transition
-    if (oscillatorNodeRef.current && audioContextRef.current) {
-      const time = audioContextRef.current.currentTime;
-      // Use exponentialRampToValueAtTime for smooth, immediate frequency changes
-      oscillatorNodeRef.current.frequency.exponentialRampToValueAtTime(
-        freq,
-        time + 0.001 // Very short ramp time (1ms) for near-instant response
-      );
-    }
-  }, []);
+  const updateFrequency = useCallback(
+    (freq: number) => {
+      setFrequency(freq);
+      // If source is currently playing, update playback rate in real-time
+      if (oscillatorNodeRef.current && audioContextRef.current) {
+        const sourceNode = oscillatorNodeRef.current as any;
+        const waveformLength = waveformData.length || 2048;
+        const baseCycleFrequency =
+          audioContextRef.current.sampleRate / waveformLength;
+        const time = audioContextRef.current.currentTime;
+
+        // Update playback rate to match new frequency
+        if (sourceNode.playbackRate) {
+          sourceNode.playbackRate.exponentialRampToValueAtTime(
+            freq / baseCycleFrequency,
+            time + 0.001
+          );
+        }
+      }
+    },
+    [waveformData.length]
+  );
 
   /**
    * Update filter parameters in real-time
@@ -192,44 +180,62 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
       // Store the first filter for parameter updates
       filterNodeRef.current = filter1;
 
-      // Create oscillator node
-      const oscillatorNode = audioContext.createOscillator();
-      oscillatorNode.frequency.value = frequency;
+      // Create audio buffer source node for custom waveform playback
+      const sourceNode = audioContext.createBufferSource();
 
-      // Generate and set custom waveform from Fourier series
-      const calculatedWaveform = calculateWaveform(harmonics);
+      console.log("Creating audio source with waveform data:", waveformData);
 
-      // Create a custom wave table from our calculated waveform
-      const waveTable = audioContext.createPeriodicWave(
-        calculatedWaveform, // Real part (sine components)
-        new Float32Array(calculatedWaveform.length).fill(0) // Imaginary part (cosine components)
+      // Convert waveformData to Float32Array if needed
+      const calculatedWaveform = new Float32Array(waveformData);
+
+      // Create an AudioBuffer to hold our custom waveform
+      const buffer = audioContext.createBuffer(
+        1, // mono channel
+        calculatedWaveform.length,
+        audioContext.sampleRate
       );
 
-      // Connect the audio chain: oscillator -> filter1 -> filter2 -> filter3 -> filter4 -> gain -> output
-      oscillatorNode.setPeriodicWave(waveTable);
-      oscillatorNode.connect(filter1);
+      // Copy waveform data into the buffer
+      buffer.copyToChannel(calculatedWaveform, 0);
+
+      // Set the buffer and enable looping for continuous playback
+      sourceNode.buffer = buffer;
+      sourceNode.loop = true;
+
+      // Adjust playback rate to match desired frequency
+      // The buffer represents one cycle, so playback rate = frequency / base frequency
+      const baseCycleFrequency =
+        audioContext.sampleRate / calculatedWaveform.length;
+      sourceNode.playbackRate.value = frequency / baseCycleFrequency;
+
+      // Connect the audio chain: source -> filter1 -> filter2 -> filter3 -> filter4 -> gain -> output
+      sourceNode.connect(filter1);
       filter1.connect(filter2);
       filter2.connect(filter3);
       filter3.connect(filter4);
       filter4.connect(gainNode);
       gainNode.connect(audioContext.destination);
 
-      oscillatorNode.start();
-      oscillatorNodeRef.current = oscillatorNode;
+      sourceNode.start();
+      oscillatorNodeRef.current = sourceNode as any; // Store as oscillator ref for compatibility
 
       return () => {
         if (oscillatorNodeRef.current) {
-          oscillatorNodeRef.current.stop();
-          oscillatorNodeRef.current.disconnect();
+          try {
+            oscillatorNodeRef.current.stop();
+            oscillatorNodeRef.current.disconnect();
+          } catch (e) {
+            console.warn("Error stopping source node:", e);
+          }
           oscillatorNodeRef.current = null;
         }
         filterNodeRef.current = null;
       };
     }
-    // Only recreate audio when isPlaying changes or harmonics change
+    // Recreate audio when playing state, harmonics, or waveformData changes
     // Frequency, cutoff, and resonance updates are handled in real-time via refs
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying, harmonics]);
+  }, [isPlaying, harmonics, waveformData]);
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(

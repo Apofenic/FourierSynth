@@ -7,7 +7,7 @@ import { useAudioEngine } from "../contexts/AudioEngineContext";
 import {
   generateFourierEquation,
   generateFullEquation,
-} from "../helperFunctions";
+} from "../utils/helperFunctions";
 
 /**
  * EquationDisplay component

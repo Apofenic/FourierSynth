@@ -3,57 +3,14 @@ import React, {
   useContext,
   useState,
   ReactNode,
-  useEffect,
   useCallback,
   useMemo,
 } from "react";
-import { calculateWaveform } from "../helperFunctions";
-
-/**
- * Interface for harmonic parameters (amplitude and phase)
- */
-export interface HarmonicParam {
-  amplitude: number;
-  phase: number;
-}
-
-/**
- * Interface for keyboard note mapping
- */
-export interface KeyboardNote {
-  key: string;
-  note: string;
-  frequency: number;
-  isActive: boolean;
-}
-
-/**
- * Type definition for the SynthControls context value
- * Provides access to synthesis parameters, keyboard state, and waveform data
- */
-interface SynthControlsContextType {
-  // Harmonics state
-  harmonics: HarmonicParam[];
-  updateHarmonic: (
-    index: number,
-    paramType: "amplitude" | "phase",
-    value: number
-  ) => void;
-
-  // Keyboard state
-  keyboardNotes: KeyboardNote[];
-  activeKey: string | null;
-  setActiveKey: (key: string | null) => void;
-  clearActiveKey: (key: string) => void;
-  updateKeyboardNoteState: (key: string, isActive: boolean) => void;
-
-  // Waveform data for visualization
-  waveformData: Float32Array;
-
-  // Keyboard enabled state
-  keyboardEnabled: boolean;
-  setKeyboardEnabled: (enabled: boolean) => void;
-}
+import type {
+  HarmonicParam,
+  KeyboardNote,
+  SynthControlsContextType,
+} from "../types/synthControlsTypes";
 
 /**
  * Context for managing synthesis controls and parameters
@@ -104,6 +61,11 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
     { key: ";", note: "E4", frequency: 329.63, isActive: false },
   ]);
 
+  // Tab state for UI navigation (equation builder vs harmonic controls)
+  const [activeTab, setActiveTab] = useState<"equation" | "harmonic">(
+    "equation"
+  );
+
   // Waveform data for visualization
   const [waveformData, setWaveformData] = useState<Float32Array>(
     new Float32Array(2048).fill(0)
@@ -153,13 +115,8 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
     setActiveKey((currentKey) => (currentKey === key ? null : currentKey));
   }, []);
 
-  /**
-   * Recalculate waveform whenever harmonics change
-   */
-  useEffect(() => {
-    const calculatedWaveform = calculateWaveform(harmonics);
-    setWaveformData(calculatedWaveform);
-  }, [harmonics]);
+  // NOTE: Waveform calculation is now handled by HybridWaveformSync component
+  // which combines both equation builder and harmonic controls
 
   // Memoize context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -172,8 +129,11 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
       clearActiveKey,
       updateKeyboardNoteState,
       waveformData,
+      setWaveformData,
       keyboardEnabled,
       setKeyboardEnabled,
+      activeTab,
+      setActiveTab,
     }),
     [
       harmonics,
@@ -184,6 +144,7 @@ export const SynthControlsProvider: React.FC<{ children: ReactNode }> = ({
       updateKeyboardNoteState,
       waveformData,
       keyboardEnabled,
+      activeTab,
     ]
   );
 

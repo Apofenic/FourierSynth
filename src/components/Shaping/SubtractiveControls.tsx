@@ -1,7 +1,7 @@
 import React from "react";
 import { Typography, Box } from "@mui/material";
-import { useAudioEngine } from "../contexts/AudioEngineContext";
-import { FilterControls, EnvelopeControls } from "./";
+import { useAudioEngine } from "../../contexts/AudioEngineContext";
+import { FilterControls, EnvelopeControls } from "..";
 
 /**
  * SubtractiveControls component
