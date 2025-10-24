@@ -114,6 +114,20 @@ export const Mixer: React.FC = () => {
             minMaxFontSize={10}
           />
         </Box>
+
+        <Stack spacing={2} alignItems="start">
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={false}
+                onChange={() => {}}
+                color="primary"
+              />
+            }
+            label="unison"
+          />
+        </Stack>
       </Paper>
     </Box>
   );

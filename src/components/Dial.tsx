@@ -18,6 +18,7 @@ interface DialProps {
   labelBelow?: boolean; // if true, label is rendered below the dial
   numberFontSize?: number; // font size for the number in the center (in px)
   minMaxFontSize?: number; // font size for the min and max numbers (in px)
+  hideCenterNumber?: boolean; // hides the number in the center if true
 }
 
 export const Dial: React.FC<DialProps> = ({
@@ -37,11 +38,23 @@ export const Dial: React.FC<DialProps> = ({
   labelBelow = false,
   numberFontSize,
   minMaxFontSize,
+  hideCenterNumber = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
   const startY = useRef(0);
   const startValue = useRef(value);
+  const currentValueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+
+  // Keep refs in sync
+  useEffect(() => {
+    currentValueRef.current = currentValue;
+  }, [currentValue]);
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
   useEffect(() => {
     setCurrentValue(value);
@@ -99,9 +112,9 @@ export const Dial: React.FC<DialProps> = ({
       e.preventDefault();
       setIsDragging(true);
       startY.current = e.clientY;
-      startValue.current = currentValue;
+      startValue.current = currentValueRef.current;
     },
-    [currentValue]
+    []
   );
 
   // Handle mouse move
@@ -119,12 +132,12 @@ export const Dial: React.FC<DialProps> = ({
       // Round to step
       newValue = Math.round(newValue / step) * step;
 
-      if (newValue !== currentValue) {
+      if (newValue !== currentValueRef.current) {
         setCurrentValue(newValue);
-        onChange?.(newValue);
+        onChangeRef.current?.(newValue);
       }
     },
-    [isDragging, sensitivity, step, min, max, currentValue, onChange]
+    [isDragging, sensitivity, step, min, max]
   );
 
   // Handle mouse up
@@ -252,22 +265,24 @@ export const Dial: React.FC<DialProps> = ({
             }}
           />
 
-          {/* Value text */}
-          <text
-            x={centerX}
-            y={centerY}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill={textColor}
-            fontSize={
-              numberFontSize !== undefined ? numberFontSize : size * 0.15
-            }
-            fontWeight="300"
-            fontFamily="'Roboto', sans-serif"
-            style={{ pointerEvents: "none" }}
-          >
-            {Math.round(currentValue)}
-          </text>
+          {/* Value text (center number) */}
+          {!hideCenterNumber && (
+            <text
+              x={centerX}
+              y={centerY}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill={textColor}
+              fontSize={
+                numberFontSize !== undefined ? numberFontSize : size * 0.15
+              }
+              fontWeight="300"
+              fontFamily="'Roboto', sans-serif"
+              style={{ pointerEvents: "none" }}
+            >
+              {Math.round(currentValue)}
+            </text>
+          )}
 
           {/* Min and Max labels - only show if outer ring is enabled */}
           {!disableOuterRing && (

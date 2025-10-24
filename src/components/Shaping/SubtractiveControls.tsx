@@ -24,14 +24,13 @@ export const SubtractiveControls: React.FC = () => {
     <Paper
       sx={{
         display: "grid",
-        gridTemplateColumns: " 1fr 1fr",
-        gridTemplateRows: "auto 1fr",
+        gridTemplateColumns: "1fr 1fr",
         gap: 2,
         height: "100%",
         overflow: "hidden",
       }}
     >
-      <Box sx={{ gridRow: 2, minHeight: 0, overflow: "hidden" }}>
+      <Box sx={{ gridRow: 1, minHeight: 0, overflow: "hidden" }}>
         <FilterControls
           cutoffFrequency={cutoffFrequency}
           resonance={resonance}
@@ -39,7 +38,7 @@ export const SubtractiveControls: React.FC = () => {
           onResonanceChange={handleResonanceChange}
         />
       </Box>
-      <Box sx={{ gridRow: 2, minHeight: 0, overflow: "hidden" }}>
+      <Box sx={{ gridRow: 1, minHeight: "100%", overflow: "hidden" }}>
         <EnvelopeControls />
       </Box>
     </Paper>
