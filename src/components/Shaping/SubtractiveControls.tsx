@@ -1,5 +1,5 @@
 import React from "react";
-import { Typography, Box } from "@mui/material";
+import { Typography, Box, Paper } from "@mui/material";
 import { useAudioEngine } from "../../contexts/AudioEngineContext";
 import { FilterControls, EnvelopeControls } from "..";
 
@@ -21,7 +21,7 @@ export const SubtractiveControls: React.FC = () => {
   };
 
   return (
-    <Box
+    <Paper
       sx={{
         display: "grid",
         gridTemplateColumns: " 1fr 1fr",
@@ -42,6 +42,6 @@ export const SubtractiveControls: React.FC = () => {
       <Box sx={{ gridRow: 2, minHeight: 0, overflow: "hidden" }}>
         <EnvelopeControls />
       </Box>
-    </Box>
+    </Paper>
   );
 };

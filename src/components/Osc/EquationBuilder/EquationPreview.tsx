@@ -10,7 +10,7 @@
  * Part of PR #6: Equation Preview Component
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 import {
@@ -29,6 +29,9 @@ import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 export function EquationPreview() {
   const { latexExpression, variables, expression } = useEquationBuilder();
   const [copySuccess, setCopySuccess] = useState(false);
+  const [fontSize, setFontSize] = useState(24); // Starting font size in pixels
+  const contentRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleCopyLatex = async () => {
     try {
@@ -42,6 +45,79 @@ export function EquationPreview() {
   const handleCloseSnackbar = () => {
     setCopySuccess(false);
   };
+
+  // Dynamic font sizing effect
+  useEffect(() => {
+    const adjustFontSize = () => {
+      if (!contentRef.current || !containerRef.current) return;
+
+      const container = containerRef.current;
+      const content = contentRef.current;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      // Start with a larger font size and reduce if needed
+      let currentFontSize = 32; // Start at 32px
+      const minFontSize = 12; // Minimum readable size
+      const maxFontSize = 40; // Maximum size
+
+      // Set initial font size
+      content.style.fontSize = `${currentFontSize}px`;
+
+      // Give the browser time to render
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Check if content overflows
+          const contentWidth = content.scrollWidth;
+          const contentHeight = content.scrollHeight;
+
+          // Reduce font size until it fits, with some padding
+          const paddingFactor = 0.95; // Use 95% of available space
+
+          while (
+            (contentWidth > containerWidth * paddingFactor ||
+              contentHeight > containerHeight * paddingFactor) &&
+            currentFontSize > minFontSize
+          ) {
+            currentFontSize -= 1;
+            content.style.fontSize = `${currentFontSize}px`;
+
+            // Re-check dimensions
+            if (
+              content.scrollWidth <= containerWidth * paddingFactor &&
+              content.scrollHeight <= containerHeight * paddingFactor
+            ) {
+              break;
+            }
+          }
+
+          // Cap at max font size for small equations
+          if (currentFontSize > maxFontSize) {
+            currentFontSize = maxFontSize;
+          }
+
+          setFontSize(currentFontSize);
+        });
+      });
+    };
+
+    // Adjust on mount and when equation changes
+    adjustFontSize();
+
+    // Add resize observer to handle container size changes
+    const resizeObserver = new ResizeObserver(() => {
+      adjustFontSize();
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [latexExpression, expression]);
 
   const renderLatex = () => {
     // Empty expression case
@@ -62,13 +138,22 @@ export function EquationPreview() {
 
     // Try to render LaTeX - BlockMath will handle errors internally
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box
+        ref={contentRef}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 1,
+          fontSize: `${fontSize}px`,
+          transition: "font-size 0.2s ease-out",
+        }}
+      >
         <Typography variant="h5" component="span" sx={{ fontFamily: "serif" }}>
           f(t) =
         </Typography>
         <Box
           sx={{
-            overflow: "auto",
+            overflow: "visible",
             maxWidth: "100%",
           }}
         >
@@ -112,12 +197,12 @@ export function EquationPreview() {
         border: "1px solid",
         borderColor: "divider",
         borderRadius: 2,
-    minHeight: 120,
-    display: "flex",
-    flexDirection: "column",
-    position: "relative",
-    height: '100%',
-    flexGrow: 1,
+        minHeight: 120,
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        height: "100%",
+        flexGrow: 1,
       }}
     >
       {/* Header with title and actions */}
@@ -161,12 +246,14 @@ export function EquationPreview() {
 
       {/* LaTeX preview */}
       <Box
+        ref={containerRef}
         sx={{
           flex: 1,
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           py: 2,
+          overflow: "hidden",
         }}
       >
         {renderLatex()}

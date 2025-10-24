@@ -120,15 +120,20 @@ function App() {
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
           gridTemplateRows: "auto 1.5fr 1fr",
-          gap: 2,
-          padding: "1rem",
+          gap: 1,
+          padding: "0.5rem",
           height: "100vh",
           overflow: "hidden",
         }}
       >
         {/* Header Section - Row 1, spans all 12 columns */}
         <Box sx={{ gridColumn: "1 / -1", gridRow: 1 }}>
-          <Typography variant="h1" align="center" gutterBottom>
+          <Typography
+            variant="h1"
+            align="center"
+            gutterBottom
+            sx={{ margin: 0 }}
+          >
             FourierSynth
           </Typography>
         </Box>
@@ -173,11 +178,19 @@ function App() {
                 sx={{
                   paddingTop: "1rem",
                   flexShrink: 0,
+                  "& .MuiTab-root": {
+                    borderTopLeftRadius: "8px",
+                    borderBottomLeftRadius: "8px",
+                    borderTopRightRadius: 0,
+                  },
                   "& .MuiTabs-indicator": {
                     display: "none",
                   },
                   "& .MuiTab-root.Mui-selected": {
                     backgroundColor: "#45505A",
+                  },
+                  "& .MuiTab-root:hover": {
+                    backgroundColor: "rgba(97, 218, 251, 0.1)",
                   },
                 }}
               >
@@ -222,21 +235,28 @@ function App() {
             value={activeTab}
             onChange={handleTabChange}
             aria-label="control tabs"
-            sx={{ gridRow: 1 }}
+            sx={{
+              paddingLeft: "1rem",
+              flexShrink: 0,
+              "& .MuiTab-root": {
+                padding: "1rem 1.5rem",
+              },
+              "& .MuiTabs-indicator": {
+                display: "none",
+              },
+              "& .MuiTab-root.Mui-selected": {
+                backgroundColor: "#45505A",
+              },
+              "& .MuiTab-root:hover": {
+                backgroundColor: "rgba(97, 218, 251, 0.1)",
+              },
+            }}
           >
             <Tab label="Subtractive Controls" />
             <Tab label="Keyboard Layout" />
           </Tabs>
-          <Box
-            sx={{
-              gridRow: 2,
-              minHeight: 0,
-              overflow: "hidden",
-            }}
-          >
-            {activeTab === 0 && <SubtractiveControls />}
-            {activeTab === 3 && <KeyboardControls />}
-          </Box>
+          {activeTab === 0 && <SubtractiveControls />}
+          {activeTab === 3 && <KeyboardControls />}
         </Paper>
       </Box>
     </ThemeProvider>
