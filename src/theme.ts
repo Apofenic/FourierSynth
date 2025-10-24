@@ -83,15 +83,17 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           color: "#61dafb",
-          fontWeight: 500,
+          fontWeight: 700,
+          paddingBottom: "1",
           textTransform: "none",
           minWidth: 0,
-          paddingRight: "6px",
-
-          paddingLeft: "4px",
-          minHeight: 48,
-          "&:hover": {
-            backgroundColor: "rgba(97, 218, 251, 0.1)",
+          minHeight: 0,
+          paddingRight: "0.5rem",
+          paddingLeft: "0.5rem",
+          borderTopLeftRadius: "8px",
+          borderTopRightRadius: "8px",
+          "& .MuiTabs-indicator": {
+            display: "none",
           },
         },
       },

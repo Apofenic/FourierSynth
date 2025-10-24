@@ -1,15 +1,7 @@
 import React from "react";
-import {
-  WaveformVisualizer,
-  HarmonicsControl,
-} from "..";
+import { WaveformVisualizer, HarmonicsControl } from "..";
 import { EquationBuilder } from "./EquationBuilder";
-import {
-  Box,
-  Paper,
-  Tabs,
-  Tab,
-} from "@mui/material";
+import { Box, Paper, Tabs, Tab } from "@mui/material";
 import { TunerControls } from "./TunerControls";
 import { HybridWaveformSync } from "./HybridWaveformSync";
 import { useSynthControls } from "../../contexts/SynthControlsContext";
@@ -81,8 +73,6 @@ export const OscControls: React.FC = () => {
               },
               "& .MuiTab-root.Mui-selected": {
                 backgroundColor: "#60727D",
-                borderTopLeftRadius: "8px",
-                borderTopRightRadius: "8px",
               },
             }}
           >
