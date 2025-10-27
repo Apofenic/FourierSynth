@@ -1,7 +1,7 @@
 import React from "react";
 import { Typography, Box, Paper } from "@mui/material";
 import { useAudioEngine } from "../../contexts/AudioEngineContext";
-import { FilterControls, EnvelopeControls } from "..";
+import { FilterControls, EnvelopeControls, LFOControls } from "..";
 
 /**
  * SubtractiveControls component
@@ -24,7 +24,7 @@ export const SubtractiveControls: React.FC = () => {
     <Paper
       sx={{
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: "1fr 1fr 1fr",
         gap: 2,
         height: "100%",
         overflow: "hidden",
@@ -40,6 +40,23 @@ export const SubtractiveControls: React.FC = () => {
       </Box>
       <Box sx={{ gridRow: 1, minHeight: "100%", overflow: "hidden" }}>
         <EnvelopeControls />
+      </Box>
+      <Box
+        sx={{
+          gridRow: 1,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 1,
+          minHeight: "100%",
+          overflow: "hidden",
+        }}
+      >
+        <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+          <LFOControls />
+        </Box>
+        <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+          <LFOControls />
+        </Box>
       </Box>
     </Paper>
   );

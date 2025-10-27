@@ -14,6 +14,9 @@ import {
   KeyboardControls,
   Mixer,
   OscControls,
+  ModulationMatrix,
+  SequencerControls,
+  EffectsControls,
 } from "./components";
 import { useSynthControls } from "./contexts/SynthControlsContext";
 import { useAudioEngine } from "./contexts/AudioEngineContext";
@@ -119,7 +122,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1.5fr 1fr",
+          gridTemplateRows: "auto 1.3fr 1fr",
           gap: 1,
           padding: "0.5rem",
           height: "100vh",
@@ -253,10 +256,16 @@ function App() {
             }}
           >
             <Tab label="Subtractive Controls" />
+            <Tab label="Modulation Matrix" />
+            <Tab label="Sequencer Controls" />
+            <Tab label="Effects Controls" />
             <Tab label="Keyboard Layout" />
           </Tabs>
           {activeTab === 0 && <SubtractiveControls />}
-          {activeTab === 3 && <KeyboardControls />}
+          {activeTab === 1 && <ModulationMatrix />}
+          {activeTab === 2 && <SequencerControls />}
+          {activeTab === 3 && <EffectsControls />}
+          {activeTab === 4 && <KeyboardControls />}
         </Paper>
       </Box>
     </ThemeProvider>

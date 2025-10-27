@@ -215,7 +215,7 @@ export function EquationPreview() {
         }}
       >
         <Typography variant="h6" component="h3">
-          LaTeX Preview
+          Equation Preview
         </Typography>
 
         <Box sx={{ display: "flex", gap: 1 }}>
@@ -275,7 +275,7 @@ export function EquationPreview() {
           variant="filled"
           sx={{ width: "100%" }}
         >
-          LaTeX copied to clipboard!
+          Copied to clipboard!
         </Alert>
       </Snackbar>
     </Paper>

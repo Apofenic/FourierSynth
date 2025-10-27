@@ -52,13 +52,18 @@ interface EquationInputProps {
   /** Maximum character length for the expression */
   maxLength?: number;
 }
-
 /**
  * Methods exposed via ref
  */
 export interface EquationInputHandle {
   insertAtCursor: (text: string) => void;
 }
+
+export const equationPresets = [
+  { name: "Sine", value: "sin(i*t)" },
+  { name: "Sawtooth", value: "(1/i)*sin(i*t)" },
+  { name: "Square", value: "((4/pi)*(1/(2*i-1)))*sin((2*i-1)*t)" },
+];
 
 /**
  * Equation input field with drop target and validation
@@ -247,15 +252,25 @@ export const EquationInput = forwardRef<
         <FormControl size="small" fullWidth>
           <InputLabel>Preset Equations</InputLabel>
           <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={10}
+            labelId="preset-equations-label"
+            id="preset-equations-select"
+            value=""
             label="Preset Equations"
-            onChange={() => {}}
+            onChange={(e) => {
+              const selectedValue = e.target.value as string;
+              setLocalExpression(selectedValue);
+              updateExpression(selectedValue);
+              setCursorPosition(selectedValue.length);
+              if (inputRef.current) {
+                inputRef.current.focus();
+              }
+            }}
           >
-            <MenuItem value={10}>Sine</MenuItem>
-            <MenuItem value={20}>Sawtooth</MenuItem>
-            <MenuItem value={30}>Square</MenuItem>
+            {equationPresets.map((preset, index) => (
+              <MenuItem key={index} value={preset.value}>
+                {preset.name}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Box>

@@ -7,6 +7,10 @@ export { Mixer } from "./Mixer";
 export { FilterControls } from "./Shaping/FilterControls";
 export { EnvelopeControls } from "./Shaping/EnvelopeControls";
 export { TunerControls } from "./Osc/TunerControls";
+export { LFOControls } from "./Shaping/LFOControls";
+export { EffectsControls } from "./EffectsControls";
+export { ModulationMatrix } from "./ModulationMatrix";
+export { SequencerControls } from "./SequencerControls";
 export { Dial } from "./Dial";
 
 // Equation Builder Components

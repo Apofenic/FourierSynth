@@ -28,7 +28,7 @@ import { equationBuilderReducer } from "../reducers/equationBuilderReducer";
 /**
  * Initial state for the equation builder
  * Starts with sin(i*t) to create a proper Fourier series with harmonic index
- * Always includes 'i' and 'n' variables for summation support
+ * Always includes 'n' variable for summation support
  * When n=1, shows only fundamental; when n>1, shows partial series sum
  */
 const initialExpression = "sin(i*t)";
@@ -36,16 +36,8 @@ const initialParsed = parseExpression(initialExpression);
 const initialCompiled = compileExpression(initialParsed);
 const initialLatex = generateLatex(initialExpression);
 
-// Create initial variables with i and n for summation
+// Create initial variables with n for summation
 const initialVariables: Record<string, VariableConfig> = {
-  i: {
-    name: "i",
-    value: 1,
-    min: 1,
-    max: 20,
-    step: 1,
-    defaultValue: 1,
-  },
   n: {
     name: "n",
     value: 1,
@@ -144,7 +136,7 @@ export function EquationBuilderProvider({
   /**
    * Effect: Detect and update variables when parsed expression changes
    * Adds new variables with defaults, removes obsolete ones, preserves existing configurations
-   * ALWAYS keeps 'i' and 'n' variables for summation support
+   * ALWAYS keeps 'n' variable for summation support
    */
   useEffect(() => {
     // Only run if parsed expression actually changed
@@ -155,17 +147,9 @@ export function EquationBuilderProvider({
 
     // Don't clear variables if we're waiting for parsing (expression exists but not parsed yet)
     if (!state.parsedExpression) {
-      // Keep i and n even if expression is empty
+      // Keep n even if expression is empty
       if (!state.expression) {
         const summationVars: Record<string, VariableConfig> = {
-          i: state.variables.i || {
-            name: "i",
-            value: 1,
-            min: 1,
-            max: 20,
-            step: 1,
-            defaultValue: 1,
-          },
           n: state.variables.n || {
             name: "n",
             value: 1,
@@ -182,8 +166,8 @@ export function EquationBuilderProvider({
 
     const detectedVars = extractVariables(state.expression);
 
-    // Always include 'i' and 'n' for summation, even if not detected in expression
-    const requiredVars = new Set([...detectedVars, "i", "n"]);
+    // Always include 'n' for summation, even if not detected in expression
+    const requiredVars = new Set([...detectedVars, "n"]);
     const currentVarNames = Object.keys(state.variables);
 
     // Check if variables have changed
@@ -206,7 +190,7 @@ export function EquationBuilderProvider({
       } else {
         // Create new configuration with defaults
         // Special defaults for summation variables
-        if (varName === "i" || varName === "n") {
+        if (varName === "n") {
           newVariables[varName] = {
             name: varName,
             value: 1,

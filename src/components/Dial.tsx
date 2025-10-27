@@ -107,15 +107,12 @@ export const Dial: React.FC<DialProps> = ({
   };
 
   // Handle mouse down
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-      startY.current = e.clientY;
-      startValue.current = currentValueRef.current;
-    },
-    []
-  );
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    startY.current = e.clientY;
+    startValue.current = currentValueRef.current;
+  }, []);
 
   // Handle mouse move
   const handleMouseMove = useCallback(

@@ -115,7 +115,7 @@ export const Mixer: React.FC = () => {
           />
         </Box>
 
-        <Stack spacing={2} alignItems="start">
+        <Stack spacing={2} alignItems="center">
           <FormControlLabel
             control={
               <Switch

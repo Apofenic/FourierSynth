@@ -94,7 +94,6 @@ const RESERVED_VARIABLES = new Set(["t", "i", "e"]);
 export function parseExpression(expression: string): ParsedExpression {
   try {
     const node = mathWithSum.parse(expression);
-    console.log(node);
     return {
       node,
       expression,
