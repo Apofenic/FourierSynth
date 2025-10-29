@@ -164,12 +164,10 @@ export function extractVariables(expression: string): string[] {
 export function compileExpression(parsed: ParsedExpression): CompiledFunction {
   try {
     const compiled = parsed.node.compile();
-    console.log("Compiled expression:", compiled);
 
     return (scope: Record<string, number>): number => {
       try {
         const result = compiled.evaluate(scope);
-        // console.log("Evaluation result:", result);
         // Handle edge cases
         if (typeof result !== "number") {
           return 0;

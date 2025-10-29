@@ -29,7 +29,7 @@ import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
 export function EquationPreview() {
   const { latexExpression, variables, expression } = useEquationBuilder();
   const [copySuccess, setCopySuccess] = useState(false);
-  const [fontSize, setFontSize] = useState(32); // Starting font size in pixels
+  const [fontSize, setFontSize] = useState(24); // Starting font size in pixels
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,9 +58,9 @@ export function EquationPreview() {
       const containerHeight = container.clientHeight;
 
       // Start with a larger font size and reduce if needed
-      let currentFontSize = 48; // Start at 48px (increased from 32)
-      const minFontSize = 16; // Minimum readable size (increased from 12)
-      const maxFontSize = 64; // Maximum size (increased from 40)
+      let currentFontSize = 32; // Start at 32px - reasonable default
+      const minFontSize = 14; // Minimum readable size
+      const maxFontSize = 36; // Maximum size - prevent oversized equations
 
       // Set initial font size
       content.style.fontSize = `${currentFontSize}px`;
@@ -147,10 +147,10 @@ export function EquationPreview() {
           transition: "font-size 0.2s ease-out",
         }}
       >
-        <Typography 
-          variant="h3" 
-          component="span" 
-          sx={{ 
+        <Typography
+          variant="h3"
+          component="span"
+          sx={{
             fontFamily: "serif",
             fontSize: `${fontSize}px`,
           }}

@@ -1,3 +1,4 @@
+import "./wdyr"; // Must be first import to set up why-did-you-render
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./fonts.css";

@@ -183,8 +183,6 @@ export const AudioEngineProvider: React.FC<{ children: ReactNode }> = ({
       // Create audio buffer source node for custom waveform playback
       const sourceNode = audioContext.createBufferSource();
 
-      console.log("Creating audio source with waveform data:", waveformData);
-
       // Convert waveformData to Float32Array if needed
       const calculatedWaveform = new Float32Array(waveformData);
 
