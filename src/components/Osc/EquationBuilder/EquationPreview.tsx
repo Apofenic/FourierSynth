@@ -24,10 +24,12 @@ import {
 } from "@mui/material";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
+import { useEquationBuilderStore } from "../../../stores";
 
 export function EquationPreview() {
-  const { latexExpression, variables, expression } = useEquationBuilder();
+  const latexExpression = useEquationBuilderStore((state) => state.latexExpression);
+  const variables = useEquationBuilderStore((state) => state.variables);
+  const expression = useEquationBuilderStore((state) => state.expression);
   const [copySuccess, setCopySuccess] = useState(false);
   const [fontSize, setFontSize] = useState(24); // Starting font size in pixels
   const contentRef = useRef<HTMLDivElement>(null);

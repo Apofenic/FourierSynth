@@ -18,22 +18,22 @@ import {
   SequencerControls,
   EffectsControls,
 } from "./components";
-import { useSynthControls } from "./contexts/SynthControlsContext";
-import { useAudioEngine } from "./contexts/AudioEngineContext";
+import { useSynthControlsStore, useAudioEngineStore } from "./stores";
 import { theme } from "./theme";
 
 function App() {
   const [activeTab, setActiveTab] = React.useState(0);
   const [activeOsc, setActiveOsc] = React.useState(0);
 
-  const { isPlaying, setIsPlaying, updateFrequency } = useAudioEngine();
-  const {
-    keyboardNotes,
-    keyboardEnabled,
-    activeKey,
-    setActiveKey,
-    updateKeyboardNoteState,
-  } = useSynthControls();
+  const isPlaying = useAudioEngineStore((state) => state.isPlaying);
+  const setIsPlaying = useAudioEngineStore((state) => state.setIsPlaying);
+  const updateFrequency = useAudioEngineStore((state) => state.updateFrequency);
+  
+  const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
+  const keyboardEnabled = useSynthControlsStore((state) => state.keyboardEnabled);
+  const activeKey = useSynthControlsStore((state) => state.activeKey);
+  const setActiveKey = useSynthControlsStore((state) => state.setActiveKey);
+  const updateKeyboardNoteState = useSynthControlsStore((state) => state.updateKeyboardNoteState);
 
   // Use refs to access the latest state without triggering effect re-runs
   const keyboardNotesRef = useRef(keyboardNotes);

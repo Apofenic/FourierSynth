@@ -1,6 +1,6 @@
 import React from "react";
 import { Paper, Typography, Box } from "@mui/material";
-import { useSynthControls } from "../contexts/SynthControlsContext";
+import { useSynthControlsStore } from "../stores";
 
 /**
  * KeyboardControls component
@@ -8,7 +8,11 @@ import { useSynthControls } from "../contexts/SynthControlsContext";
  * Handles keydown/keyup events to trigger notes
  */
 export const KeyboardControls: React.FC = () => {
-  const { keyboardNotes, keyboardEnabled, activeKey } = useSynthControls();
+  const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
+  const keyboardEnabled = useSynthControlsStore(
+    (state) => state.keyboardEnabled
+  );
+  const activeKey = useSynthControlsStore((state) => state.activeKey);
 
   return (
     <Paper sx={{ p: 2, mt: 2 }}>
@@ -40,8 +44,8 @@ export const KeyboardControls: React.FC = () => {
               bgcolor: note.isActive
                 ? "secondary.main"
                 : note.note.includes("#")
-                ? "#333"
-                : "#fff",
+                  ? "#333"
+                  : "#fff",
               color: note.note.includes("#") ? "#fff" : "#000",
               border: "1px solid #666",
               boxShadow: note.isActive ? 4 : 1,

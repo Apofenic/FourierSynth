@@ -43,7 +43,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import { useDrop } from "react-dnd";
-import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
+import { useEquationBuilderStore } from "../../../stores";
 
 /**
  * Props for EquationInput component
@@ -72,8 +72,9 @@ export const EquationInput = forwardRef<
   EquationInputHandle,
   EquationInputProps
 >(({ maxLength = 200 }, ref) => {
-  const { expression, validationResult, updateExpression } =
-    useEquationBuilder();
+  const expression = useEquationBuilderStore((state) => state.expression);
+  const validationResult = useEquationBuilderStore((state) => state.validationResult);
+  const updateExpression = useEquationBuilderStore((state) => state.updateExpression);
 
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [localExpression, setLocalExpression] = useState<string>(expression);

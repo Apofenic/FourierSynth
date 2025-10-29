@@ -1,6 +1,6 @@
 import React from "react";
 import { Typography, Box, Paper } from "@mui/material";
-import { useAudioEngine } from "../../contexts/AudioEngineContext";
+import { useAudioEngineStore } from "../../stores";
 import { FilterControls, EnvelopeControls, LFOControls } from "..";
 
 /**
@@ -8,7 +8,9 @@ import { FilterControls, EnvelopeControls, LFOControls } from "..";
  * Provides controls for the 4-pole low-pass filter (cutoff frequency and resonance)
  */
 export const SubtractiveControls: React.FC = () => {
-  const { cutoffFrequency, resonance, updateFilter } = useAudioEngine();
+  const cutoffFrequency = useAudioEngineStore((state) => state.cutoffFrequency);
+  const resonance = useAudioEngineStore((state) => state.resonance);
+  const updateFilter = useAudioEngineStore((state) => state.updateFilter);
 
   const handleCutoffChange = (_: Event, value: number | number[]) => {
     const newCutoff = value as number;

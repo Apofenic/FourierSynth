@@ -1,15 +1,15 @@
 import React from "react";
 import { Paper, Typography, Stack, Grid, Slider } from "@mui/material";
-import { useSynthControls } from "../../contexts/SynthControlsContext";
-import { useAudioEngine } from "../../contexts/AudioEngineContext";
+import { useSynthControlsStore, useAudioEngineStore } from "../../stores";
 
 /**
  * HarmonicsControl component
  * Provides sliders to control the amplitude and phase of each harmonic
  */
 export const HarmonicsControl: React.FC = () => {
-  const { harmonics, updateHarmonic } = useSynthControls();
-  const { frequency } = useAudioEngine();
+  const harmonics = useSynthControlsStore((state) => state.harmonics);
+  const updateHarmonic = useSynthControlsStore((state) => state.updateHarmonic);
+  const frequency = useAudioEngineStore((state) => state.frequency);
 
   return (
     <Paper sx={{ height: "100%", overflow: "auto", p: 2 }}>

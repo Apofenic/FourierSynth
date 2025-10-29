@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { useEquationBuilder } from "../../contexts/EquationBuilderContext";
-import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { useEquationBuilderStore, useSynthControlsStore } from "../../stores";
 import {
   calculateWaveform,
   calculateWaveformFromExpression,
@@ -15,14 +14,23 @@ import {
  * to generate the waveform from the equation-defined partials.
  */
 export const HybridWaveformSync: React.FC = () => {
-  const equationBuilder = useEquationBuilder();
-  const { harmonics, setWaveformData, activeTab } = useSynthControls();
+  const compiledFunction = useEquationBuilderStore(
+    (state) => state.compiledFunction
+  );
+  const expression = useEquationBuilderStore((state) => state.expression);
+  const validationResult = useEquationBuilderStore(
+    (state) => state.validationResult
+  );
+  const variables = useEquationBuilderStore((state) => state.variables);
+
+  const harmonics = useSynthControlsStore((state) => state.harmonics);
+  const setWaveformData = useSynthControlsStore(
+    (state) => state.setWaveformData
+  );
+  const activeTab = useSynthControlsStore((state) => state.activeTab);
 
   // Create a stable serialized version of variables for dependency comparison
-  const variablesKey = useMemo(
-    () => JSON.stringify(equationBuilder.variables),
-    [equationBuilder.variables]
-  );
+  const variablesKey = useMemo(() => JSON.stringify(variables), [variables]);
 
   useEffect(() => {
     try {
@@ -30,13 +38,10 @@ export const HybridWaveformSync: React.FC = () => {
       if (activeTab === "equation") {
         // Generate waveform directly from equation (which includes summation)
         let equationWaveform: number[] = [];
-        if (
-          equationBuilder.compiledFunction &&
-          equationBuilder.validationResult.isValid
-        ) {
+        if (compiledFunction && validationResult.isValid) {
           equationWaveform = calculateWaveformFromExpression(
-            equationBuilder.compiledFunction,
-            equationBuilder.variables,
+            compiledFunction,
+            variables,
             2048
           );
         }
@@ -60,7 +65,7 @@ export const HybridWaveformSync: React.FC = () => {
         setWaveformData(combinedWaveform);
       } else {
         // When on harmonic tab, use the harmonic controls
-        const nValue = equationBuilder.variables.n?.value ?? 1;
+        const nValue = variables.n?.value ?? 1;
         const maxHarmonics = Math.min(Math.round(nValue), harmonics.length);
         const activeHarmonics = harmonics.slice(0, maxHarmonics);
         const harmonicWaveform = calculateWaveform(activeHarmonics);
@@ -82,12 +87,13 @@ export const HybridWaveformSync: React.FC = () => {
     }
   }, [
     harmonics,
-    equationBuilder.compiledFunction,
-    equationBuilder.expression,
-    equationBuilder.validationResult.isValid,
+    compiledFunction,
+    expression,
+    validationResult.isValid,
     activeTab,
     variablesKey, // Use the memoized key
     setWaveformData,
+    variables,
   ]);
 
   // This component doesn't render anything

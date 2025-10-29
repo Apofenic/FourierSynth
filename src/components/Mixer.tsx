@@ -7,7 +7,7 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
-import { useSynthControls } from "../contexts/SynthControlsContext";
+import { useSynthControlsStore } from "../stores";
 import { Dial } from "./Dial";
 
 export const Mixer: React.FC = () => {
@@ -16,7 +16,13 @@ export const Mixer: React.FC = () => {
   const [osc2Volume, setOsc2Volume] = React.useState<number>(75);
   const [osc3Volume, setOsc3Volume] = React.useState<number>(75);
   const [osc4Volume, setOsc4Volume] = React.useState<number>(75);
-  const { keyboardEnabled, setKeyboardEnabled } = useSynthControls();
+
+  const keyboardEnabled = useSynthControlsStore(
+    (state) => state.keyboardEnabled
+  );
+  const setKeyboardEnabled = useSynthControlsStore(
+    (state) => state.setKeyboardEnabled
+  );
 
   const handleKeyboardToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeyboardEnabled(event.target.checked);
