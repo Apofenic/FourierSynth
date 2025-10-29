@@ -2,6 +2,11 @@
   "name": "osc-app",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "yarn@1.22.0",
+  "engines": {
+    "node": ">=14.0.0",
+    "yarn": ">=1.22.0"
+  },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -27,6 +32,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "preinstall": "npx only-allow yarn",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -63,6 +69,7 @@
     ]
   },
   "devDependencies": {
+    "@welldone-software/why-did-you-render": "^10.0.1",
     "identity-obj-proxy": "^3.0.0",
     "prettier": "^3.6.2"
   }

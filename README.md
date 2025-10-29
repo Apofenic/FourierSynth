@@ -53,7 +53,9 @@ src/
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) (v14 or newer recommended)
-- [npm](https://www.npmjs.com/) (comes with Node.js)
+- [Yarn](https://yarnpkg.com/) (v1.22+ recommended)
+
+> **Note:** This project uses Yarn exclusively. npm commands will not work due to the `packageManager` field in `package.json`. If you don't have Yarn installed, run: `npm install -g yarn`
 
 ### Installation
 
@@ -62,7 +64,7 @@ Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/Apofenic/FourierSynth.git
 cd FourierSynth
-npm install
+yarn install
 ```
 
 ### Running the App
@@ -70,7 +72,7 @@ npm install
 Start the development server:
 
 ```bash
-npm start
+yarn start
 ```
 
 Open [http://localhost:5847](http://localhost:5847) in your browser to use the app.
@@ -79,10 +81,12 @@ Open [http://localhost:5847](http://localhost:5847) in your browser to use the a
 
 ### Available Scripts
 
-- `npm start` – Run the app in development mode
-- `npm test` – Launch the test runner
-- `npm run build` – Build the app for production
-- `npm run eject` – Eject configuration (not recommended unless necessary)
+- `yarn start` – Run the app in development mode
+- `yarn test` – Launch the test runner
+- `yarn build` – Build the app for production
+- `yarn eject` – Eject configuration (not recommended unless necessary)
+- `yarn format` – Format code with Prettier
+- `yarn format:check` – Check code formatting
 
 ## License
 
