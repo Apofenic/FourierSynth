@@ -21,9 +21,14 @@ export const theme = createTheme({
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: "1.5rem",
-      fontWeight: 500,
-      marginBottom: "1rem",
+      fontFamily: '"TitleFont", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontSize: "3rem",
+      fontWeight: 200,
+      background:
+        "linear-gradient(180deg, #ffd6beff 20%, #fe5d23ff 40%, #623cfaff 70%)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text",
     },
     h3: {
       fontSize: "1rem",

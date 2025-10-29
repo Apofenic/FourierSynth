@@ -122,7 +122,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1.3fr 1fr",
+          gridTemplateRows: "1fr 20fr 15fr",
           gap: 1,
           padding: "0.5rem",
           height: "100vh",
@@ -131,13 +131,8 @@ function App() {
       >
         {/* Header Section - Row 1, spans all 12 columns */}
         <Box sx={{ gridColumn: "1 / -1", gridRow: 1 }}>
-          <Typography
-            variant="h1"
-            align="center"
-            gutterBottom
-            sx={{ margin: 0 }}
-          >
-            FourierSynth
+          <Typography variant="h1" align="left" sx={{ margin: 0 }}>
+            Sigmatron
           </Typography>
         </Box>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
