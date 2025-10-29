@@ -287,7 +287,7 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
             false,
             "_parseExpressionError"
           );
-          
+
           // Clear waveform on parse error
           set({ waveformData: [] }, false, "_clearWaveformOnError");
         }

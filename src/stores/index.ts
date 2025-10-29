@@ -8,11 +8,12 @@
 // Store exports
 export { useSynthControlsStore } from "./useSynthControlsStore";
 export { useEquationBuilderStore } from "./useEquationBuilderStore";
-// export { useAudioEngineStore } from "./useAudioEngineStore"; // TODO: Implement in Phase 2.3
+export { useAudioEngineStore, audioNodes } from "./useAudioEngineStore";
 
 // Import stores for selector type inference
 import { useSynthControlsStore } from "./useSynthControlsStore";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
+import { useAudioEngineStore } from "./useAudioEngineStore";
 
 // Re-export types for convenience
 export type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";
@@ -73,4 +74,21 @@ export const selectHasWaveformData = (
   state: ReturnType<typeof useEquationBuilderStore.getState>
 ) => {
   return state.waveformData.length > 0;
+};
+
+// AudioEngine selectors
+export const selectIsPlaying = (
+  state: ReturnType<typeof useAudioEngineStore.getState>
+) => {
+  return state.isPlaying;
+};
+
+export const selectAudioParameters = (
+  state: ReturnType<typeof useAudioEngineStore.getState>
+) => {
+  return {
+    frequency: state.frequency,
+    cutoffFrequency: state.cutoffFrequency,
+    resonance: state.resonance,
+  };
 };

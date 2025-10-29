@@ -14,7 +14,6 @@ interface SynthControlsStore {
   waveformData: Float32Array;
   keyboardEnabled: boolean;
   activeTab: "equation" | "harmonic";
-
   // Actions
   updateHarmonic: (
     index: number,
