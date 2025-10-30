@@ -1,0 +1,28 @@
+/* Custom font declarations */
+
+@font-face {
+  font-family: "TitleFont";
+  src: url("./assets/fonts/titleFont.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* If you have multiple weights/styles, add more @font-face rules:
+
+@font-face {
+  font-family: 'YourFontName';
+  src: url('/fonts/your-font-bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'YourFontName';
+  src: url('/fonts/your-font-italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+*/

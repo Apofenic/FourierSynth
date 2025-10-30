@@ -4,10 +4,11 @@ import { EquationBuilder } from "./EquationBuilder";
 import { Box, Paper, Tabs, Tab } from "@mui/material";
 import { TunerControls } from "./TunerControls";
 import { HybridWaveformSync } from "./HybridWaveformSync";
-import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { useSynthControlsStore } from "../../stores";
 
 export const OscControls: React.FC = () => {
-  const { activeTab, setActiveTab } = useSynthControls();
+  const activeTab = useSynthControlsStore((state) => state.activeTab);
+  const setActiveTab = useSynthControlsStore((state) => state.setActiveTab);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue === 0 ? "equation" : "harmonic");

@@ -27,7 +27,7 @@ import {
 import SettingsIcon from "@mui/icons-material/Settings";
 import UndoIcon from "@mui/icons-material/Undo";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useEquationBuilder } from "../../../contexts/EquationBuilderContext";
+import { useEquationBuilderStore } from "../../../stores";
 import { VariableConfig } from "../../../types/equationBuilderTypes";
 
 interface ConfigDialogState {
@@ -43,13 +43,17 @@ interface ConfigDialogState {
  * Variables are automatically detected and controls are created on-the-fly.
  */
 export function VariableControlPanel() {
-  const {
-    variables,
-    updateVariable,
-    updateVariableConfig,
-    resetVariable,
-    resetAllVariables,
-  } = useEquationBuilder();
+  const variables = useEquationBuilderStore((state) => state.variables);
+  const updateVariable = useEquationBuilderStore(
+    (state) => state.updateVariable
+  );
+  const updateVariableConfig = useEquationBuilderStore(
+    (state) => state.updateVariableConfig
+  );
+  const resetVariable = useEquationBuilderStore((state) => state.resetVariable);
+  const resetAllVariables = useEquationBuilderStore(
+    (state) => state.resetAllVariables
+  );
 
   const [configDialog, setConfigDialog] = useState<ConfigDialogState>({
     open: false,

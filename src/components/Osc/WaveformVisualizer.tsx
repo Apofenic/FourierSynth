@@ -1,13 +1,13 @@
 import React, { useEffect, useRef } from "react";
 import { Paper, Typography } from "@mui/material";
-import { useSynthControls } from "../../contexts/SynthControlsContext";
+import { useSynthControlsStore } from "../../stores";
 
 /**
  * WaveformVisualizer component
  * Displays a real-time visualization of the synthesized waveform on a canvas
  */
 export const WaveformVisualizer: React.FC = () => {
-  const { waveformData } = useSynthControls();
+  const waveformData = useSynthControlsStore((state) => state.waveformData);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Draw the waveform on canvas whenever waveformData changes
   useEffect(() => {

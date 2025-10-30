@@ -18,22 +18,27 @@ import {
   SequencerControls,
   EffectsControls,
 } from "./components";
-import { useSynthControls } from "./contexts/SynthControlsContext";
-import { useAudioEngine } from "./contexts/AudioEngineContext";
+import { useSynthControlsStore, useAudioEngineStore } from "./stores";
 import { theme } from "./theme";
 
 function App() {
   const [activeTab, setActiveTab] = React.useState(0);
   const [activeOsc, setActiveOsc] = React.useState(0);
 
-  const { isPlaying, setIsPlaying, updateFrequency } = useAudioEngine();
-  const {
-    keyboardNotes,
-    keyboardEnabled,
-    activeKey,
-    setActiveKey,
-    updateKeyboardNoteState,
-  } = useSynthControls();
+  const isPlaying = useAudioEngineStore((state) => state.isPlaying);
+  const startAudio = useAudioEngineStore((state) => state.startAudio);
+  const stopAudio = useAudioEngineStore((state) => state.stopAudio);
+  const updateFrequency = useAudioEngineStore((state) => state.updateFrequency);
+
+  const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
+  const keyboardEnabled = useSynthControlsStore(
+    (state) => state.keyboardEnabled
+  );
+  const activeKey = useSynthControlsStore((state) => state.activeKey);
+  const setActiveKey = useSynthControlsStore((state) => state.setActiveKey);
+  const updateKeyboardNoteState = useSynthControlsStore(
+    (state) => state.updateKeyboardNoteState
+  );
 
   // Use refs to access the latest state without triggering effect re-runs
   const keyboardNotesRef = useRef(keyboardNotes);
@@ -63,11 +68,11 @@ function App() {
         setActiveKey(keyPressed);
 
         if (!isPlayingRef.current) {
-          setIsPlaying(true);
+          startAudio();
         }
       }
     },
-    [updateFrequency, updateKeyboardNoteState, setActiveKey, setIsPlaying]
+    [updateFrequency, updateKeyboardNoteState, setActiveKey, startAudio]
   );
 
   const handleKeyUp = useCallback(
@@ -89,11 +94,11 @@ function App() {
         );
 
         if (!anyKeysActive && isPlayingRef.current) {
-          setIsPlaying(false);
+          stopAudio();
         }
       }
     },
-    [updateKeyboardNoteState, setActiveKey, setIsPlaying]
+    [updateKeyboardNoteState, setActiveKey, stopAudio]
   );
 
   // Global keyboard event listeners
@@ -122,7 +127,7 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "auto 1.3fr 1fr",
+          gridTemplateRows: "1fr 20fr 15fr",
           gap: 1,
           padding: "0.5rem",
           height: "100vh",
@@ -131,13 +136,8 @@ function App() {
       >
         {/* Header Section - Row 1, spans all 12 columns */}
         <Box sx={{ gridColumn: "1 / -1", gridRow: 1 }}>
-          <Typography
-            variant="h1"
-            align="center"
-            gutterBottom
-            sx={{ margin: 0 }}
-          >
-            FourierSynth
+          <Typography variant="h1" align="left" sx={{ margin: 0 }}>
+            Sigmatron
           </Typography>
         </Box>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}

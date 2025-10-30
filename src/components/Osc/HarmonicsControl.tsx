@@ -1,23 +1,37 @@
 import React from "react";
 import { Paper, Typography, Stack, Grid, Slider } from "@mui/material";
-import { useSynthControls } from "../../contexts/SynthControlsContext";
-import { useAudioEngine } from "../../contexts/AudioEngineContext";
+import {
+  useSynthControlsStore,
+  useAudioEngineStore,
+  useEquationBuilderStore,
+} from "../../stores";
 
 /**
  * HarmonicsControl component
  * Provides sliders to control the amplitude and phase of each harmonic
  */
 export const HarmonicsControl: React.FC = () => {
-  const { harmonics, updateHarmonic } = useSynthControls();
-  const { frequency } = useAudioEngine();
+  const harmonics = useSynthControlsStore((state) => state.harmonics);
+  const updateHarmonic = useSynthControlsStore((state) => state.updateHarmonic);
+  const frequency = useAudioEngineStore((state) => state.frequency);
+  const nValue = useEquationBuilderStore(
+    (state) => state.variables.n?.value ?? 8
+  );
+
+  // Determine how many harmonics to display based on 'n' variable
+  const numHarmonicsToDisplay = Math.min(
+    Math.max(1, Math.round(nValue)),
+    harmonics.length
+  );
+  const displayedHarmonics = harmonics.slice(0, numHarmonicsToDisplay);
 
   return (
     <Paper sx={{ height: "100%", overflow: "auto", p: 2 }}>
       <Typography variant="h3" align="center">
-        Harmonic Components
+        Harmonic Components (n={numHarmonicsToDisplay})
       </Typography>
       <Stack spacing={1.5}>
-        {harmonics.map((harmonic, idx) => (
+        {displayedHarmonics.map((harmonic, idx) => (
           <Paper
             key={idx}
             sx={{
@@ -72,3 +86,6 @@ export const HarmonicsControl: React.FC = () => {
     </Paper>
   );
 };
+
+// Mark for Why Did You Render tracking
+HarmonicsControl.whyDidYouRender = true;
