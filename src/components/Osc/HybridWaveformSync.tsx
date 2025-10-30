@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useEquationBuilderStore, useSynthControlsStore } from "../../stores";
 import {
   calculateWaveform,
@@ -22,15 +22,44 @@ export const HybridWaveformSync: React.FC = () => {
     (state) => state.validationResult
   );
   const variables = useEquationBuilderStore((state) => state.variables);
+  const equationWaveformData = useEquationBuilderStore(
+    (state) => state.waveformData
+  );
 
   const harmonics = useSynthControlsStore((state) => state.harmonics);
   const setWaveformData = useSynthControlsStore(
     (state) => state.setWaveformData
   );
+  const syncHarmonicsFromWaveform = useSynthControlsStore(
+    (state) => state.syncHarmonicsFromWaveform
+  );
   const activeTab = useSynthControlsStore((state) => state.activeTab);
+
+  // Track previous tab to detect tab switches
+  const prevTabRef = useRef<"equation" | "harmonic">(activeTab);
 
   // Create a stable serialized version of variables for dependency comparison
   const variablesKey = useMemo(() => JSON.stringify(variables), [variables]);
+
+  // Detect tab switch from equation to harmonic and sync harmonics
+  useEffect(() => {
+    const switchedToHarmonic =
+      prevTabRef.current === "equation" && activeTab === "harmonic";
+
+    if (switchedToHarmonic && equationWaveformData.length > 0) {
+      // Get the number of harmonics to extract from the 'n' variable
+      const nValue = Math.min(
+        Math.max(1, Math.round(variables.n?.value ?? 8)),
+        8
+      );
+
+      // Sync harmonics from the equation's waveform
+      syncHarmonicsFromWaveform(equationWaveformData, nValue);
+    }
+
+    // Update previous tab reference
+    prevTabRef.current = activeTab;
+  }, [activeTab, equationWaveformData, variables.n, syncHarmonicsFromWaveform]);
 
   useEffect(() => {
     try {
@@ -70,11 +99,12 @@ export const HybridWaveformSync: React.FC = () => {
         const activeHarmonics = harmonics.slice(0, maxHarmonics);
         const harmonicWaveform = calculateWaveform(activeHarmonics);
 
-        // Normalize waveform
+        // Only normalize if clipping would occur (max > 1.0)
+        // This preserves amplitude changes while preventing distortion
         const maxAmplitude = Math.max(
           ...Array.from(harmonicWaveform).map(Math.abs)
         );
-        if (maxAmplitude > 1e-10) {
+        if (maxAmplitude > 1.0) {
           for (let i = 0; i < harmonicWaveform.length; i++) {
             harmonicWaveform[i] /= maxAmplitude;
           }

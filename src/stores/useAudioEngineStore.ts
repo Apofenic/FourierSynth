@@ -169,6 +169,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const waveformData = useEquationBuilderStore.getState().waveformData;
         const harmonics = useSynthControlsStore.getState().harmonics;
 
+        // Check if waveformData has data
+        if (!waveformData || waveformData.length === 0) {
+          console.warn("Cannot create audio: waveformData is empty");
+          return;
+        }
+
         // Initialize audio context if needed
         if (!audioNodes.audioContext) {
           audioNodes.audioContext = new (window.AudioContext ||

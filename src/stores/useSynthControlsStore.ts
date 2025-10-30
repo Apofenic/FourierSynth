@@ -1,6 +1,24 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";
+import { calculateWaveform } from "../utils/helperFunctions";
+import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
+
+/**
+ * Generate initial waveform from first harmonic (sine wave)
+ */
+const initialHarmonics: HarmonicParam[] = [
+  { amplitude: 1.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+  { amplitude: 0.0, phase: 0.5 * Math.PI },
+];
+
+const initialWaveformData = calculateWaveform(initialHarmonics);
 
 /**
  * SynthControlsStore State Interface
@@ -26,6 +44,11 @@ interface SynthControlsStore {
   setWaveformData: (data: Float32Array) => void;
   setKeyboardEnabled: (enabled: boolean) => void;
   setActiveTab: (tab: "equation" | "harmonic") => void;
+  syncHarmonicsFromWaveform: (
+    waveform: Float32Array | number[],
+    numHarmonics: number
+  ) => void;
+  setHarmonics: (harmonics: HarmonicParam[]) => void;
 }
 
 /**
@@ -42,16 +65,7 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
   devtools(
     (set) => ({
       // Initial State
-      harmonics: [
-        { amplitude: 1.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-        { amplitude: 0.0, phase: 0.5 * Math.PI },
-      ],
+      harmonics: initialHarmonics,
       keyboardNotes: [
         { key: "a", note: "C3", frequency: 130.81, isActive: false },
         { key: "w", note: "C#3", frequency: 138.59, isActive: false },
@@ -72,7 +86,7 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         { key: ";", note: "E4", frequency: 329.63, isActive: false },
       ],
       activeKey: null,
-      waveformData: new Float32Array(2048).fill(0),
+      waveformData: initialWaveformData,
       keyboardEnabled: true,
       activeTab: "equation",
 
@@ -120,6 +134,26 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         set({ keyboardEnabled: enabled }, false, "setKeyboardEnabled"),
 
       setActiveTab: (tab) => set({ activeTab: tab }, false, "setActiveTab"),
+
+      syncHarmonicsFromWaveform: (waveform, numHarmonics) => {
+        // Analyze waveform and extract harmonic components
+        const extractedHarmonics = analyzeWaveformToHarmonics(
+          waveform,
+          numHarmonics
+        );
+
+        // Pad with zeros if we have fewer harmonics than the fixed 8
+        while (extractedHarmonics.length < 8) {
+          extractedHarmonics.push({ amplitude: 0, phase: 0 });
+        }
+
+        // Trim if we extracted more than 8
+        const finalHarmonics = extractedHarmonics.slice(0, 8);
+
+        set({ harmonics: finalHarmonics }, false, "syncHarmonicsFromWaveform");
+      },
+
+      setHarmonics: (harmonics) => set({ harmonics }, false, "setHarmonics"),
     }),
     {
       name: "SynthControls",

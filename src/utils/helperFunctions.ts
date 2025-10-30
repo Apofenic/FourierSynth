@@ -21,13 +21,8 @@ export const calculateWaveform = (harmonics:HarmonicParam[]) => {
       // Normalize to the range [-1, 1]
       newWaveform[i] = value;
     }
-    // Normalize the waveform to prevent clipping
-    const maxAmplitude = Math.max(...Array.from(newWaveform).map(Math.abs));
-    if (maxAmplitude > 1) {
-      for (let i = 0; i < newWaveform.length; i++) {
-        newWaveform[i] /= maxAmplitude;
-      }
-    }
+    // No automatic normalization - let the caller decide
+    // This allows amplitude changes to be visible in the visualizer
     return newWaveform;
 };
 

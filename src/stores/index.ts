@@ -5,15 +5,15 @@
  * Stores manage application state using Zustand's lightweight state management.
  */
 
-// Store exports
-export { useSynthControlsStore } from "./useSynthControlsStore";
-export { useEquationBuilderStore } from "./useEquationBuilderStore";
-export { useAudioEngineStore, audioNodes } from "./useAudioEngineStore";
-
 // Import stores for selector type inference
 import { useSynthControlsStore } from "./useSynthControlsStore";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
 import { useAudioEngineStore } from "./useAudioEngineStore";
+
+// Store exports
+export { useSynthControlsStore } from "./useSynthControlsStore";
+export { useEquationBuilderStore } from "./useEquationBuilderStore";
+export { useAudioEngineStore, audioNodes } from "./useAudioEngineStore";
 
 // Re-export types for convenience
 export type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";

@@ -26,14 +26,19 @@ function App() {
   const [activeOsc, setActiveOsc] = React.useState(0);
 
   const isPlaying = useAudioEngineStore((state) => state.isPlaying);
-  const setIsPlaying = useAudioEngineStore((state) => state.setIsPlaying);
+  const startAudio = useAudioEngineStore((state) => state.startAudio);
+  const stopAudio = useAudioEngineStore((state) => state.stopAudio);
   const updateFrequency = useAudioEngineStore((state) => state.updateFrequency);
-  
+
   const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
-  const keyboardEnabled = useSynthControlsStore((state) => state.keyboardEnabled);
+  const keyboardEnabled = useSynthControlsStore(
+    (state) => state.keyboardEnabled
+  );
   const activeKey = useSynthControlsStore((state) => state.activeKey);
   const setActiveKey = useSynthControlsStore((state) => state.setActiveKey);
-  const updateKeyboardNoteState = useSynthControlsStore((state) => state.updateKeyboardNoteState);
+  const updateKeyboardNoteState = useSynthControlsStore(
+    (state) => state.updateKeyboardNoteState
+  );
 
   // Use refs to access the latest state without triggering effect re-runs
   const keyboardNotesRef = useRef(keyboardNotes);
@@ -63,11 +68,11 @@ function App() {
         setActiveKey(keyPressed);
 
         if (!isPlayingRef.current) {
-          setIsPlaying(true);
+          startAudio();
         }
       }
     },
-    [updateFrequency, updateKeyboardNoteState, setActiveKey, setIsPlaying]
+    [updateFrequency, updateKeyboardNoteState, setActiveKey, startAudio]
   );
 
   const handleKeyUp = useCallback(
@@ -89,11 +94,11 @@ function App() {
         );
 
         if (!anyKeysActive && isPlayingRef.current) {
-          setIsPlaying(false);
+          stopAudio();
         }
       }
     },
-    [updateKeyboardNoteState, setActiveKey, setIsPlaying]
+    [updateKeyboardNoteState, setActiveKey, stopAudio]
   );
 
   // Global keyboard event listeners

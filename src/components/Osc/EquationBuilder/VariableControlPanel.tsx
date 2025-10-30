@@ -44,10 +44,16 @@ interface ConfigDialogState {
  */
 export function VariableControlPanel() {
   const variables = useEquationBuilderStore((state) => state.variables);
-  const updateVariable = useEquationBuilderStore((state) => state.updateVariable);
-  const updateVariableConfig = useEquationBuilderStore((state) => state.updateVariableConfig);
+  const updateVariable = useEquationBuilderStore(
+    (state) => state.updateVariable
+  );
+  const updateVariableConfig = useEquationBuilderStore(
+    (state) => state.updateVariableConfig
+  );
   const resetVariable = useEquationBuilderStore((state) => state.resetVariable);
-  const resetAllVariables = useEquationBuilderStore((state) => state.resetAllVariables);
+  const resetAllVariables = useEquationBuilderStore(
+    (state) => state.resetAllVariables
+  );
 
   const [configDialog, setConfigDialog] = useState<ConfigDialogState>({
     open: false,

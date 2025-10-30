@@ -27,7 +27,9 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { useEquationBuilderStore } from "../../../stores";
 
 export function EquationPreview() {
-  const latexExpression = useEquationBuilderStore((state) => state.latexExpression);
+  const latexExpression = useEquationBuilderStore(
+    (state) => state.latexExpression
+  );
   const variables = useEquationBuilderStore((state) => state.variables);
   const expression = useEquationBuilderStore((state) => state.expression);
   const [copySuccess, setCopySuccess] = useState(false);

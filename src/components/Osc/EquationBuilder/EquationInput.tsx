@@ -73,8 +73,12 @@ export const EquationInput = forwardRef<
   EquationInputProps
 >(({ maxLength = 200 }, ref) => {
   const expression = useEquationBuilderStore((state) => state.expression);
-  const validationResult = useEquationBuilderStore((state) => state.validationResult);
-  const updateExpression = useEquationBuilderStore((state) => state.updateExpression);
+  const validationResult = useEquationBuilderStore(
+    (state) => state.validationResult
+  );
+  const updateExpression = useEquationBuilderStore(
+    (state) => state.updateExpression
+  );
 
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [localExpression, setLocalExpression] = useState<string>(expression);

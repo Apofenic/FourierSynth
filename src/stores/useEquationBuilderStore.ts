@@ -87,7 +87,11 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
       variables: initialVariables,
       latexExpression: initialLatex,
       validationResult: { isValid: true, errors: [] },
-      waveformData: [],
+      waveformData: calculateWaveformFromExpression(
+        initialCompiled,
+        initialVariables,
+        2048
+      ),
 
       // Public Actions
 
