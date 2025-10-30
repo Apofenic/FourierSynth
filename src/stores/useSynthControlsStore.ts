@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";
+import type { HarmonicParam, SynthControlsStore } from "../types";
 import { calculateWaveform } from "../utils/helperFunctions";
 import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
 
@@ -19,37 +19,6 @@ const initialHarmonics: HarmonicParam[] = [
 ];
 
 const initialWaveformData = calculateWaveform(initialHarmonics);
-
-/**
- * SynthControlsStore State Interface
- * Manages synthesis controls, harmonics, keyboard state, and waveform generation
- */
-interface SynthControlsStore {
-  // State
-  harmonics: HarmonicParam[];
-  keyboardNotes: KeyboardNote[];
-  activeKey: string | null;
-  waveformData: Float32Array;
-  keyboardEnabled: boolean;
-  activeTab: "equation" | "harmonic";
-  // Actions
-  updateHarmonic: (
-    index: number,
-    paramType: "amplitude" | "phase",
-    value: number
-  ) => void;
-  updateKeyboardNoteState: (key: string, isActive: boolean) => void;
-  setActiveKey: (key: string | null) => void;
-  clearActiveKey: (key: string) => void;
-  setWaveformData: (data: Float32Array) => void;
-  setKeyboardEnabled: (enabled: boolean) => void;
-  setActiveTab: (tab: "equation" | "harmonic") => void;
-  syncHarmonicsFromWaveform: (
-    waveform: Float32Array | number[],
-    numHarmonics: number
-  ) => void;
-  setHarmonics: (harmonics: HarmonicParam[]) => void;
-}
 
 /**
  * SynthControls Store
@@ -160,3 +129,26 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
     }
   )
 );
+
+// SynthControls selectors
+export const selectActiveNote = (
+  state: ReturnType<typeof useSynthControlsStore.getState>
+) => {
+  if (!state.activeKey) return null;
+  return (
+    state.keyboardNotes.find((note) => note.key === state.activeKey) || null
+  );
+};
+
+export const selectActiveFrequency = (
+  state: ReturnType<typeof useSynthControlsStore.getState>
+) => {
+  const activeNote = selectActiveNote(state);
+  return activeNote?.frequency || 220; // Default to A3
+};
+
+export const selectNonZeroHarmonics = (
+  state: ReturnType<typeof useSynthControlsStore.getState>
+) => {
+  return state.harmonics.filter((h) => h.amplitude > 0);
+};

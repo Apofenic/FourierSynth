@@ -1,19 +1,22 @@
 # FourierSynth
 
-A web-based Fourier series synthesizer and visualization tool built with React and TypeScript. FourierSynth demonstrates how complex waveforms can be constructed from simple sine waves using Fourier series, with real-time audio synthesis and visualization.
+A web-based Fourier series synthesizer and visualization tool built with React, TypeScript, and Zustand. FourierSynth demonstrates how complex waveforms can be constructed from simple sine waves using Fourier series, with real-time audio synthesis and visualization. The application leverages Zustand for efficient state management, ensuring smooth interactions and performance.
 
 ## Features
 
-- **Interactive Fourier Series Synthesis**: Adjust up to 8 harmonics with amplitude and phase control
-- **Real-time Audio Playback**: Web Audio API-based synthesis with 4-pole lowpass filter
-- **Waveform Visualization**: Canvas-based real-time waveform display
-- **Mathematical Equation Display**: LaTeX-rendered Fourier series equation with fallback
-- **Visual Keyboard**: Computer keyboard-to-note mapping with visual feedback
-- **Subtractive Synthesis**: Adjustable filter cutoff and resonance controls
+- **Customizable Fourier Series**: Adjust up to 8 harmonics with precise amplitude and phase controls.
+- **Real-time Audio Synthesis**: Generate and play waveforms using the Web Audio API with low-latency performance.
+- **Dynamic Waveform Visualization**: Real-time canvas rendering of waveforms, updated with every user interaction.
+- **Equation Builder**: Create and visualize mathematical equations that define waveforms, with LaTeX rendering support.
+- **Interactive Keyboard**: Play notes using a virtual keyboard with visual feedback and customizable key mappings.
+- **Advanced Synthesis Controls**: Fine-tune waveforms with adjustable filter cutoff, resonance, and waveform blending.
+- **State Management with Zustand**: Efficient and scalable state handling for harmonics, equations, and audio parameters.
+- **Performance Optimization**: Minimized re-renders and optimized rendering pipeline for smooth user experience.
+- **Modular Design**: Extensible architecture for adding new synthesis features and visualizations.
 
 ## Architecture
 
-FourierSynth uses a modern React architecture with Context API for state management:
+FourierSynth uses a modern React architecture with Zustand for state management:
 
 ### Project Structure
 
@@ -26,23 +29,26 @@ src/
 │   ├── HarmonicsControl.tsx      # Harmonic amplitude/phase sliders
 │   ├── SubtractiveControls.tsx   # Filter cutoff/resonance controls
 │   └── KeyboardControls.tsx      # Musical keyboard interface
-├── contexts/            # State Management
-│   ├── AudioEngineContext.tsx    # Web Audio API state & methods
-│   └── SynthControlsContext.tsx  # Synthesis parameters & keyboard state
+├── stores/              # Zustand Stores
+│   ├── useAudioEngineStore.ts    # Web Audio API state & methods
+│   ├── useSynthControlsStore.ts  # Synthesis parameters & keyboard state
+│   └── useEquationBuilderStore.ts # Equation builder state
 ├── hooks/               # Custom Hooks
 │   └── useAudioInitializer.ts    # Audio system initialization
 ├── types/               # TypeScript Definitions
 └── helperFunctions.ts   # Waveform calculation utilities
 ```
 
-### Context API
+### Zustand State Management
 
-- **AudioEngineContext**: Manages Web Audio API nodes, playback state, and real-time parameter updates
-- **SynthControlsContext**: Manages harmonics, keyboard state, and waveform data generation
+- **useAudioEngineStore**: Manages Web Audio API nodes, playback state, and real-time parameter updates
+- **useSynthControlsStore**: Manages harmonics, keyboard state, and waveform data generation
+- **useEquationBuilderStore**: Handles equation parsing, validation, and waveform synthesis
 
 ### Key Technologies
 
 - React 18+ with TypeScript
+- Zustand for state management
 - Web Audio API for synthesis
 - Material-UI (MUI) for UI components
 - KaTeX for mathematical equation rendering

@@ -27,68 +27,17 @@ export type {
   EquationTemplate,
 } from "../types/equationBuilderTypes";
 
-/**
- * Common selectors for stores
- *
- * These selectors can be used with stores to efficiently select specific state.
- * Example: const activeNote = useSynthControlsStore(selectActiveNote);
- */
+// Re-export selectors from each store
+export {
+  selectActiveNote,
+  selectActiveFrequency,
+  selectNonZeroHarmonics,
+} from "./useSynthControlsStore";
 
-// SynthControls selectors
-export const selectActiveNote = (
-  state: ReturnType<typeof useSynthControlsStore.getState>
-) => {
-  if (!state.activeKey) return null;
-  return (
-    state.keyboardNotes.find((note) => note.key === state.activeKey) || null
-  );
-};
+export {
+  selectIsValidExpression,
+  selectVariableCount,
+  selectHasWaveformData,
+} from "./useEquationBuilderStore";
 
-export const selectActiveFrequency = (
-  state: ReturnType<typeof useSynthControlsStore.getState>
-) => {
-  const activeNote = selectActiveNote(state);
-  return activeNote?.frequency || 220; // Default to A3
-};
-
-export const selectNonZeroHarmonics = (
-  state: ReturnType<typeof useSynthControlsStore.getState>
-) => {
-  return state.harmonics.filter((h) => h.amplitude > 0);
-};
-
-// EquationBuilder selectors
-export const selectIsValidExpression = (
-  state: ReturnType<typeof useEquationBuilderStore.getState>
-) => {
-  return state.validationResult.isValid && state.expression.length > 0;
-};
-
-export const selectVariableCount = (
-  state: ReturnType<typeof useEquationBuilderStore.getState>
-) => {
-  return Object.keys(state.variables).length;
-};
-
-export const selectHasWaveformData = (
-  state: ReturnType<typeof useEquationBuilderStore.getState>
-) => {
-  return state.waveformData.length > 0;
-};
-
-// AudioEngine selectors
-export const selectIsPlaying = (
-  state: ReturnType<typeof useAudioEngineStore.getState>
-) => {
-  return state.isPlaying;
-};
-
-export const selectAudioParameters = (
-  state: ReturnType<typeof useAudioEngineStore.getState>
-) => {
-  return {
-    frequency: state.frequency,
-    cutoffFrequency: state.cutoffFrequency,
-    resonance: state.resonance,
-  };
-};
+export { selectIsPlaying, selectAudioParameters } from "./useAudioEngineStore";

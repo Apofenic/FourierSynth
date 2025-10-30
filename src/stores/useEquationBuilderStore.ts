@@ -1,13 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type {
-  EquationBuilderState,
   VariableConfig,
   ParsedExpression,
-  CompiledFunction,
-  ValidationResult,
   EquationTemplate,
-} from "../types/equationBuilderTypes";
+  EquationBuilderStore,
+} from "../types";
 import {
   parseExpression,
   extractVariables,
@@ -17,25 +15,6 @@ import {
   createDefaultVariableConfig,
 } from "../utils/expressionParser";
 import { calculateWaveformFromExpression } from "../utils/helperFunctions";
-
-/**
- * EquationBuilderStore State Interface
- * Manages mathematical equation parsing, validation, and waveform generation
- */
-interface EquationBuilderStore extends EquationBuilderState {
-  // Actions
-  updateExpression: (newExpression: string) => void;
-  updateVariable: (name: string, value: number) => void;
-  updateVariableConfig: (name: string, config: Partial<VariableConfig>) => void;
-  resetVariable: (name: string) => void;
-  resetAllVariables: () => void;
-  loadTemplate: (template: EquationTemplate) => void;
-
-  // Internal actions (prefixed with _)
-  _parseExpression: () => void;
-  _updateVariables: () => void;
-  _generateWaveform: () => void;
-}
 
 // Timeout ID for debounced parsing
 let parseTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -414,3 +393,22 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
     }
   )
 );
+
+// EquationBuilder selectors
+export const selectIsValidExpression = (
+  state: ReturnType<typeof useEquationBuilderStore.getState>
+) => {
+  return state.validationResult.isValid && state.expression.length > 0;
+};
+
+export const selectVariableCount = (
+  state: ReturnType<typeof useEquationBuilderStore.getState>
+) => {
+  return Object.keys(state.variables).length;
+};
+
+export const selectHasWaveformData = (
+  state: ReturnType<typeof useEquationBuilderStore.getState>
+) => {
+  return state.waveformData.length > 0;
+};

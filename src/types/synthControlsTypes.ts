@@ -1,4 +1,3 @@
-
 /**
  * Interface for harmonic parameters (amplitude and phase)
  */
@@ -17,35 +16,29 @@ export interface KeyboardNote {
   isActive: boolean;
 }
 
-/**
- * Type definition for the SynthControls context value
- * Provides access to synthesis parameters, keyboard state, and waveform data
- */
-export interface SynthControlsContextType {
-  // Harmonics state
+export interface SynthControlsStore {
+  // State
   harmonics: HarmonicParam[];
+  keyboardNotes: KeyboardNote[];
+  activeKey: string | null;
+  waveformData: Float32Array;
+  keyboardEnabled: boolean;
+  activeTab: "equation" | "harmonic";
+  // Actions
   updateHarmonic: (
     index: number,
     paramType: "amplitude" | "phase",
     value: number
   ) => void;
-
-  // Keyboard state
-  keyboardNotes: KeyboardNote[];
-  activeKey: string | null;
+  updateKeyboardNoteState: (key: string, isActive: boolean) => void;
   setActiveKey: (key: string | null) => void;
   clearActiveKey: (key: string) => void;
-  updateKeyboardNoteState: (key: string, isActive: boolean) => void;
-
-  // Waveform data for visualization
-  waveformData: Float32Array;
   setWaveformData: (data: Float32Array) => void;
-
-  // Keyboard enabled state
-  keyboardEnabled: boolean;
   setKeyboardEnabled: (enabled: boolean) => void;
-
-  // Tab state for UI navigation (equation builder vs harmonic controls)
-  activeTab: 'equation' | 'harmonic';
-  setActiveTab: (tab: 'equation' | 'harmonic') => void;
+  setActiveTab: (tab: "equation" | "harmonic") => void;
+  syncHarmonicsFromWaveform: (
+    waveform: Float32Array | number[],
+    numHarmonics: number
+  ) => void;
+  setHarmonics: (harmonics: HarmonicParam[]) => void;
 }

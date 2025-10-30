@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
 import { useSynthControlsStore } from "./useSynthControlsStore";
+import { AudioEngineState } from "../types";
 
 /**
  * External manager class for Web Audio API nodes
@@ -44,28 +45,6 @@ class AudioNodeManager {
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
-
-/**
- * AudioEngine store state
- */
-interface AudioEngineState {
-  // Playback state
-  isPlaying: boolean;
-  frequency: number;
-  cutoffFrequency: number;
-  resonance: number;
-
-  // Actions
-  startAudio: () => void;
-  stopAudio: () => void;
-  updateFrequency: (freq: number) => void;
-  updateFilter: (cutoff: number, resonance: number) => void;
-  setIsPlaying: (playing: boolean) => void;
-
-  // Internal methods
-  _initializeAudioContext: () => void;
-  _recreateAudio: () => void;
-}
 
 /**
  * Zustand store for AudioEngine
@@ -256,6 +235,22 @@ export const useAudioEngineStore = create<AudioEngineState>()(
   )
 );
 
+// AudioEngine selectors
+export const selectIsPlaying = (
+  state: ReturnType<typeof useAudioEngineStore.getState>
+) => {
+  return state.isPlaying;
+};
+
+export const selectAudioParameters = (
+  state: ReturnType<typeof useAudioEngineStore.getState>
+) => {
+  return {
+    frequency: state.frequency,
+    cutoffFrequency: state.cutoffFrequency,
+    resonance: state.resonance,
+  };
+};
 // Subscribe to waveformData changes to recreate audio
 useEquationBuilderStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
