@@ -15,6 +15,11 @@ export interface OscillatorParams {
   waveformData: Float32Array;
   volume: number; // 0-100 range for UI
   isActive: boolean;
+  detune: {
+    octave: number; // -3 to +3
+    semitone: number; // -12 to +12
+    cent: number; // -100 to +100
+  };
 }
 
 /**
@@ -58,4 +63,9 @@ export interface SynthControlsStore {
     numHarmonics: number
   ) => void;
   setHarmonics: (oscIndex: number, harmonics: HarmonicParam[]) => void;
+  updateDetune: (
+    oscIndex: number,
+    detuneType: "octave" | "semitone" | "cent",
+    value: number
+  ) => void;
 }

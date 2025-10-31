@@ -28,7 +28,9 @@ interface EquationBuilderProps {
 /**
  * Inner component that has access to context
  */
-const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex = 0 }) => {
+const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
+  oscillatorIndex = 0,
+}) => {
   const inputRef = useRef<EquationInputHandle>(null);
 
   /**
@@ -107,7 +109,11 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex 
               >
                 {/* Equation Input */}
                 <Box>
-                  <EquationInput ref={inputRef} maxLength={200} />
+                  <EquationInput
+                    ref={inputRef}
+                    oscillatorIndex={oscillatorIndex}
+                    maxLength={200}
+                  />
                 </Box>
 
                 <Divider />
@@ -121,7 +127,7 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex 
                     flexDirection: "column",
                   }}
                 >
-                  <EquationPreview />
+                  <EquationPreview oscillatorIndex={oscillatorIndex} />
                 </Box>
 
                 {/* Variable Controls */}
@@ -137,7 +143,7 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex 
               }}
             >
               <Box sx={{ flex: 1, minHeight: 0 }}>
-                <VariableControlPanel />
+                <VariableControlPanel oscillatorIndex={oscillatorIndex} />
               </Box>
             </Grid>
           </Grid>
@@ -155,7 +161,9 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex 
  *
  * Note: Relies on EquationBuilderProvider being available in parent component tree
  */
-export const EquationBuilder: React.FC<EquationBuilderProps> = ({ oscillatorIndex = 0 }) => {
+export const EquationBuilder: React.FC<EquationBuilderProps> = ({
+  oscillatorIndex = 0,
+}) => {
   return <EquationBuilderInner oscillatorIndex={oscillatorIndex} />;
 };
 

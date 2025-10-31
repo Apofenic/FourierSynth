@@ -161,13 +161,13 @@ export const audioNodes = new AudioNodeManager();
 export const useAudioEngineStore = create<AudioEngineState>()(
   devtools(
     (set, get) => ({
-      // Initial state - 4 oscillators
+      // Initial state - 4 oscillators (all active)
       isPlaying: false,
       oscillators: [
         { frequency: 220, volume: 0.75, isActive: true },
-        { frequency: 220, volume: 0.75, isActive: false },
-        { frequency: 220, volume: 0.75, isActive: false },
-        { frequency: 220, volume: 0.75, isActive: false },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
       ],
       masterVolume: 75,
       cutoffFrequency: 2000,
@@ -480,11 +480,15 @@ export const selectAudioParameters = (
 // Subscribe to waveformData changes to recreate audio
 useEquationBuilderStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
-  if (
-    audioEngineState.isPlaying &&
-    state.waveformData !== prevState.waveformData
-  ) {
-    audioEngineState._recreateAudio();
+  if (audioEngineState.isPlaying) {
+    // Check if any oscillator's waveform data changed
+    const waveformChanged = state.oscillators.some(
+      (osc, index) =>
+        osc.waveformData !== prevState.oscillators[index].waveformData
+    );
+    if (waveformChanged) {
+      audioEngineState._recreateAudio();
+    }
   }
 });
 
@@ -495,7 +499,46 @@ useSynthControlsStore.subscribe((state, prevState) => {
     audioEngineState.isPlaying &&
     state.oscillators !== prevState.oscillators
   ) {
-    audioEngineState._recreateAudio();
+    // Check if detune changed for any oscillator
+    const detuneChanged = state.oscillators.some(
+      (osc, index) =>
+        osc.detune.octave !== prevState.oscillators[index].detune.octave ||
+        osc.detune.semitone !== prevState.oscillators[index].detune.semitone ||
+        osc.detune.cent !== prevState.oscillators[index].detune.cent
+    );
+
+    if (detuneChanged) {
+      // Re-apply current frequency with new detune values
+      const activeNote = state.keyboardNotes.find(
+        (note) => note.key === state.activeKey
+      );
+      if (activeNote) {
+        // Import the helper function inline
+        const calculateDetunedFrequency = (
+          baseFrequency: number,
+          octave: number,
+          semitone: number,
+          cent: number
+        ): number => {
+          const totalSemitones = octave * 12 + semitone + cent / 100;
+          return baseFrequency * Math.pow(2, totalSemitones / 12);
+        };
+
+        state.oscillators.forEach((osc, index) => {
+          if (audioEngineState.oscillators[index].isActive) {
+            const detunedFreq = calculateDetunedFrequency(
+              activeNote.frequency,
+              osc.detune.octave,
+              osc.detune.semitone,
+              osc.detune.cent
+            );
+            audioEngineState.updateOscillatorFrequency(index, detunedFreq);
+          }
+        });
+      }
+    } else {
+      audioEngineState._recreateAudio();
+    }
   }
 });
 

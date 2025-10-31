@@ -30,6 +30,10 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useEquationBuilderStore } from "../../../stores";
 import { VariableConfig } from "../../../types/equationBuilderTypes";
 
+interface VariableControlPanelProps {
+  oscillatorIndex: number;
+}
+
 interface ConfigDialogState {
   open: boolean;
   variableName: string | null;
@@ -42,8 +46,12 @@ interface ConfigDialogState {
  * Renders dynamic controls for all variables in the current equation.
  * Variables are automatically detected and controls are created on-the-fly.
  */
-export function VariableControlPanel() {
-  const variables = useEquationBuilderStore((state) => state.variables);
+export function VariableControlPanel({
+  oscillatorIndex,
+}: VariableControlPanelProps) {
+  const variables = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].variables
+  );
   const updateVariable = useEquationBuilderStore(
     (state) => state.updateVariable
   );
@@ -95,7 +103,11 @@ export function VariableControlPanel() {
    */
   const handleSaveConfig = () => {
     if (configDialog.variableName && configDialog.config) {
-      updateVariableConfig(configDialog.variableName, configDialog.config);
+      updateVariableConfig(
+        oscillatorIndex,
+        configDialog.variableName,
+        configDialog.config
+      );
     }
     handleCloseConfig();
   };
@@ -119,7 +131,7 @@ export function VariableControlPanel() {
   const handleSliderChange =
     (name: string) => (_: Event, value: number | number[]) => {
       if (typeof value === "number") {
-        updateVariable(name, value);
+        updateVariable(oscillatorIndex, name, value);
       }
     };
 
@@ -136,7 +148,7 @@ export function VariableControlPanel() {
           variable.min,
           Math.min(variable.max, value)
         );
-        updateVariable(name, clampedValue);
+        updateVariable(oscillatorIndex, name, clampedValue);
       }
     };
 
@@ -144,7 +156,7 @@ export function VariableControlPanel() {
    * Handle reset individual variable
    */
   const handleReset = (name: string) => {
-    resetVariable(name);
+    resetVariable(oscillatorIndex, name);
   };
 
   // Empty state: no variables detected
@@ -182,7 +194,7 @@ export function VariableControlPanel() {
           <Button
             size="small"
             startIcon={<RestartAltIcon />}
-            onClick={resetAllVariables}
+            onClick={() => resetAllVariables(oscillatorIndex)}
             disabled={variableNames.length === 0}
           >
             Reset All

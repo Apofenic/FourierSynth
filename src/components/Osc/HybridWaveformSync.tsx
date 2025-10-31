@@ -17,20 +17,28 @@ interface HybridWaveformSyncProps {
  * This component bridges the equation builder and synth controls contexts
  * to generate the waveform from the equation-defined partials.
  */
-export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({ oscillatorIndex }) => {
+export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({
+  oscillatorIndex,
+}) => {
   const compiledFunction = useEquationBuilderStore(
-    (state) => state.compiledFunction
+    (state) => state.oscillators[oscillatorIndex].compiledFunction
   );
-  const expression = useEquationBuilderStore((state) => state.expression);
+  const expression = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].expression
+  );
   const validationResult = useEquationBuilderStore(
-    (state) => state.validationResult
+    (state) => state.oscillators[oscillatorIndex].validationResult
   );
-  const variables = useEquationBuilderStore((state) => state.variables);
+  const variables = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].variables
+  );
   const equationWaveformData = useEquationBuilderStore(
-    (state) => state.waveformData
+    (state) => state.oscillators[oscillatorIndex].waveformData
   );
 
-  const oscillator = useSynthControlsStore((state) => state.oscillators[oscillatorIndex]);
+  const oscillator = useSynthControlsStore(
+    (state) => state.oscillators[oscillatorIndex]
+  );
   const harmonics = oscillator?.harmonics || [];
   const updateOscillatorParam = useSynthControlsStore(
     (state) => state.updateOscillatorParam
@@ -64,7 +72,13 @@ export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({ oscillat
 
     // Update previous tab reference
     prevTabRef.current = activeTab;
-  }, [activeTab, equationWaveformData, variables.n, syncHarmonicsFromWaveform, oscillatorIndex]);
+  }, [
+    activeTab,
+    equationWaveformData,
+    variables.n,
+    syncHarmonicsFromWaveform,
+    oscillatorIndex,
+  ]);
 
   useEffect(() => {
     try {
@@ -96,7 +110,11 @@ export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({ oscillat
           }
         }
 
-        updateOscillatorParam(oscillatorIndex, "waveformData", combinedWaveform);
+        updateOscillatorParam(
+          oscillatorIndex,
+          "waveformData",
+          combinedWaveform
+        );
       } else {
         // When on harmonic tab, use the harmonic controls
         const nValue = variables.n?.value ?? 1;
@@ -104,7 +122,11 @@ export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({ oscillat
         const activeHarmonics = harmonics.slice(0, maxHarmonics);
         const harmonicWaveform = calculateWaveform(activeHarmonics);
 
-        updateOscillatorParam(oscillatorIndex, "waveformData", harmonicWaveform);
+        updateOscillatorParam(
+          oscillatorIndex,
+          "waveformData",
+          harmonicWaveform
+        );
       }
     } catch (error) {
       console.error("Error calculating waveform:", error);

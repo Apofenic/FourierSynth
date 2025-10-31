@@ -26,12 +26,20 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import { useEquationBuilderStore } from "../../../stores";
 
-export function EquationPreview() {
+interface EquationPreviewProps {
+  oscillatorIndex: number;
+}
+
+export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
   const latexExpression = useEquationBuilderStore(
-    (state) => state.latexExpression
+    (state) => state.oscillators[oscillatorIndex].latexExpression
   );
-  const variables = useEquationBuilderStore((state) => state.variables);
-  const expression = useEquationBuilderStore((state) => state.expression);
+  const variables = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].variables
+  );
+  const expression = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].expression
+  );
   const [copySuccess, setCopySuccess] = useState(false);
   const [fontSize, setFontSize] = useState(24); // Starting font size in pixels
   const contentRef = useRef<HTMLDivElement>(null);

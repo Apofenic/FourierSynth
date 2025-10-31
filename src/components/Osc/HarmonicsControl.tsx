@@ -26,7 +26,7 @@ export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
     (state) => state.oscillators[oscillatorIndex]?.frequency || 220
   );
   const nValue = useEquationBuilderStore(
-    (state) => state.variables.n?.value ?? 8
+    (state) => state.oscillators[oscillatorIndex].variables.n?.value ?? 8
   );
 
   // Determine how many harmonics to display based on 'n' variable

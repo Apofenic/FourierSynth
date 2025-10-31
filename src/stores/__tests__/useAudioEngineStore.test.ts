@@ -49,9 +49,9 @@ describe("useAudioEngineStore", () => {
       isPlaying: false,
       oscillators: [
         { frequency: 220, volume: 0.75, isActive: true },
-        { frequency: 220, volume: 0.75, isActive: false },
-        { frequency: 220, volume: 0.75, isActive: false },
-        { frequency: 220, volume: 0.75, isActive: false },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
       ],
       masterVolume: 75,
       cutoffFrequency: 2000,
@@ -100,11 +100,13 @@ describe("useAudioEngineStore", () => {
 
     // Reset audioNodes and set mock audio context
     audioNodes.audioContext = mockAudioContext as any;
-    audioNodes.oscillators = Array(4).fill(null).map(() => ({
-      sourceNode: null,
-      gainNode: null,
-      waveformBuffer: null,
-    }));
+    audioNodes.oscillators = Array(4)
+      .fill(null)
+      .map(() => ({
+        sourceNode: null,
+        gainNode: null,
+        waveformBuffer: null,
+      }));
     audioNodes.mixerGainNode = null;
     audioNodes.masterGainNode = null;
     audioNodes.filterNode = null;

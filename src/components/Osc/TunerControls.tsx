@@ -3,18 +3,26 @@ import {
   Paper,
   Typography,
   Box,
-  Slider,
-  Tooltip,
   FormControlLabel,
   Stack,
   Switch,
 } from "@mui/material";
 import { Dial } from "../Dial";
+import { useSynthControlsStore } from "../../stores";
 
-export const TunerControls: React.FC = () => {
+interface TunerControlsProps {
+  oscillatorIndex: number;
+}
+
+export const TunerControls: React.FC<TunerControlsProps> = ({
+  oscillatorIndex,
+}) => {
   const [legato, setLegato] = useState(false);
-  const [octave, setOctave] = useState(0);
-  const [fineTune, setFineTune] = useState(0);
+
+  const detune = useSynthControlsStore(
+    (state) => state.oscillators[oscillatorIndex].detune
+  );
+  const updateDetune = useSynthControlsStore((state) => state.updateDetune);
 
   return (
     <Paper>
@@ -22,7 +30,7 @@ export const TunerControls: React.FC = () => {
         Tuner
       </Typography>
       <Box
-        sx={{ padding: 2, display: "flex", flexDirection: "column", gap: 2 }}
+        sx={{ padding: 0, display: "flex", flexDirection: "column", gap: 2 }}
       >
         <Stack spacing={2} alignItems="start">
           <FormControlLabel
@@ -32,40 +40,61 @@ export const TunerControls: React.FC = () => {
                 checked={legato}
                 onChange={(e) => setLegato(e.target.checked)}
                 color="primary"
+                disabled
               />
             }
             label="Legato"
           />
         </Stack>
-        <Box
-          display="flex"
-          flexDirection="row"
-          justifyContent="space-evenly"
-          alignItems="center"
-        >
-          <Dial
-            value={octave}
-            min={-3}
-            max={3}
-            onChange={setOctave}
-            label="Octave"
-            size={75}
-            ringColor="#2ecc71"
-            numberFontSize={18}
-            minMaxFontSize={10}
-          />
-          <Dial
-            value={fineTune}
-            min={-100}
-            max={100}
-            onChange={setFineTune}
-            label="Fine tune"
-            size={75}
-            ringColor="#2ecc71"
-            numberFontSize={18}
-            minMaxFontSize={10}
-          />
-        </Box>
+        <Paper>
+          <Typography variant="h3" align="center">
+            Detune
+          </Typography>
+          <Box
+            display="flex"
+            flexDirection="row"
+            justifyContent="space-evenly"
+            alignItems="center"
+          >
+            <Dial
+              value={detune.octave}
+              min={-2}
+              max={2}
+              onChange={(value) =>
+                updateDetune(oscillatorIndex, "octave", value)
+              }
+              label="Octave"
+              size={75}
+              ringColor="#2ecc71"
+              numberFontSize={18}
+              minMaxFontSize={10}
+            />
+            <Dial
+              value={detune.semitone}
+              min={-12}
+              max={12}
+              onChange={(value) =>
+                updateDetune(oscillatorIndex, "semitone", value)
+              }
+              label="Semitone"
+              size={75}
+              ringColor="#2ecc71"
+              numberFontSize={18}
+              minMaxFontSize={10}
+            />
+            <Dial
+              value={detune.cent}
+              min={-100}
+              max={100}
+              onChange={(value) => updateDetune(oscillatorIndex, "cent", value)}
+              label="cent"
+              size={75}
+              ringColor="#2ecc71"
+              numberFontSize={18}
+              minMaxFontSize={10}
+            />
+          </Box>
+        </Paper>
       </Box>
     </Paper>
   );

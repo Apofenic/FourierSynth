@@ -45,7 +45,7 @@ export const OscControls: React.FC<OscControlsProps> = ({
         }}
       >
         <WaveformVisualizer oscillatorIndex={oscillatorIndex} />
-        <TunerControls />
+        <TunerControls oscillatorIndex={oscillatorIndex} />
       </Box>
       <Box
         sx={{
@@ -84,7 +84,7 @@ export const OscControls: React.FC<OscControlsProps> = ({
             }}
           >
             <Tab label="Equation Builder" />
-            <Tab label="Partial controller" />
+            <Tab label="Harmonics Controls" />
           </Tabs>
           <Box
             sx={{

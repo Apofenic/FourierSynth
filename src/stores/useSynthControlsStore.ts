@@ -36,6 +36,11 @@ const createDefaultOscillator = (
     waveformData,
     volume: 75,
     isActive,
+    detune: {
+      octave: 0,
+      semitone: 0,
+      cent: 0,
+    },
   };
 };
 
@@ -51,12 +56,12 @@ const createDefaultOscillator = (
 export const useSynthControlsStore = create<SynthControlsStore>()(
   devtools(
     (set) => ({
-      // Initial State - 4 oscillators
+      // Initial State - 4 oscillators (all active)
       oscillators: [
         createDefaultOscillator(1, true),
-        createDefaultOscillator(2, false),
-        createDefaultOscillator(3, false),
-        createDefaultOscillator(4, false),
+        createDefaultOscillator(2, true),
+        createDefaultOscillator(3, true),
+        createDefaultOscillator(4, true),
       ],
       keyboardNotes: [
         { key: "a", note: "C3", frequency: 130.81, isActive: false },
@@ -204,6 +209,27 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           },
           false,
           "setHarmonics"
+        ),
+
+      updateDetune: (
+        oscIndex: number,
+        detuneType: "octave" | "semitone" | "cent",
+        value: number
+      ) =>
+        set(
+          (state) => {
+            const updatedOscillators = [...state.oscillators];
+            updatedOscillators[oscIndex] = {
+              ...updatedOscillators[oscIndex],
+              detune: {
+                ...updatedOscillators[oscIndex].detune,
+                [detuneType]: value,
+              },
+            };
+            return { oscillators: updatedOscillators };
+          },
+          false,
+          "updateDetune"
         ),
     }),
     {

@@ -142,6 +142,7 @@ export const Mixer: React.FC = () => {
                 checked={false}
                 onChange={() => {}}
                 color="primary"
+                disabled
               />
             }
             label="unison"

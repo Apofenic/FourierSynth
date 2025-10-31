@@ -20,6 +20,7 @@ import {
 } from "./components";
 import { useSynthControlsStore, useAudioEngineStore } from "./stores";
 import { theme } from "./theme";
+import { calculateDetunedFrequency } from "./utils/helperFunctions";
 
 function App() {
   const [activeTab, setActiveTab] = React.useState(0);
@@ -34,6 +35,7 @@ function App() {
   );
 
   const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
+  const synthOscillators = useSynthControlsStore((state) => state.oscillators);
   const keyboardEnabled = useSynthControlsStore(
     (state) => state.keyboardEnabled
   );
@@ -45,6 +47,7 @@ function App() {
 
   // Use refs to access the latest state without triggering effect re-runs
   const keyboardNotesRef = useRef(keyboardNotes);
+  const synthOscillatorsRef = useRef(synthOscillators);
   const isPlayingRef = useRef(isPlaying);
   const activeKeyRef = useRef(activeKey);
   const keyboardEnabledRef = useRef(keyboardEnabled);
@@ -53,11 +56,19 @@ function App() {
   // Update refs when state changes
   useEffect(() => {
     keyboardNotesRef.current = keyboardNotes;
+    synthOscillatorsRef.current = synthOscillators;
     isPlayingRef.current = isPlaying;
     activeKeyRef.current = activeKey;
     keyboardEnabledRef.current = keyboardEnabled;
     oscillatorsRef.current = oscillators;
-  }, [keyboardNotes, isPlaying, activeKey, keyboardEnabled, oscillators]);
+  }, [
+    keyboardNotes,
+    synthOscillators,
+    isPlaying,
+    activeKey,
+    keyboardEnabled,
+    oscillators,
+  ]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -68,10 +79,17 @@ function App() {
       const note = keyboardNotesRef.current.find((n) => n.key === keyPressed);
 
       if (note) {
-        // Update frequency for all active oscillators
+        // Update frequency for all active oscillators with detune applied
         oscillatorsRef.current.forEach((osc, index) => {
           if (osc.isActive) {
-            updateOscillatorFrequency(index, note.frequency);
+            const synthOsc = synthOscillatorsRef.current[index];
+            const detunedFreq = calculateDetunedFrequency(
+              note.frequency,
+              synthOsc.detune.octave,
+              synthOsc.detune.semitone,
+              synthOsc.detune.cent
+            );
+            updateOscillatorFrequency(index, detunedFreq);
           }
         });
 

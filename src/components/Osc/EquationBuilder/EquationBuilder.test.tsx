@@ -176,7 +176,9 @@ describe("EquationBuilder Component", () => {
     });
 
     it("accepts optional oscillatorIndex prop", () => {
-      expect(() => render(<EquationBuilder oscillatorIndex={1} />)).not.toThrow();
+      expect(() =>
+        render(<EquationBuilder oscillatorIndex={1} />)
+      ).not.toThrow();
     });
   });
 

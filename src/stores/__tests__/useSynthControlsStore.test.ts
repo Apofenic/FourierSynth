@@ -22,8 +22,11 @@ describe("useSynthControlsStore", () => {
       phase: 0.5 * Math.PI,
     });
     expect(result.current.oscillators[0].harmonics[1].amplitude).toBe(0.0);
+    // All oscillators should be active by default
     expect(result.current.oscillators[0].isActive).toBe(true);
-    expect(result.current.oscillators[1].isActive).toBe(false);
+    expect(result.current.oscillators[1].isActive).toBe(true);
+    expect(result.current.oscillators[2].isActive).toBe(true);
+    expect(result.current.oscillators[3].isActive).toBe(true);
     expect(result.current.keyboardNotes).toHaveLength(17);
     expect(result.current.activeKey).toBeNull();
     expect(result.current.keyboardEnabled).toBe(true);
@@ -39,7 +42,9 @@ describe("useSynthControlsStore", () => {
       });
 
       expect(result.current.oscillators[0].harmonics[1].amplitude).toBe(0.75);
-      expect(result.current.oscillators[0].harmonics[1].phase).toBe(0.5 * Math.PI);
+      expect(result.current.oscillators[0].harmonics[1].phase).toBe(
+        0.5 * Math.PI
+      );
       expect(result.current.oscillators[0].harmonics[0].amplitude).toBe(1.0);
     });
 
@@ -64,7 +69,9 @@ describe("useSynthControlsStore", () => {
 
       for (let i = 0; i < 8; i++) {
         if (i === 3) continue;
-        expect(result.current.oscillators[0].harmonics[i]).toEqual(originalHarmonics[i]);
+        expect(result.current.oscillators[0].harmonics[i]).toEqual(
+          originalHarmonics[i]
+        );
       }
     });
 
