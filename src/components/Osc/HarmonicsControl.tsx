@@ -6,16 +6,27 @@ import {
   useEquationBuilderStore,
 } from "../../stores";
 
+interface HarmonicsControlProps {
+  oscillatorIndex: number;
+}
+
 /**
  * HarmonicsControl component
  * Provides sliders to control the amplitude and phase of each harmonic
  */
-export const HarmonicsControl: React.FC = () => {
-  const harmonics = useSynthControlsStore((state) => state.harmonics);
+export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
+  oscillatorIndex,
+}) => {
+  const oscillator = useSynthControlsStore(
+    (state) => state.oscillators[oscillatorIndex]
+  );
+  const harmonics = oscillator?.harmonics || [];
   const updateHarmonic = useSynthControlsStore((state) => state.updateHarmonic);
-  const frequency = useAudioEngineStore((state) => state.frequency);
+  const oscillatorFrequency = useAudioEngineStore(
+    (state) => state.oscillators[oscillatorIndex]?.frequency || 220
+  );
   const nValue = useEquationBuilderStore(
-    (state) => state.variables.n?.value ?? 8
+    (state) => state.oscillators[oscillatorIndex].variables.n?.value ?? 8
   );
 
   // Determine how many harmonics to display based on 'n' variable
@@ -44,7 +55,7 @@ export const HarmonicsControl: React.FC = () => {
               variant="subtitle2"
               sx={{ mb: 0.5, color: "primary.main" }}
             >
-              H{idx + 1} ({(idx + 1) * frequency} Hz)
+              H{idx + 1} ({(idx + 1) * oscillatorFrequency} Hz)
             </Typography>
             <Grid container spacing={2}>
               <Grid size={6}>
@@ -58,7 +69,12 @@ export const HarmonicsControl: React.FC = () => {
                   max={1}
                   step={0.01}
                   onChange={(_, value) =>
-                    updateHarmonic(idx, "amplitude", value as number)
+                    updateHarmonic(
+                      oscillatorIndex,
+                      idx,
+                      "amplitude",
+                      value as number
+                    )
                   }
                   aria-labelledby={`amplitude-slider-${idx}`}
                 />
@@ -74,7 +90,12 @@ export const HarmonicsControl: React.FC = () => {
                   max={Math.PI}
                   step={0.01}
                   onChange={(_, value) =>
-                    updateHarmonic(idx, "phase", value as number)
+                    updateHarmonic(
+                      oscillatorIndex,
+                      idx,
+                      "phase",
+                      value as number
+                    )
                   }
                   aria-labelledby={`phase-slider-${idx}`}
                 />

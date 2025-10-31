@@ -96,20 +96,28 @@ export interface EquationBuilderState {
 /**
  * EquationBuilderStore State Interface
  * Manages mathematical equation parsing, validation, and waveform generation
+ * Now supports per-oscillator state
  */
-export interface EquationBuilderStore extends EquationBuilderState {
-  // Actions
-  updateExpression: (newExpression: string) => void;
-  updateVariable: (name: string, value: number) => void;
-  updateVariableConfig: (name: string, config: Partial<VariableConfig>) => void;
-  resetVariable: (name: string) => void;
-  resetAllVariables: () => void;
-  loadTemplate: (template: EquationTemplate) => void;
+export interface EquationBuilderStore {
+  // Per-oscillator state (4 oscillators)
+  oscillators: EquationBuilderState[];
+
+  // Actions (now require oscillatorIndex)
+  updateExpression: (oscIndex: number, newExpression: string) => void;
+  updateVariable: (oscIndex: number, name: string, value: number) => void;
+  updateVariableConfig: (
+    oscIndex: number,
+    name: string,
+    config: Partial<VariableConfig>
+  ) => void;
+  resetVariable: (oscIndex: number, name: string) => void;
+  resetAllVariables: (oscIndex: number) => void;
+  loadTemplate: (oscIndex: number, template: EquationTemplate) => void;
 
   // Internal actions (prefixed with _)
-  _parseExpression: () => void;
-  _updateVariables: () => void;
-  _generateWaveform: () => void;
+  _parseExpression: (oscIndex: number) => void;
+  _updateVariables: (oscIndex: number) => void;
+  _generateWaveform: (oscIndex: number) => void;
 }
 /**
  * Template for preset equations

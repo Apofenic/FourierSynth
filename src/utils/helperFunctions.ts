@@ -4,6 +4,27 @@ import {
   VariableConfig,
 } from "../types/equationBuilderTypes";
 
+/**
+ * Calculate detuned frequency from base frequency and detune parameters
+ * @param baseFrequency - The base frequency in Hz
+ * @param octave - Octave shift (-3 to +3)
+ * @param semitone - Semitone shift (-12 to +12)
+ * @param cent - Cent shift (-100 to +100)
+ * @returns The detuned frequency in Hz
+ */
+export const calculateDetunedFrequency = (
+  baseFrequency: number,
+  octave: number,
+  semitone: number,
+  cent: number
+): number => {
+  // Calculate total semitone shift
+  const totalSemitones = octave * 12 + semitone + cent / 100;
+
+  // Apply frequency ratio: f' = f * 2^(n/12) where n is semitones
+  return baseFrequency * Math.pow(2, totalSemitones / 12);
+};
+
 export const calculateWaveform = (harmonics: HarmonicParam[]) => {
   const newWaveform = new Float32Array(2048);
   const TWO_PI = Math.PI * 2;

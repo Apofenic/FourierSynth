@@ -47,7 +47,13 @@ describe("useAudioEngineStore", () => {
     // Reset store state before each test
     useAudioEngineStore.setState({
       isPlaying: false,
-      frequency: 220,
+      oscillators: [
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+      ],
+      masterVolume: 75,
       cutoffFrequency: 2000,
       resonance: 0,
     });
@@ -57,8 +63,9 @@ describe("useAudioEngineStore", () => {
 
     // Reset mock implementations to return fresh objects
     mockAudioContext.createGain.mockReturnValue({
-      gain: { value: 0 },
+      gain: { value: 0, linearRampToValueAtTime: jest.fn() },
       connect: jest.fn(),
+      disconnect: jest.fn(),
     } as any);
 
     mockAudioContext.createBiquadFilter.mockReturnValue({
@@ -93,8 +100,15 @@ describe("useAudioEngineStore", () => {
 
     // Reset audioNodes and set mock audio context
     audioNodes.audioContext = mockAudioContext as any;
-    audioNodes.oscillatorNode = null;
-    audioNodes.gainNode = null;
+    audioNodes.oscillators = Array(4)
+      .fill(null)
+      .map(() => ({
+        sourceNode: null,
+        gainNode: null,
+        waveformBuffer: null,
+      }));
+    audioNodes.mixerGainNode = null;
+    audioNodes.masterGainNode = null;
     audioNodes.filterNode = null;
   });
 
@@ -103,7 +117,10 @@ describe("useAudioEngineStore", () => {
       const { result } = renderHook(() => useAudioEngineStore());
 
       expect(result.current.isPlaying).toBe(false);
-      expect(result.current.frequency).toBe(220);
+      expect(result.current.oscillators).toHaveLength(4);
+      expect(result.current.oscillators[0].frequency).toBe(220);
+      expect(result.current.oscillators[0].isActive).toBe(true);
+      expect(result.current.masterVolume).toBe(75);
       expect(result.current.cutoffFrequency).toBe(2000);
       expect(result.current.resonance).toBe(0);
     });
@@ -113,7 +130,10 @@ describe("useAudioEngineStore", () => {
 
       expect(typeof result.current.startAudio).toBe("function");
       expect(typeof result.current.stopAudio).toBe("function");
-      expect(typeof result.current.updateFrequency).toBe("function");
+      expect(typeof result.current.updateOscillatorFrequency).toBe("function");
+      expect(typeof result.current.updateOscillatorVolume).toBe("function");
+      expect(typeof result.current.updateMasterVolume).toBe("function");
+      expect(typeof result.current.toggleOscillator).toBe("function");
       expect(typeof result.current.updateFilter).toBe("function");
       expect(typeof result.current.setIsPlaying).toBe("function");
     });
@@ -196,7 +216,7 @@ describe("useAudioEngineStore", () => {
         stop: jest.fn(),
         disconnect: jest.fn(),
       };
-      audioNodes.oscillatorNode = mockOscillator as any;
+      audioNodes.oscillators[0].sourceNode = mockOscillator as any;
 
       act(() => {
         result.current.stopAudio();
@@ -204,7 +224,7 @@ describe("useAudioEngineStore", () => {
 
       expect(mockOscillator.stop).toHaveBeenCalled();
       expect(mockOscillator.disconnect).toHaveBeenCalled();
-      expect(audioNodes.oscillatorNode).toBeNull();
+      expect(audioNodes.oscillators[0].sourceNode).toBeNull();
     });
 
     it("handles already stopped nodes gracefully", () => {
@@ -216,7 +236,7 @@ describe("useAudioEngineStore", () => {
         }),
         disconnect: jest.fn(),
       };
-      audioNodes.oscillatorNode = mockOscillator as any;
+      audioNodes.oscillators[0].sourceNode = mockOscillator as any;
 
       // Should not throw
       expect(() => {
@@ -225,19 +245,20 @@ describe("useAudioEngineStore", () => {
         });
       }).not.toThrow();
 
-      expect(audioNodes.oscillatorNode).toBeNull();
+      expect(audioNodes.oscillators[0].sourceNode).toBeNull();
     });
   });
 
-  describe("updateFrequency", () => {
-    it("updates frequency state", () => {
+  describe("updateOscillatorFrequency", () => {
+    it("updates frequency state for specific oscillator", () => {
       const { result } = renderHook(() => useAudioEngineStore());
 
       act(() => {
-        result.current.updateFrequency(440);
+        result.current.updateOscillatorFrequency(0, 440);
       });
 
-      expect(result.current.frequency).toBe(440);
+      expect(result.current.oscillators[0].frequency).toBe(440);
+      expect(result.current.oscillators[1].frequency).toBe(220); // unchanged
     });
 
     it("updates playback rate when audio is playing", () => {
@@ -250,14 +271,97 @@ describe("useAudioEngineStore", () => {
       const mockOscillator = {
         playbackRate: mockPlaybackRate,
       };
-      audioNodes.oscillatorNode = mockOscillator as any;
+      audioNodes.oscillators[0].sourceNode = mockOscillator as any;
       audioNodes.audioContext = mockAudioContext as any;
 
       act(() => {
-        result.current.updateFrequency(440);
+        result.current.updateOscillatorFrequency(0, 440);
       });
 
       expect(mockPlaybackRate.exponentialRampToValueAtTime).toHaveBeenCalled();
+    });
+  });
+
+  describe("updateOscillatorVolume", () => {
+    it("updates volume state for specific oscillator", () => {
+      const { result } = renderHook(() => useAudioEngineStore());
+
+      act(() => {
+        result.current.updateOscillatorVolume(0, 0.5);
+      });
+
+      expect(result.current.oscillators[0].volume).toBe(0.5);
+      expect(result.current.oscillators[1].volume).toBe(0.75); // unchanged
+    });
+
+    it("updates gain node when active", () => {
+      const { result } = renderHook(() => useAudioEngineStore());
+
+      // Setup mock gain node
+      const mockGain = {
+        gain: { linearRampToValueAtTime: jest.fn() },
+      };
+      audioNodes.oscillators[0].gainNode = mockGain as any;
+      audioNodes.audioContext = mockAudioContext as any;
+
+      act(() => {
+        result.current.updateOscillatorVolume(0, 0.5);
+      });
+
+      expect(mockGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0.5,
+        expect.any(Number)
+      );
+    });
+  });
+
+  describe("updateMasterVolume", () => {
+    it("updates master volume state", () => {
+      const { result } = renderHook(() => useAudioEngineStore());
+
+      act(() => {
+        result.current.updateMasterVolume(50);
+      });
+
+      expect(result.current.masterVolume).toBe(50);
+    });
+
+    it("updates master gain node when active", () => {
+      const { result } = renderHook(() => useAudioEngineStore());
+
+      // Setup mock master gain
+      const mockMasterGain = {
+        gain: { linearRampToValueAtTime: jest.fn() },
+      };
+      audioNodes.masterGainNode = mockMasterGain as any;
+      audioNodes.audioContext = mockAudioContext as any;
+
+      act(() => {
+        result.current.updateMasterVolume(50);
+      });
+
+      expect(mockMasterGain.gain.linearRampToValueAtTime).toHaveBeenCalledWith(
+        0.5, // 50/100
+        expect.any(Number)
+      );
+    });
+  });
+
+  describe("toggleOscillator", () => {
+    it("updates oscillator active state", () => {
+      const { result } = renderHook(() => useAudioEngineStore());
+
+      act(() => {
+        result.current.toggleOscillator(1, true);
+      });
+
+      expect(result.current.oscillators[1].isActive).toBe(true);
+
+      act(() => {
+        result.current.toggleOscillator(1, false);
+      });
+
+      expect(result.current.oscillators[1].isActive).toBe(false);
     });
   });
 
@@ -334,15 +438,17 @@ describe("useAudioEngineStore", () => {
         stop: jest.fn(),
         disconnect: jest.fn(),
       };
-      audioNodes.oscillatorNode = mockOscillator as any;
-      audioNodes.gainNode = {} as any;
+      audioNodes.oscillators[0].sourceNode = mockOscillator as any;
+      audioNodes.mixerGainNode = {} as any;
+      audioNodes.masterGainNode = {} as any;
       audioNodes.filterNode = {} as any;
 
       audioNodes.cleanup();
 
       expect(mockOscillator.stop).toHaveBeenCalled();
-      expect(audioNodes.oscillatorNode).toBeNull();
-      expect(audioNodes.gainNode).toBeNull();
+      expect(audioNodes.oscillators[0].sourceNode).toBeNull();
+      expect(audioNodes.mixerGainNode).toBeNull();
+      expect(audioNodes.masterGainNode).toBeNull();
       expect(audioNodes.filterNode).toBeNull();
     });
   });

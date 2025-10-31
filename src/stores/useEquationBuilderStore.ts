@@ -5,6 +5,7 @@ import type {
   ParsedExpression,
   EquationTemplate,
   EquationBuilderStore,
+  EquationBuilderState,
 } from "../types";
 import {
   parseExpression,
@@ -16,38 +17,62 @@ import {
 } from "../utils/expressionParser";
 import { calculateWaveformFromExpression } from "../utils/helperFunctions";
 
-// Timeout ID for debounced parsing
-let parseTimeoutId: ReturnType<typeof setTimeout> | null = null;
+// Timeout IDs for debounced parsing (one per oscillator)
+const parseTimeoutIds: (ReturnType<typeof setTimeout> | null)[] = [
+  null,
+  null,
+  null,
+  null,
+];
 
-// Previous parsed expression for change detection
-let prevParsedExpression: ParsedExpression | null = null;
+// Previous parsed expressions for change detection (one per oscillator)
+const prevParsedExpressions: (ParsedExpression | null)[] = [
+  null,
+  null,
+  null,
+  null,
+];
 
 /**
- * Initial state setup
- * Starts with sin(i*t) to create a proper Fourier series with harmonic index
- * Always includes 'n' variable for summation support
+ * Create initial state for a single oscillator
  */
-const initialExpression = "sin(i*t)";
-const initialParsed = parseExpression(initialExpression);
-const initialCompiled = compileExpression(initialParsed);
-const initialLatex = generateLatex(initialExpression);
+const createInitialOscillatorState = (): EquationBuilderState => {
+  const initialExpression = "sin(i*t)";
+  const initialParsed = parseExpression(initialExpression);
+  const initialCompiled = compileExpression(initialParsed);
+  const initialLatex = generateLatex(initialExpression);
 
-const initialVariables: Record<string, VariableConfig> = {
-  n: {
-    name: "n",
-    value: 1,
-    min: 1,
-    max: 20,
-    step: 1,
-    defaultValue: 1,
-  },
+  const initialVariables: Record<string, VariableConfig> = {
+    n: {
+      name: "n",
+      value: 1,
+      min: 1,
+      max: 20,
+      step: 1,
+      defaultValue: 1,
+    },
+  };
+
+  return {
+    expression: initialExpression,
+    parsedExpression: initialParsed,
+    compiledFunction: initialCompiled,
+    variables: initialVariables,
+    latexExpression: initialLatex,
+    validationResult: { isValid: true, errors: [] },
+    waveformData: calculateWaveformFromExpression(
+      initialCompiled,
+      initialVariables,
+      2048
+    ),
+  };
 };
 
 /**
  * EquationBuilder Store
  *
- * Manages equation builder state including:
- * - Expression parsing with 300ms debounce
+ * Manages equation builder state for 4 independent oscillators including:
+ * - Expression parsing with 300ms debounce (per oscillator)
  * - Variable auto-detection (always includes 'n')
  * - LaTeX rendering
  * - Validation
@@ -59,91 +84,116 @@ const initialVariables: Record<string, VariableConfig> = {
 export const useEquationBuilderStore = create<EquationBuilderStore>()(
   devtools(
     (set, get) => ({
-      // Initial State
-      expression: initialExpression,
-      parsedExpression: initialParsed,
-      compiledFunction: initialCompiled,
-      variables: initialVariables,
-      latexExpression: initialLatex,
-      validationResult: { isValid: true, errors: [] },
-      waveformData: calculateWaveformFromExpression(
-        initialCompiled,
-        initialVariables,
-        2048
-      ),
+      // Initial State - 4 independent oscillators
+      oscillators: [
+        createInitialOscillatorState(),
+        createInitialOscillatorState(),
+        createInitialOscillatorState(),
+        createInitialOscillatorState(),
+      ],
 
       // Public Actions
 
       /**
        * Update expression with 300ms debounce for parsing
        */
-      updateExpression: (newExpression: string) => {
-        set({ expression: newExpression }, false, "updateExpression");
+      updateExpression: (oscIndex: number, newExpression: string) => {
+        set(
+          (state) => {
+            const oscillators = [...state.oscillators];
+            oscillators[oscIndex] = {
+              ...oscillators[oscIndex],
+              expression: newExpression,
+            };
+            return { oscillators };
+          },
+          false,
+          "updateExpression"
+        );
 
-        // Clear existing timeout
-        if (parseTimeoutId) {
-          clearTimeout(parseTimeoutId);
+        // Clear existing timeout for this oscillator
+        if (parseTimeoutIds[oscIndex]) {
+          clearTimeout(parseTimeoutIds[oscIndex]!);
         }
 
         // If expression is empty, clear parsed data
         if (!newExpression) {
           set(
-            {
-              parsedExpression: null,
-              compiledFunction: null,
-              latexExpression: "",
-              validationResult: { isValid: true, errors: [] },
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                parsedExpression: null,
+                compiledFunction: null,
+                latexExpression: "",
+                validationResult: { isValid: true, errors: [] },
+              };
+              return { oscillators };
             },
             false,
             "clearParsedData"
           );
           // Keep 'n' variable even when expression is empty
-          get()._updateVariables();
+          get()._updateVariables(oscIndex);
           return;
         }
 
         // Debounce parsing by 300ms
-        parseTimeoutId = setTimeout(() => {
-          get()._parseExpression();
+        parseTimeoutIds[oscIndex] = setTimeout(() => {
+          get()._parseExpression(oscIndex);
         }, 300);
       },
 
       /**
        * Update a variable value and regenerate waveform
        */
-      updateVariable: (name: string, value: number) => {
+      updateVariable: (oscIndex: number, name: string, value: number) => {
         set(
-          (state) => ({
-            variables: {
-              ...state.variables,
-              [name]: {
-                ...state.variables[name],
-                value,
+          (state) => {
+            const oscillators = [...state.oscillators];
+            oscillators[oscIndex] = {
+              ...oscillators[oscIndex],
+              variables: {
+                ...oscillators[oscIndex].variables,
+                [name]: {
+                  ...oscillators[oscIndex].variables[name],
+                  value,
+                },
               },
-            },
-          }),
+            };
+            return { oscillators };
+          },
           false,
           "updateVariable"
         );
 
         // Regenerate waveform with new variable value
-        get()._generateWaveform();
+        get()._generateWaveform(oscIndex);
       },
 
       /**
        * Update variable configuration (min, max, step, etc.)
        */
-      updateVariableConfig: (name: string, config: Partial<VariableConfig>) => {
+      updateVariableConfig: (
+        oscIndex: number,
+        name: string,
+        config: Partial<VariableConfig>
+      ) => {
         set(
-          (state) => ({
-            variables: {
-              ...state.variables,
-              [name]: {
-                ...state.variables[name],
-                ...config,
+          (state) => {
+            const oscillators = [...state.oscillators];
+            oscillators[oscIndex] = {
+              ...oscillators[oscIndex],
+              variables: {
+                ...oscillators[oscIndex].variables,
+                [name]: {
+                  ...oscillators[oscIndex].variables[name],
+                  ...config,
+                },
               },
-            },
-          }),
+            };
+            return { oscillators };
+          },
           false,
           "updateVariableConfig"
         );
@@ -152,50 +202,62 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
       /**
        * Reset a variable to its default value
        */
-      resetVariable: (name: string) => {
+      resetVariable: (oscIndex: number, name: string) => {
         set(
-          (state) => ({
-            variables: {
-              ...state.variables,
-              [name]: {
-                ...state.variables[name],
-                value: state.variables[name].defaultValue,
+          (state) => {
+            const oscillators = [...state.oscillators];
+            const osc = oscillators[oscIndex];
+            oscillators[oscIndex] = {
+              ...osc,
+              variables: {
+                ...osc.variables,
+                [name]: {
+                  ...osc.variables[name],
+                  value: osc.variables[name].defaultValue,
+                },
               },
-            },
-          }),
+            };
+            return { oscillators };
+          },
           false,
           "resetVariable"
         );
 
         // Regenerate waveform with reset value
-        get()._generateWaveform();
+        get()._generateWaveform(oscIndex);
       },
 
       /**
        * Reset all variables to their default values
        */
-      resetAllVariables: () => {
+      resetAllVariables: (oscIndex: number) => {
         set(
-          (state) => ({
-            variables: Object.fromEntries(
-              Object.entries(state.variables).map(([name, config]) => [
-                name,
-                { ...config, value: config.defaultValue },
-              ])
-            ),
-          }),
+          (state) => {
+            const oscillators = [...state.oscillators];
+            const osc = oscillators[oscIndex];
+            oscillators[oscIndex] = {
+              ...osc,
+              variables: Object.fromEntries(
+                Object.entries(osc.variables).map(([name, config]) => [
+                  name,
+                  { ...config, value: config.defaultValue },
+                ])
+              ),
+            };
+            return { oscillators };
+          },
           false,
           "resetAllVariables"
         );
 
         // Regenerate waveform with reset values
-        get()._generateWaveform();
+        get()._generateWaveform(oscIndex);
       },
 
       /**
        * Load a template equation with pre-configured variables
        */
-      loadTemplate: (template: EquationTemplate) => {
+      loadTemplate: (oscIndex: number, template: EquationTemplate) => {
         // Create variables with template values, merging with defaults
         const templateVariables = Object.fromEntries(
           Object.entries(template.variables).map(([name, config]) => {
@@ -216,16 +278,21 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
         );
 
         set(
-          {
-            expression: template.expression,
-            variables: templateVariables,
+          (state) => {
+            const oscillators = [...state.oscillators];
+            oscillators[oscIndex] = {
+              ...oscillators[oscIndex],
+              expression: template.expression,
+              variables: templateVariables,
+            };
+            return { oscillators };
           },
           false,
           "loadTemplate"
         );
 
         // Trigger parsing of new expression
-        get()._parseExpression();
+        get()._parseExpression(oscIndex);
       },
 
       // Internal Actions
@@ -233,46 +300,55 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
       /**
        * Internal: Parse expression and update related state
        */
-      _parseExpression: () => {
+      _parseExpression: (oscIndex: number) => {
         const state = get();
+        const osc = state.oscillators[oscIndex];
 
         try {
-          const parsed = parseExpression(state.expression);
+          const parsed = parseExpression(osc.expression);
           const compiled = compileExpression(parsed);
-          const validation = validateExpression(state.expression);
-          const latex = generateLatex(state.expression);
+          const validation = validateExpression(osc.expression);
+          const latex = generateLatex(osc.expression);
 
           set(
-            {
-              parsedExpression: parsed,
-              compiledFunction: compiled,
-              latexExpression: latex,
-              validationResult: validation,
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                parsedExpression: parsed,
+                compiledFunction: compiled,
+                latexExpression: latex,
+                validationResult: validation,
+              };
+              return { oscillators };
             },
             false,
             "_parseExpression"
           );
 
           // Update variables based on new parsed expression
-          get()._updateVariables();
+          get()._updateVariables(oscIndex);
         } catch (error) {
           set(
-            {
-              parsedExpression: null,
-              compiledFunction: null,
-              validationResult: {
-                isValid: false,
-                errors: [
-                  error instanceof Error ? error.message : String(error),
-                ],
-              },
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                parsedExpression: null,
+                compiledFunction: null,
+                validationResult: {
+                  isValid: false,
+                  errors: [
+                    error instanceof Error ? error.message : String(error),
+                  ],
+                },
+                waveformData: [],
+              };
+              return { oscillators };
             },
             false,
             "_parseExpressionError"
           );
-
-          // Clear waveform on parse error
-          set({ waveformData: [] }, false, "_clearWaveformOnError");
         }
       },
 
@@ -280,20 +356,21 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
        * Internal: Auto-detect and update variables from parsed expression
        * Always keeps 'n' variable for summation support
        */
-      _updateVariables: () => {
+      _updateVariables: (oscIndex: number) => {
         const state = get();
+        const osc = state.oscillators[oscIndex];
 
         // Only run if parsed expression actually changed
-        if (prevParsedExpression === state.parsedExpression) {
+        if (prevParsedExpressions[oscIndex] === osc.parsedExpression) {
           return;
         }
-        prevParsedExpression = state.parsedExpression;
+        prevParsedExpressions[oscIndex] = osc.parsedExpression;
 
         // If no parsed expression, keep only 'n'
-        if (!state.parsedExpression) {
-          if (!state.expression) {
+        if (!osc.parsedExpression) {
+          if (!osc.expression) {
             const summationVars: Record<string, VariableConfig> = {
-              n: state.variables.n || {
+              n: osc.variables.n || {
                 name: "n",
                 value: 1,
                 min: 1,
@@ -302,25 +379,36 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
                 defaultValue: 1,
               },
             };
-            set({ variables: summationVars }, false, "_updateVariables");
+            set(
+              (state) => {
+                const oscillators = [...state.oscillators];
+                oscillators[oscIndex] = {
+                  ...oscillators[oscIndex],
+                  variables: summationVars,
+                };
+                return { oscillators };
+              },
+              false,
+              "_updateVariables"
+            );
           }
           return;
         }
 
-        const detectedVars = extractVariables(state.expression);
+        const detectedVars = extractVariables(osc.expression);
 
         // Always include 'n' for summation, even if not detected
         const requiredVars = new Set([...detectedVars, "n"]);
-        const currentVarNames = Object.keys(state.variables);
+        const currentVarNames = Object.keys(osc.variables);
 
         // Check if variables have changed
         const varsChanged =
           requiredVars.size !== currentVarNames.length ||
-          Array.from(requiredVars).some((name) => !state.variables[name]) ||
+          Array.from(requiredVars).some((name) => !osc.variables[name]) ||
           currentVarNames.some((name) => !requiredVars.has(name));
 
         if (!varsChanged) {
-          get()._generateWaveform();
+          get()._generateWaveform(oscIndex);
           return;
         }
 
@@ -328,9 +416,9 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
 
         // Add new variables, preserve existing configuration
         Array.from(requiredVars).forEach((varName) => {
-          if (state.variables[varName]) {
+          if (osc.variables[varName]) {
             // Keep complete existing configuration
-            newVariables[varName] = state.variables[varName];
+            newVariables[varName] = osc.variables[varName];
           } else {
             // Create new configuration with defaults
             if (varName === "n") {
@@ -348,67 +436,119 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
           }
         });
 
-        set({ variables: newVariables }, false, "_updateVariables");
+        set(
+          (state) => {
+            const oscillators = [...state.oscillators];
+            oscillators[oscIndex] = {
+              ...oscillators[oscIndex],
+              variables: newVariables,
+            };
+            return { oscillators };
+          },
+          false,
+          "_updateVariables"
+        );
 
         // Generate waveform with new variables
-        get()._generateWaveform();
+        get()._generateWaveform(oscIndex);
       },
 
       /**
        * Internal: Generate waveform from compiled function and variables
        */
-      _generateWaveform: () => {
+      _generateWaveform: (oscIndex: number) => {
         const state = get();
+        const osc = state.oscillators[oscIndex];
 
-        if (!state.compiledFunction || !state.validationResult.isValid) {
-          set({ waveformData: [] }, false, "_generateWaveform");
+        if (!osc.compiledFunction || !osc.validationResult.isValid) {
+          set(
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                waveformData: [],
+              };
+              return { oscillators };
+            },
+            false,
+            "_generateWaveform"
+          );
           return;
         }
 
         try {
           const waveform = calculateWaveformFromExpression(
-            state.compiledFunction,
-            state.variables,
+            osc.compiledFunction,
+            osc.variables,
             2048
           );
-          set({ waveformData: waveform }, false, "_generateWaveform");
+          set(
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                waveformData: waveform,
+              };
+              return { oscillators };
+            },
+            false,
+            "_generateWaveform"
+          );
         } catch (error) {
           console.error("Waveform generation error:", error);
-          set({ waveformData: [] }, false, "_generateWaveformError");
+          set(
+            (state) => {
+              const oscillators = [...state.oscillators];
+              oscillators[oscIndex] = {
+                ...oscillators[oscIndex],
+                waveformData: [],
+              };
+              return { oscillators };
+            },
+            false,
+            "_generateWaveformError"
+          );
         }
       },
     }),
     {
       name: "EquationBuilder",
       // Exclude non-serializable state from DevTools
-      partialize: (state: EquationBuilderStore) =>
-        Object.fromEntries(
-          Object.entries(state).filter(
-            ([key]) =>
-              key !== "parsedExpression" &&
-              key !== "compiledFunction" &&
-              !key.startsWith("_")
-          )
-        ) as Partial<EquationBuilderStore>,
+      partialize: (state: EquationBuilderStore) => ({
+        oscillators: state.oscillators.map((osc) => ({
+          expression: osc.expression,
+          variables: osc.variables,
+          latexExpression: osc.latexExpression,
+          validationResult: osc.validationResult,
+          waveformData: osc.waveformData,
+          // Exclude non-serializable fields
+          parsedExpression: null,
+          compiledFunction: null,
+        })),
+      }),
     }
   )
 );
 
 // EquationBuilder selectors
 export const selectIsValidExpression = (
+  oscIndex: number,
   state: ReturnType<typeof useEquationBuilderStore.getState>
 ) => {
-  return state.validationResult.isValid && state.expression.length > 0;
+  const osc = state.oscillators[oscIndex];
+  return osc.validationResult.isValid && osc.expression.length > 0;
 };
 
 export const selectVariableCount = (
+  oscIndex: number,
   state: ReturnType<typeof useEquationBuilderStore.getState>
 ) => {
-  return Object.keys(state.variables).length;
+  return Object.keys(state.oscillators[oscIndex].variables).length;
 };
 
 export const selectHasWaveformData = (
+  oscIndex: number,
   state: ReturnType<typeof useEquationBuilderStore.getState>
 ) => {
-  return state.waveformData.length > 0;
+  return state.oscillators[oscIndex].waveformData.length > 0;
 };

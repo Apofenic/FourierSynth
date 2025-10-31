@@ -78,17 +78,6 @@ jest.mock("./VariableControlPanel", () => {
   };
 });
 
-// Mock contexts
-jest.mock("../../contexts/EquationBuilderContext", () => ({
-  EquationBuilderProvider: ({ children }: any) => <div>{children}</div>,
-  useEquationBuilder: () => ({
-    expression: "",
-    variables: {},
-    validationResult: { isValid: true, errors: [] },
-    updateExpression: jest.fn(),
-  }),
-}));
-
 // Mock react-dnd
 jest.mock("react-dnd", () => ({
   DndProvider: ({ children }: any) => <div>{children}</div>,
@@ -102,7 +91,7 @@ describe("EquationBuilder Component", () => {
   describe("Rendering", () => {
     it("renders without crashing", () => {
       render(<EquationBuilder />);
-      expect(screen.getByText("Custom Equation Builder")).toBeInTheDocument();
+      expect(screen.getByTestId("symbol-palette")).toBeInTheDocument();
     });
 
     it("renders all child components", () => {
@@ -112,25 +101,6 @@ describe("EquationBuilder Component", () => {
       expect(screen.getByTestId("equation-input")).toBeInTheDocument();
       expect(screen.getByTestId("equation-preview")).toBeInTheDocument();
       expect(screen.getByTestId("variable-control-panel")).toBeInTheDocument();
-    });
-
-    it("renders header with title", () => {
-      render(<EquationBuilder />);
-      expect(screen.getByText("Custom Equation Builder")).toBeInTheDocument();
-    });
-
-    it("renders help button", () => {
-      render(<EquationBuilder />);
-      const helpButton = screen.getByRole("button", { name: /learn more/i });
-      expect(helpButton).toBeInTheDocument();
-    });
-
-    it("renders section labels", () => {
-      render(<EquationBuilder />);
-
-      expect(screen.getByText("Expression Input")).toBeInTheDocument();
-      expect(screen.getByText("LaTeX Preview")).toBeInTheDocument();
-      expect(screen.getByText("Variable Controls")).toBeInTheDocument();
     });
   });
 
@@ -154,65 +124,6 @@ describe("EquationBuilder Component", () => {
 
       // Symbol palette should come first (left panel)
       expect(allElements[0]).toHaveAttribute("data-testid", "symbol-palette");
-    });
-  });
-
-  describe("Info Section", () => {
-    it("toggles info section when help button clicked", async () => {
-      render(<EquationBuilder />);
-
-      const helpButton = screen.getByRole("button", { name: /learn more/i });
-
-      // Initially info should not be visible
-      expect(screen.queryByText(/How to use:/i)).not.toBeVisible();
-
-      // Click to expand
-      fireEvent.click(helpButton);
-
-      await waitFor(() => {
-        expect(screen.getByText(/How to use:/i)).toBeVisible();
-      });
-
-      // Click to collapse
-      fireEvent.click(helpButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText(/How to use:/i)).not.toBeVisible();
-      });
-    });
-
-    it("displays usage instructions in info section", async () => {
-      render(<EquationBuilder />);
-
-      const helpButton = screen.getByRole("button", { name: /learn more/i });
-      fireEvent.click(helpButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/Type or drag symbols to build your equation/i)
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(/Use single-letter variables/i)
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            /Reserved: t \(time\), i \(imaginary unit\), e \(Euler's number\)/i
-          )
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("lists available functions in info section", async () => {
-      render(<EquationBuilder />);
-
-      const helpButton = screen.getByRole("button", { name: /learn more/i });
-      fireEvent.click(helpButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText(/Available functions: sin, cos, tan, exp, log/i)
-        ).toBeInTheDocument();
-      });
     });
   });
 
@@ -263,16 +174,15 @@ describe("EquationBuilder Component", () => {
       const inputField = screen.getByTestId("equation-input-field");
       expect(inputField).toHaveAttribute("maxlength", "200");
     });
+
+    it("accepts optional oscillatorIndex prop", () => {
+      expect(() =>
+        render(<EquationBuilder oscillatorIndex={1} />)
+      ).not.toThrow();
+    });
   });
 
   describe("Context Integration", () => {
-    it("wraps components in EquationBuilderProvider", () => {
-      // This is tested implicitly by the mock - if the provider wasn't there,
-      // the useEquationBuilder hook would fail
-      render(<EquationBuilder />);
-      expect(screen.getByTestId("equation-input")).toBeInTheDocument();
-    });
-
     it("wraps components in DndProvider", () => {
       // This is tested implicitly by the mock
       render(<EquationBuilder />);
@@ -281,26 +191,9 @@ describe("EquationBuilder Component", () => {
   });
 
   describe("Accessibility", () => {
-    it("has proper heading hierarchy", () => {
+    it("has proper component structure", () => {
       render(<EquationBuilder />);
-
-      const heading = screen.getByText("Custom Equation Builder");
-      expect(heading.tagName).toBe("H5");
-    });
-
-    it("help button has accessible name", () => {
-      render(<EquationBuilder />);
-
-      const helpButton = screen.getByRole("button", { name: /learn more/i });
-      expect(helpButton).toBeInTheDocument();
-    });
-
-    it("sections have descriptive labels", () => {
-      render(<EquationBuilder />);
-
-      expect(screen.getByText("Expression Input")).toBeInTheDocument();
-      expect(screen.getByText("LaTeX Preview")).toBeInTheDocument();
-      expect(screen.getByText("Variable Controls")).toBeInTheDocument();
+      expect(screen.getByTestId("equation-input")).toBeInTheDocument();
     });
   });
 

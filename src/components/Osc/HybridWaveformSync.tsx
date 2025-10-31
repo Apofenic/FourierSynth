@@ -5,6 +5,10 @@ import {
   calculateWaveformFromExpression,
 } from "../../utils/helperFunctions";
 
+interface HybridWaveformSyncProps {
+  oscillatorIndex: number;
+}
+
 /**
  * Component that synchronizes hybrid waveform calculation
  * The equation defines the partial series formula, and the result is
@@ -13,22 +17,31 @@ import {
  * This component bridges the equation builder and synth controls contexts
  * to generate the waveform from the equation-defined partials.
  */
-export const HybridWaveformSync: React.FC = () => {
+export const HybridWaveformSync: React.FC<HybridWaveformSyncProps> = ({
+  oscillatorIndex,
+}) => {
   const compiledFunction = useEquationBuilderStore(
-    (state) => state.compiledFunction
+    (state) => state.oscillators[oscillatorIndex].compiledFunction
   );
-  const expression = useEquationBuilderStore((state) => state.expression);
+  const expression = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].expression
+  );
   const validationResult = useEquationBuilderStore(
-    (state) => state.validationResult
+    (state) => state.oscillators[oscillatorIndex].validationResult
   );
-  const variables = useEquationBuilderStore((state) => state.variables);
+  const variables = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].variables
+  );
   const equationWaveformData = useEquationBuilderStore(
-    (state) => state.waveformData
+    (state) => state.oscillators[oscillatorIndex].waveformData
   );
 
-  const harmonics = useSynthControlsStore((state) => state.harmonics);
-  const setWaveformData = useSynthControlsStore(
-    (state) => state.setWaveformData
+  const oscillator = useSynthControlsStore(
+    (state) => state.oscillators[oscillatorIndex]
+  );
+  const harmonics = oscillator?.harmonics || [];
+  const updateOscillatorParam = useSynthControlsStore(
+    (state) => state.updateOscillatorParam
   );
   const syncHarmonicsFromWaveform = useSynthControlsStore(
     (state) => state.syncHarmonicsFromWaveform
@@ -54,12 +67,18 @@ export const HybridWaveformSync: React.FC = () => {
       );
 
       // Sync harmonics from the equation's waveform
-      syncHarmonicsFromWaveform(equationWaveformData, nValue);
+      syncHarmonicsFromWaveform(oscillatorIndex, equationWaveformData, nValue);
     }
 
     // Update previous tab reference
     prevTabRef.current = activeTab;
-  }, [activeTab, equationWaveformData, variables.n, syncHarmonicsFromWaveform]);
+  }, [
+    activeTab,
+    equationWaveformData,
+    variables.n,
+    syncHarmonicsFromWaveform,
+    oscillatorIndex,
+  ]);
 
   useEffect(() => {
     try {
@@ -91,7 +110,11 @@ export const HybridWaveformSync: React.FC = () => {
           }
         }
 
-        setWaveformData(combinedWaveform);
+        updateOscillatorParam(
+          oscillatorIndex,
+          "waveformData",
+          combinedWaveform
+        );
       } else {
         // When on harmonic tab, use the harmonic controls
         const nValue = variables.n?.value ?? 1;
@@ -99,33 +122,25 @@ export const HybridWaveformSync: React.FC = () => {
         const activeHarmonics = harmonics.slice(0, maxHarmonics);
         const harmonicWaveform = calculateWaveform(activeHarmonics);
 
-        // Only normalize if clipping would occur (max > 1.0)
-        // This preserves amplitude changes while preventing distortion
-        const maxAmplitude = Math.max(
-          ...Array.from(harmonicWaveform).map(Math.abs)
+        updateOscillatorParam(
+          oscillatorIndex,
+          "waveformData",
+          harmonicWaveform
         );
-        if (maxAmplitude > 1.0) {
-          for (let i = 0; i < harmonicWaveform.length; i++) {
-            harmonicWaveform[i] /= maxAmplitude;
-          }
-        }
-
-        setWaveformData(harmonicWaveform);
       }
     } catch (error) {
-      console.error("HybridWaveformSync effect error:", error);
+      console.error("Error calculating waveform:", error);
     }
   }, [
-    harmonics,
-    compiledFunction,
-    expression,
-    validationResult.isValid,
     activeTab,
-    variablesKey, // Use the memoized key
-    setWaveformData,
+    compiledFunction,
+    validationResult.isValid,
+    variablesKey,
+    harmonics,
+    oscillatorIndex,
+    updateOscillatorParam,
     variables,
   ]);
 
-  // This component doesn't render anything
   return null;
 };

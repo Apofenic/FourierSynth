@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
 import { useSynthControlsStore } from "./useSynthControlsStore";
-import { AudioEngineState } from "../types";
+import { AudioEngineState, OscillatorNodeSet } from "../types";
 
 /**
  * External manager class for Web Audio API nodes
@@ -10,9 +10,21 @@ import { AudioEngineState } from "../types";
  */
 class AudioNodeManager {
   audioContext: AudioContext | null = null;
-  oscillatorNode: OscillatorNode | null = null;
-  gainNode: GainNode | null = null;
+  oscillators: OscillatorNodeSet[] = [];
+  mixerGainNode: GainNode | null = null;
+  masterGainNode: GainNode | null = null;
   filterNode: BiquadFilterNode | null = null;
+
+  constructor() {
+    // Initialize 4 empty oscillator slots
+    this.oscillators = Array(4)
+      .fill(null)
+      .map(() => ({
+        sourceNode: null,
+        gainNode: null,
+        waveformBuffer: null,
+      }));
+  }
 
   /**
    * Initialize audio context if not already created
@@ -26,20 +38,116 @@ class AudioNodeManager {
   }
 
   /**
+   * Create an oscillator chain (source + gain node)
+   */
+  createOscillatorChain(
+    audioContext: AudioContext,
+    waveformData: Float32Array,
+    frequency: number,
+    volume: number
+  ): OscillatorNodeSet {
+    // Validate waveformData
+    if (!waveformData || waveformData.length === 0) {
+      console.warn("Cannot create oscillator: waveformData is empty");
+      return {
+        sourceNode: null,
+        gainNode: null,
+        waveformBuffer: null,
+      };
+    }
+
+    // Create AudioBuffer
+    const buffer = audioContext.createBuffer(
+      1, // mono
+      waveformData.length,
+      audioContext.sampleRate
+    );
+    // Copy waveform data - create new Float32Array to ensure proper type
+    const bufferData = new Float32Array(waveformData);
+    buffer.copyToChannel(bufferData, 0);
+
+    // Create BufferSourceNode
+    const sourceNode = audioContext.createBufferSource();
+    sourceNode.buffer = buffer;
+    sourceNode.loop = true;
+
+    // Calculate playback rate for frequency control
+    const baseCycleFrequency = audioContext.sampleRate / waveformData.length;
+    sourceNode.playbackRate.value = frequency / baseCycleFrequency;
+
+    // Create GainNode for volume control
+    const gainNode = audioContext.createGain();
+    gainNode.gain.value = volume;
+
+    // Connect source -> gain
+    sourceNode.connect(gainNode);
+
+    return {
+      sourceNode,
+      gainNode,
+      waveformBuffer: buffer,
+    };
+  }
+
+  /**
+   * Clean up a specific oscillator
+   */
+  cleanupOscillator(oscIndex: number): void {
+    if (oscIndex < 0 || oscIndex >= this.oscillators.length) return;
+
+    const osc = this.oscillators[oscIndex];
+    if (osc.sourceNode) {
+      try {
+        osc.sourceNode.stop();
+        osc.sourceNode.disconnect();
+      } catch (e) {
+        console.warn(`Error stopping oscillator ${oscIndex}:`, e);
+      }
+    }
+    if (osc.gainNode) {
+      try {
+        osc.gainNode.disconnect();
+      } catch (e) {
+        console.warn(`Error disconnecting gain node ${oscIndex}:`, e);
+      }
+    }
+
+    this.oscillators[oscIndex] = {
+      sourceNode: null,
+      gainNode: null,
+      waveformBuffer: null,
+    };
+  }
+
+  /**
    * Clean up all audio nodes
    */
   cleanup(): void {
-    if (this.oscillatorNode) {
-      try {
-        this.oscillatorNode.stop();
-        this.oscillatorNode.disconnect();
-      } catch (e) {
-        console.warn("Error stopping oscillator:", e);
-      }
-      this.oscillatorNode = null;
+    // Clean up all oscillators
+    for (let i = 0; i < this.oscillators.length; i++) {
+      this.cleanupOscillator(i);
     }
+
+    // Clean up mixer and master gain
+    if (this.mixerGainNode) {
+      try {
+        this.mixerGainNode.disconnect();
+      } catch (e) {
+        console.warn("Error disconnecting mixer:", e);
+      }
+      this.mixerGainNode = null;
+    }
+
+    if (this.masterGainNode) {
+      try {
+        this.masterGainNode.disconnect();
+      } catch (e) {
+        console.warn("Error disconnecting master gain:", e);
+      }
+      this.masterGainNode = null;
+    }
+
     this.filterNode = null;
-    this.gainNode = null;
   }
 }
 
@@ -53,9 +161,15 @@ export const audioNodes = new AudioNodeManager();
 export const useAudioEngineStore = create<AudioEngineState>()(
   devtools(
     (set, get) => ({
-      // Initial state
+      // Initial state - 4 oscillators (all active)
       isPlaying: false,
-      frequency: 220,
+      oscillators: [
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 0.75, isActive: true },
+      ],
+      masterVolume: 75,
       cutoffFrequency: 2000,
       resonance: 0,
 
@@ -67,76 +181,6 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       },
 
       /**
-       * Start audio playback
-       */
-      startAudio: () => {
-        audioNodes.initializeAudioContext();
-        set({ isPlaying: true });
-        get()._recreateAudio();
-      },
-
-      /**
-       * Stop audio playback and cleanup
-       */
-      stopAudio: () => {
-        audioNodes.cleanup();
-        set({ isPlaying: false });
-      },
-
-      /**
-       * Update frequency in real-time
-       */
-      updateFrequency: (freq: number) => {
-        set({ frequency: freq });
-
-        // If source is currently playing, update playback rate in real-time
-        if (audioNodes.oscillatorNode && audioNodes.audioContext) {
-          const sourceNode = audioNodes.oscillatorNode as any;
-          const waveformData = useEquationBuilderStore.getState().waveformData;
-          const waveformLength = waveformData.length || 2048;
-          const baseCycleFrequency =
-            audioNodes.audioContext.sampleRate / waveformLength;
-          const time = audioNodes.audioContext.currentTime;
-
-          // Update playback rate to match new frequency
-          if (sourceNode.playbackRate) {
-            sourceNode.playbackRate.exponentialRampToValueAtTime(
-              freq / baseCycleFrequency,
-              time + 0.001
-            );
-          }
-        }
-      },
-
-      /**
-       * Update filter parameters in real-time
-       */
-      updateFilter: (cutoff: number, resonance: number) => {
-        set({ cutoffFrequency: cutoff, resonance: resonance });
-
-        // If filter is currently active, update it in real-time
-        if (audioNodes.filterNode && audioNodes.audioContext) {
-          const time = audioNodes.audioContext.currentTime;
-          // Apply slight smoothing to avoid clicks
-          audioNodes.filterNode.frequency.exponentialRampToValueAtTime(
-            cutoff,
-            time + 0.01
-          );
-          audioNodes.filterNode.Q.linearRampToValueAtTime(
-            resonance,
-            time + 0.01
-          );
-        }
-      },
-
-      /**
-       * Set playing state (for external control)
-       */
-      setIsPlaying: (playing: boolean) => {
-        set({ isPlaying: playing });
-      },
-
-      /**
        * Recreate audio chain (internal method)
        * Called when isPlaying, harmonics, or waveformData changes
        */
@@ -144,15 +188,8 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const state = get();
         if (!state.isPlaying) return;
 
-        // Get dependencies from other stores
-        const waveformData = useEquationBuilderStore.getState().waveformData;
-        const harmonics = useSynthControlsStore.getState().harmonics;
-
-        // Check if waveformData has data
-        if (!waveformData || waveformData.length === 0) {
-          console.warn("Cannot create audio: waveformData is empty");
-          return;
-        }
+        // Get dependencies from SynthControls store
+        const synthControls = useSynthControlsStore.getState();
 
         // Initialize audio context if needed
         if (!audioNodes.audioContext) {
@@ -165,12 +202,17 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         // Cleanup existing nodes
         audioNodes.cleanup();
 
-        // Create gain node for volume control
-        const gainNode = audioContext.createGain();
-        gainNode.gain.value = 0.5;
-        audioNodes.gainNode = gainNode;
+        // Create mixer gain node (unity gain, oscillators control mix)
+        const mixerGain = audioContext.createGain();
+        mixerGain.gain.value = 1.0;
+        audioNodes.mixerGainNode = mixerGain;
 
-        // Create 4-pole filter (four cascaded 2nd-order filters)
+        // Create master gain node
+        const masterGain = audioContext.createGain();
+        masterGain.gain.value = state.masterVolume / 100;
+        audioNodes.masterGainNode = masterGain;
+
+        // Create 4-pole filter cascade
         const filter1 = audioContext.createBiquadFilter();
         filter1.type = "lowpass";
         filter1.frequency.value = state.cutoffFrequency;
@@ -191,44 +233,226 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         filter4.frequency.value = state.cutoffFrequency;
         filter4.Q.value = state.resonance * 0.2;
 
-        // Store the first filter for parameter updates
+        // Store first filter for parameter updates
         audioNodes.filterNode = filter1;
 
-        // Create audio buffer source node
-        const sourceNode = audioContext.createBufferSource();
+        // Create oscillator chains for all active oscillators
+        for (let i = 0; i < state.oscillators.length; i++) {
+          const oscState = state.oscillators[i];
+          if (!oscState.isActive) continue;
 
-        // Convert waveformData to Float32Array
-        const calculatedWaveform = new Float32Array(waveformData);
+          const oscParams = synthControls.oscillators[i];
+          if (
+            !oscParams ||
+            !oscParams.waveformData ||
+            oscParams.waveformData.length === 0
+          ) {
+            console.warn(`Oscillator ${i}: no waveform data available`);
+            continue;
+          }
 
-        // Create AudioBuffer
-        const buffer = audioContext.createBuffer(
-          1, // mono
-          calculatedWaveform.length,
-          audioContext.sampleRate
-        );
+          // Create oscillator chain
+          const nodeSet = audioNodes.createOscillatorChain(
+            audioContext,
+            oscParams.waveformData,
+            oscState.frequency,
+            oscState.volume
+          );
 
-        // Copy waveform data
-        buffer.copyToChannel(calculatedWaveform, 0);
+          if (nodeSet.sourceNode && nodeSet.gainNode) {
+            // Store node set
+            audioNodes.oscillators[i] = nodeSet;
 
-        // Set buffer and enable looping
-        sourceNode.buffer = buffer;
-        sourceNode.loop = true;
+            // Connect to mixer
+            nodeSet.gainNode.connect(mixerGain);
 
-        // Adjust playback rate to match frequency
-        const baseCycleFrequency =
-          audioContext.sampleRate / calculatedWaveform.length;
-        sourceNode.playbackRate.value = state.frequency / baseCycleFrequency;
+            // Start playback
+            nodeSet.sourceNode.start();
+          }
+        }
 
-        // Connect audio chain: source -> filters -> gain -> output
-        sourceNode.connect(filter1);
+        // Connect audio graph: mixer -> filter cascade -> master -> output
+        mixerGain.connect(filter1);
         filter1.connect(filter2);
         filter2.connect(filter3);
         filter3.connect(filter4);
-        filter4.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        filter4.connect(masterGain);
+        masterGain.connect(audioContext.destination);
+      },
 
-        sourceNode.start();
-        audioNodes.oscillatorNode = sourceNode as any;
+      /**
+       * Start audio playback
+       */
+      startAudio: () => {
+        audioNodes.initializeAudioContext();
+        set({ isPlaying: true });
+        get()._recreateAudio();
+      },
+
+      /**
+       * Stop audio playback and cleanup
+       */
+      stopAudio: () => {
+        audioNodes.cleanup();
+        set({ isPlaying: false });
+      },
+
+      /**
+       * Update frequency for a specific oscillator in real-time
+       */
+      updateOscillatorFrequency: (oscIndex: number, freq: number) => {
+        set((state) => ({
+          oscillators: state.oscillators.map((osc, i) =>
+            i === oscIndex ? { ...osc, frequency: freq } : osc
+          ),
+        }));
+
+        // If oscillator is currently playing, update playback rate in real-time
+        const nodeSet = audioNodes.oscillators[oscIndex];
+        if (nodeSet && nodeSet.sourceNode && audioNodes.audioContext) {
+          const synthControls = useSynthControlsStore.getState();
+          const oscParams = synthControls.oscillators[oscIndex];
+          if (oscParams && oscParams.waveformData) {
+            const baseCycleFrequency =
+              audioNodes.audioContext.sampleRate /
+              oscParams.waveformData.length;
+            const time = audioNodes.audioContext.currentTime;
+
+            nodeSet.sourceNode.playbackRate.exponentialRampToValueAtTime(
+              freq / baseCycleFrequency,
+              time + 0.001
+            );
+          }
+        }
+      },
+
+      /**
+       * Update volume for a specific oscillator in real-time
+       */
+      updateOscillatorVolume: (oscIndex: number, volume: number) => {
+        set((state) => ({
+          oscillators: state.oscillators.map((osc, i) =>
+            i === oscIndex ? { ...osc, volume } : osc
+          ),
+        }));
+
+        // If oscillator is currently playing, update gain in real-time
+        const nodeSet = audioNodes.oscillators[oscIndex];
+        if (nodeSet && nodeSet.gainNode && audioNodes.audioContext) {
+          const time = audioNodes.audioContext.currentTime;
+          nodeSet.gainNode.gain.linearRampToValueAtTime(volume, time + 0.01);
+        }
+      },
+
+      /**
+       * Update master volume in real-time
+       */
+      updateMasterVolume: (volume: number) => {
+        set({ masterVolume: volume });
+
+        // If master gain is active, update it in real-time
+        if (audioNodes.masterGainNode && audioNodes.audioContext) {
+          const time = audioNodes.audioContext.currentTime;
+          audioNodes.masterGainNode.gain.linearRampToValueAtTime(
+            volume / 100,
+            time + 0.01
+          );
+        }
+      },
+
+      /**
+       * Toggle oscillator on/off with smooth fade
+       */
+      toggleOscillator: (oscIndex: number, isActive: boolean) => {
+        set((state) => ({
+          oscillators: state.oscillators.map((osc, i) =>
+            i === oscIndex ? { ...osc, isActive } : osc
+          ),
+        }));
+
+        if (!get().isPlaying) return;
+
+        if (isActive) {
+          // Enable oscillator: create and start
+          const state = get();
+          const synthControls = useSynthControlsStore.getState();
+          const oscParams = synthControls.oscillators[oscIndex];
+          const oscState = state.oscillators[oscIndex];
+
+          if (
+            !oscParams ||
+            !oscParams.waveformData ||
+            oscParams.waveformData.length === 0
+          ) {
+            console.warn(
+              `Cannot enable oscillator ${oscIndex}: no waveform data`
+            );
+            return;
+          }
+
+          if (!audioNodes.audioContext || !audioNodes.mixerGainNode) {
+            console.warn(
+              `Cannot enable oscillator ${oscIndex}: audio context not initialized`
+            );
+            return;
+          }
+
+          // Create oscillator chain
+          const nodeSet = audioNodes.createOscillatorChain(
+            audioNodes.audioContext,
+            oscParams.waveformData,
+            oscState.frequency,
+            oscState.volume
+          );
+
+          if (nodeSet.sourceNode && nodeSet.gainNode) {
+            audioNodes.oscillators[oscIndex] = nodeSet;
+            nodeSet.gainNode.connect(audioNodes.mixerGainNode);
+            nodeSet.sourceNode.start();
+          }
+        } else {
+          // Disable oscillator: fade out and stop
+          const nodeSet = audioNodes.oscillators[oscIndex];
+          if (nodeSet && nodeSet.gainNode && audioNodes.audioContext) {
+            const time = audioNodes.audioContext.currentTime;
+            nodeSet.gainNode.gain.exponentialRampToValueAtTime(
+              0.001,
+              time + 0.05
+            );
+
+            // Stop and cleanup after fade
+            setTimeout(() => {
+              audioNodes.cleanupOscillator(oscIndex);
+            }, 60);
+          }
+        }
+      },
+
+      /**
+       * Update filter parameters in real-time
+       */
+      updateFilter: (cutoff: number, resonance: number) => {
+        set({ cutoffFrequency: cutoff, resonance: resonance });
+
+        // If filter is currently active, update it in real-time
+        if (audioNodes.filterNode && audioNodes.audioContext) {
+          const time = audioNodes.audioContext.currentTime;
+          audioNodes.filterNode.frequency.exponentialRampToValueAtTime(
+            cutoff,
+            time + 0.01
+          );
+          audioNodes.filterNode.Q.linearRampToValueAtTime(
+            resonance,
+            time + 0.01
+          );
+        }
+      },
+
+      /**
+       * Set playing state (for external control)
+       */
+      setIsPlaying: (playing: boolean) => {
+        set({ isPlaying: playing });
       },
     }),
     { name: "AudioEngine" }
@@ -246,27 +470,75 @@ export const selectAudioParameters = (
   state: ReturnType<typeof useAudioEngineStore.getState>
 ) => {
   return {
-    frequency: state.frequency,
+    oscillators: state.oscillators,
+    masterVolume: state.masterVolume,
     cutoffFrequency: state.cutoffFrequency,
     resonance: state.resonance,
   };
 };
+
 // Subscribe to waveformData changes to recreate audio
 useEquationBuilderStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
-  if (
-    audioEngineState.isPlaying &&
-    state.waveformData !== prevState.waveformData
-  ) {
-    audioEngineState._recreateAudio();
+  if (audioEngineState.isPlaying) {
+    // Check if any oscillator's waveform data changed
+    const waveformChanged = state.oscillators.some(
+      (osc, index) =>
+        osc.waveformData !== prevState.oscillators[index].waveformData
+    );
+    if (waveformChanged) {
+      audioEngineState._recreateAudio();
+    }
   }
 });
 
-// Subscribe to harmonics changes to recreate audio
+// Subscribe to oscillator changes to recreate audio
 useSynthControlsStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
-  if (audioEngineState.isPlaying && state.harmonics !== prevState.harmonics) {
-    audioEngineState._recreateAudio();
+  if (
+    audioEngineState.isPlaying &&
+    state.oscillators !== prevState.oscillators
+  ) {
+    // Check if detune changed for any oscillator
+    const detuneChanged = state.oscillators.some(
+      (osc, index) =>
+        osc.detune.octave !== prevState.oscillators[index].detune.octave ||
+        osc.detune.semitone !== prevState.oscillators[index].detune.semitone ||
+        osc.detune.cent !== prevState.oscillators[index].detune.cent
+    );
+
+    if (detuneChanged) {
+      // Re-apply current frequency with new detune values
+      const activeNote = state.keyboardNotes.find(
+        (note) => note.key === state.activeKey
+      );
+      if (activeNote) {
+        // Import the helper function inline
+        const calculateDetunedFrequency = (
+          baseFrequency: number,
+          octave: number,
+          semitone: number,
+          cent: number
+        ): number => {
+          const totalSemitones = octave * 12 + semitone + cent / 100;
+          return baseFrequency * Math.pow(2, totalSemitones / 12);
+        };
+
+        state.oscillators.forEach((osc, index) => {
+          if (audioEngineState.oscillators[index].isActive) {
+            const detunedFreq = calculateDetunedFrequency(
+              activeNote.frequency,
+              osc.detune.octave,
+              osc.detune.semitone,
+              osc.detune.cent
+            );
+            audioEngineState.updateOscillatorFrequency(index, detunedFreq);
+          }
+        });
+      }
+    } else {
+      audioEngineState._recreateAudio();
+    }
   }
 });
 

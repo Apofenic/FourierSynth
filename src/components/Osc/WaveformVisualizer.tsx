@@ -2,12 +2,21 @@ import React, { useEffect, useRef } from "react";
 import { Paper, Typography } from "@mui/material";
 import { useSynthControlsStore } from "../../stores";
 
+interface WaveformVisualizerProps {
+  oscillatorIndex: number;
+}
+
 /**
  * WaveformVisualizer component
  * Displays a real-time visualization of the synthesized waveform on a canvas
  */
-export const WaveformVisualizer: React.FC = () => {
-  const waveformData = useSynthControlsStore((state) => state.waveformData);
+export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
+  oscillatorIndex,
+}) => {
+  const oscillator = useSynthControlsStore(
+    (state) => state.oscillators[oscillatorIndex]
+  );
+  const waveformData = oscillator?.waveformData || new Float32Array(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // Draw the waveform on canvas whenever waveformData changes
   useEffect(() => {

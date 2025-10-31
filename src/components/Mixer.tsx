@@ -7,15 +7,19 @@ import {
   Switch,
   FormControlLabel,
 } from "@mui/material";
-import { useSynthControlsStore } from "../stores";
+import { useAudioEngineStore, useSynthControlsStore } from "../stores";
 import { Dial } from "./Dial";
 
 export const Mixer: React.FC = () => {
-  const [masterVolume, setMasterVolume] = React.useState<number>(75);
-  const [osc1Volume, setOsc1Volume] = React.useState<number>(75);
-  const [osc2Volume, setOsc2Volume] = React.useState<number>(75);
-  const [osc3Volume, setOsc3Volume] = React.useState<number>(75);
-  const [osc4Volume, setOsc4Volume] = React.useState<number>(75);
+  // Connect to stores
+  const oscillators = useAudioEngineStore((state) => state.oscillators);
+  const masterVolume = useAudioEngineStore((state) => state.masterVolume);
+  const updateOscillatorVolume = useAudioEngineStore(
+    (state) => state.updateOscillatorVolume
+  );
+  const updateMasterVolume = useAudioEngineStore(
+    (state) => state.updateMasterVolume
+  );
 
   const keyboardEnabled = useSynthControlsStore(
     (state) => state.keyboardEnabled
@@ -26,6 +30,15 @@ export const Mixer: React.FC = () => {
 
   const handleKeyboardToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeyboardEnabled(event.target.checked);
+  };
+
+  const handleOscVolumeChange = (oscIndex: number, volume: number) => {
+    // Convert 0-100 range to 0-1 for audio engine
+    updateOscillatorVolume(oscIndex, volume / 100);
+  };
+
+  const handleMasterVolumeChange = (volume: number) => {
+    updateMasterVolume(volume);
   };
 
   return (
@@ -68,7 +81,7 @@ export const Mixer: React.FC = () => {
             value={masterVolume}
             min={0}
             max={100}
-            onChange={setMasterVolume}
+            onChange={handleMasterVolumeChange}
             label="Master Volume"
             size={100}
             ringColor="#2ecc71"
@@ -82,40 +95,40 @@ export const Mixer: React.FC = () => {
           }}
         >
           <Dial
-            value={osc1Volume}
+            value={oscillators[0].volume * 100}
             min={0}
             max={100}
-            onChange={setOsc1Volume}
+            onChange={(vol) => handleOscVolumeChange(0, vol)}
             label="Osc 1 Volume"
             size={75}
-            ringColor="#2ecc71"
+            ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
           />
           <Dial
-            value={osc2Volume}
+            value={oscillators[1].volume * 100}
             min={0}
             max={100}
-            onChange={setOsc2Volume}
+            onChange={(vol) => handleOscVolumeChange(1, vol)}
             label="Osc 2 Volume"
             size={75}
-            ringColor="#2ecc71"
+            ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
           />
           <Dial
-            value={osc3Volume}
+            value={oscillators[2].volume * 100}
             min={0}
             max={100}
-            onChange={setOsc3Volume}
+            onChange={(vol) => handleOscVolumeChange(2, vol)}
             label="Osc 3 Volume"
             size={75}
-            ringColor="#2ecc71"
+            ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
           />
           <Dial
-            value={osc4Volume}
+            value={oscillators[3].volume * 100}
             min={0}
             max={100}
-            onChange={setOsc4Volume}
+            onChange={(vol) => handleOscVolumeChange(3, vol)}
             label="Osc 4 Volume"
             size={75}
-            ringColor="#2ecc71"
+            ringColor={oscillators[3].isActive ? "#2ecc71" : "#95a5a6"}
             numberFontSize={18}
             minMaxFontSize={10}
           />
@@ -129,6 +142,7 @@ export const Mixer: React.FC = () => {
                 checked={false}
                 onChange={() => {}}
                 color="primary"
+                disabled
               />
             }
             label="unison"

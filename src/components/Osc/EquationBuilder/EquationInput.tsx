@@ -49,6 +49,8 @@ import { useEquationBuilderStore } from "../../../stores";
  * Props for EquationInput component
  */
 interface EquationInputProps {
+  /** Oscillator index (0-3) */
+  oscillatorIndex: number;
   /** Maximum character length for the expression */
   maxLength?: number;
 }
@@ -71,10 +73,12 @@ export const equationPresets = [
 export const EquationInput = forwardRef<
   EquationInputHandle,
   EquationInputProps
->(({ maxLength = 200 }, ref) => {
-  const expression = useEquationBuilderStore((state) => state.expression);
+>(({ oscillatorIndex, maxLength = 200 }, ref) => {
+  const expression = useEquationBuilderStore(
+    (state) => state.oscillators[oscillatorIndex].expression
+  );
   const validationResult = useEquationBuilderStore(
-    (state) => state.validationResult
+    (state) => state.oscillators[oscillatorIndex].validationResult
   );
   const updateExpression = useEquationBuilderStore(
     (state) => state.updateExpression
@@ -132,7 +136,7 @@ export const EquationInput = forwardRef<
       clearTimeout(debounceTimerRef.current);
     }
     debounceTimerRef.current = setTimeout(() => {
-      updateExpression(newExpression);
+      updateExpression(oscillatorIndex, newExpression);
     }, 300);
 
     // Focus and set cursor position
@@ -185,9 +189,11 @@ export const EquationInput = forwardRef<
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
-      updateExpression(localExpression);
+      updateExpression(oscillatorIndex, localExpression);
     }
-  }; /**
+  };
+
+  /**
    * Handle click events to update cursor position
    */
   const handleClick = (e: MouseEvent<HTMLInputElement>) => {
@@ -200,7 +206,7 @@ export const EquationInput = forwardRef<
    */
   const handleClear = () => {
     setLocalExpression("");
-    updateExpression("");
+    updateExpression(oscillatorIndex, "");
     setCursorPosition(0);
     if (inputRef.current) {
       inputRef.current.focus();
@@ -261,14 +267,11 @@ export const EquationInput = forwardRef<
             id="preset-equations-select"
             value=""
             label="Preset Equations"
-            onChange={(e) => {
-              const selectedValue = e.target.value as string;
+            onChange={(event) => {
+              const selectedValue = event.target.value as string;
               setLocalExpression(selectedValue);
-              updateExpression(selectedValue);
-              setCursorPosition(selectedValue.length);
-              if (inputRef.current) {
-                inputRef.current.focus();
-              }
+              updateExpression(oscillatorIndex, selectedValue);
+              inputRef.current?.focus();
             }}
           >
             {equationPresets.map((preset, index) => (

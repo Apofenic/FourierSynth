@@ -21,10 +21,16 @@ import EquationInput, { EquationInputHandle } from "./EquationInput";
 import { EquationPreview } from "./EquationPreview";
 import { VariableControlPanel } from "./VariableControlPanel";
 
+interface EquationBuilderProps {
+  oscillatorIndex?: number;
+}
+
 /**
  * Inner component that has access to context
  */
-const EquationBuilderInner: React.FC = () => {
+const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
+  oscillatorIndex = 0,
+}) => {
   const inputRef = useRef<EquationInputHandle>(null);
 
   /**
@@ -103,7 +109,11 @@ const EquationBuilderInner: React.FC = () => {
               >
                 {/* Equation Input */}
                 <Box>
-                  <EquationInput ref={inputRef} maxLength={200} />
+                  <EquationInput
+                    ref={inputRef}
+                    oscillatorIndex={oscillatorIndex}
+                    maxLength={200}
+                  />
                 </Box>
 
                 <Divider />
@@ -117,7 +127,7 @@ const EquationBuilderInner: React.FC = () => {
                     flexDirection: "column",
                   }}
                 >
-                  <EquationPreview />
+                  <EquationPreview oscillatorIndex={oscillatorIndex} />
                 </Box>
 
                 {/* Variable Controls */}
@@ -133,7 +143,7 @@ const EquationBuilderInner: React.FC = () => {
               }}
             >
               <Box sx={{ flex: 1, minHeight: 0 }}>
-                <VariableControlPanel />
+                <VariableControlPanel oscillatorIndex={oscillatorIndex} />
               </Box>
             </Grid>
           </Grid>
@@ -151,8 +161,10 @@ const EquationBuilderInner: React.FC = () => {
  *
  * Note: Relies on EquationBuilderProvider being available in parent component tree
  */
-export const EquationBuilder: React.FC = () => {
-  return <EquationBuilderInner />;
+export const EquationBuilder: React.FC<EquationBuilderProps> = ({
+  oscillatorIndex = 0,
+}) => {
+  return <EquationBuilderInner oscillatorIndex={oscillatorIndex} />;
 };
 
 export default EquationBuilder;
