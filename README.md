@@ -4,15 +4,15 @@ A web-based Fourier series synthesizer and visualization tool built with React, 
 
 ## Features
 
-- **Customizable Fourier Series**: Adjust up to 8 harmonics with precise amplitude and phase controls.
 - **Real-time Audio Synthesis**: Generate and play waveforms using the Web Audio API with low-latency performance.
-- **Dynamic Waveform Visualization**: Real-time canvas rendering of waveforms, updated with every user interaction.
 - **Equation Builder**: Create and visualize mathematical equations that define waveforms, with LaTeX rendering support.
-- **Interactive Keyboard**: Play notes using a virtual keyboard with visual feedback and customizable key mappings.
+- **Harmonics Control**: Adjust harmonics with precise amplitude and phase controls.
 - **Advanced Synthesis Controls**: Fine-tune waveforms with adjustable filter cutoff, resonance, and waveform blending.
+- **Dynamic Waveform Visualization**: Real-time canvas rendering of waveforms, updated with every user interaction.
+- **Interactive Keyboard**: Play notes using a virtual keyboard with visual feedback and customizable key mappings.
+- **Modular Design**: Extensible architecture for adding new synthesis features and visualizations.
 - **State Management with Zustand**: Efficient and scalable state handling for harmonics, equations, and audio parameters.
 - **Performance Optimization**: Minimized re-renders and optimized rendering pipeline for smooth user experience.
-- **Modular Design**: Extensible architecture for adding new synthesis features and visualizations.
 
 ## Architecture
 

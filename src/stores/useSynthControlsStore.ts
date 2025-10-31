@@ -1,40 +1,56 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { HarmonicParam, SynthControlsStore } from "../types";
+import type { HarmonicParam, OscillatorParams, SynthControlsStore } from "../types";
 import { calculateWaveform } from "../utils/helperFunctions";
 import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
 
 /**
- * Generate initial waveform from first harmonic (sine wave)
+ * Create default oscillator parameters
  */
-const initialHarmonics: HarmonicParam[] = [
-  { amplitude: 1.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-  { amplitude: 0.0, phase: 0.5 * Math.PI },
-];
+const createDefaultOscillator = (id: number, isActive: boolean): OscillatorParams => {
+  const harmonics: HarmonicParam[] = isActive
+    ? [
+        { amplitude: 1.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+        { amplitude: 0.0, phase: 0.5 * Math.PI },
+      ]
+    : Array(8).fill({ amplitude: 0.0, phase: 0.5 * Math.PI });
 
-const initialWaveformData = calculateWaveform(initialHarmonics);
+  const waveformData = calculateWaveform(harmonics);
+
+  return {
+    id,
+    harmonics,
+    waveformData,
+    volume: 75,
+    isActive,
+  };
+};
 
 /**
  * SynthControls Store
  *
  * Manages synthesis control state including:
- * - 8 harmonics with amplitude and phase
+ * - 4 oscillators with individual harmonics and waveform data
  * - 17 keyboard notes with frequencies
  * - Active key tracking
- * - Waveform data for visualization
  * - UI state (keyboard enabled, active tab)
  */
 export const useSynthControlsStore = create<SynthControlsStore>()(
   devtools(
     (set) => ({
-      // Initial State
-      harmonics: initialHarmonics,
+      // Initial State - 4 oscillators
+      oscillators: [
+        createDefaultOscillator(1, true),
+        createDefaultOscillator(2, false),
+        createDefaultOscillator(3, false),
+        createDefaultOscillator(4, false),
+      ],
       keyboardNotes: [
         { key: "a", note: "C3", frequency: 130.81, isActive: false },
         { key: "w", note: "C#3", frequency: 138.59, isActive: false },
@@ -55,23 +71,62 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         { key: ";", note: "E4", frequency: 329.63, isActive: false },
       ],
       activeKey: null,
-      waveformData: initialWaveformData,
       keyboardEnabled: true,
       activeTab: "equation",
 
       // Actions
-      updateHarmonic: (index, paramType, value) =>
+      updateHarmonic: (oscIndex, harmonicIndex, paramType, value) =>
         set(
           (state) => {
-            const updatedHarmonics = [...state.harmonics];
-            updatedHarmonics[index] = {
-              ...updatedHarmonics[index],
+            const updatedOscillators = [...state.oscillators];
+            const osc = updatedOscillators[oscIndex];
+            const updatedHarmonics = [...osc.harmonics];
+            updatedHarmonics[harmonicIndex] = {
+              ...updatedHarmonics[harmonicIndex],
               [paramType]: value,
             };
-            return { harmonics: updatedHarmonics };
+
+            // Recalculate waveform for this oscillator
+            const waveformData = calculateWaveform(updatedHarmonics);
+
+            updatedOscillators[oscIndex] = {
+              ...osc,
+              harmonics: updatedHarmonics,
+              waveformData,
+            };
+
+            return { oscillators: updatedOscillators };
           },
           false,
           "updateHarmonic"
+        ),
+
+      updateOscillatorParam: (oscIndex, param, value) =>
+        set(
+          (state) => {
+            const updatedOscillators = [...state.oscillators];
+            updatedOscillators[oscIndex] = {
+              ...updatedOscillators[oscIndex],
+              [param]: value,
+            };
+            return { oscillators: updatedOscillators };
+          },
+          false,
+          "updateOscillatorParam"
+        ),
+
+      toggleOscillator: (oscIndex, isActive) =>
+        set(
+          (state) => {
+            const updatedOscillators = [...state.oscillators];
+            updatedOscillators[oscIndex] = {
+              ...updatedOscillators[oscIndex],
+              isActive,
+            };
+            return { oscillators: updatedOscillators };
+          },
+          false,
+          "toggleOscillator"
         ),
 
       updateKeyboardNoteState: (key, isActive) =>
@@ -96,15 +151,12 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           "clearActiveKey"
         ),
 
-      setWaveformData: (data) =>
-        set({ waveformData: data }, false, "setWaveformData"),
-
       setKeyboardEnabled: (enabled) =>
         set({ keyboardEnabled: enabled }, false, "setKeyboardEnabled"),
 
       setActiveTab: (tab) => set({ activeTab: tab }, false, "setActiveTab"),
 
-      syncHarmonicsFromWaveform: (waveform, numHarmonics) => {
+      syncHarmonicsFromWaveform: (oscIndex, waveform, numHarmonics) => {
         // Analyze waveform and extract harmonic components
         const extractedHarmonics = analyzeWaveformToHarmonics(
           waveform,
@@ -119,10 +171,33 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         // Trim if we extracted more than 8
         const finalHarmonics = extractedHarmonics.slice(0, 8);
 
-        set({ harmonics: finalHarmonics }, false, "syncHarmonicsFromWaveform");
+        set(
+          (state) => {
+            const updatedOscillators = [...state.oscillators];
+            updatedOscillators[oscIndex] = {
+              ...updatedOscillators[oscIndex],
+              harmonics: finalHarmonics,
+            };
+            return { oscillators: updatedOscillators };
+          },
+          false,
+          "syncHarmonicsFromWaveform"
+        );
       },
 
-      setHarmonics: (harmonics) => set({ harmonics }, false, "setHarmonics"),
+      setHarmonics: (oscIndex, harmonics) =>
+        set(
+          (state) => {
+            const updatedOscillators = [...state.oscillators];
+            updatedOscillators[oscIndex] = {
+              ...updatedOscillators[oscIndex],
+              harmonics,
+            };
+            return { oscillators: updatedOscillators };
+          },
+          false,
+          "setHarmonics"
+        ),
     }),
     {
       name: "SynthControls",
@@ -148,7 +223,8 @@ export const selectActiveFrequency = (
 };
 
 export const selectNonZeroHarmonics = (
+  oscIndex: number,
   state: ReturnType<typeof useSynthControlsStore.getState>
 ) => {
-  return state.harmonics.filter((h) => h.amplitude > 0);
+  return state.oscillators[oscIndex]?.harmonics.filter((h: HarmonicParam) => h.amplitude > 0) || [];
 };
