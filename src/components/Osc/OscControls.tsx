@@ -6,7 +6,13 @@ import { TunerControls } from "./TunerControls";
 import { HybridWaveformSync } from "./HybridWaveformSync";
 import { useSynthControlsStore } from "../../stores";
 
-export const OscControls: React.FC = () => {
+interface OscControlsProps {
+  oscillatorIndex: number;
+}
+
+export const OscControls: React.FC<OscControlsProps> = ({
+  oscillatorIndex,
+}) => {
   const activeTab = useSynthControlsStore((state) => state.activeTab);
   const setActiveTab = useSynthControlsStore((state) => state.setActiveTab);
 
@@ -27,7 +33,7 @@ export const OscControls: React.FC = () => {
       }}
     >
       {/* Hybrid waveform sync component - combines equation + harmonics */}
-      <HybridWaveformSync />
+      <HybridWaveformSync oscillatorIndex={oscillatorIndex} />
 
       <Box
         sx={{
@@ -38,7 +44,7 @@ export const OscControls: React.FC = () => {
           gridTemplateRows: "2.5fr 1fr",
         }}
       >
-        <WaveformVisualizer />
+        <WaveformVisualizer oscillatorIndex={oscillatorIndex} />
         <TunerControls />
       </Box>
       <Box
@@ -89,8 +95,12 @@ export const OscControls: React.FC = () => {
               flexDirection: "column",
             }}
           >
-            {activeTab === "equation" && <EquationBuilder />}
-            {activeTab === "harmonic" && <HarmonicsControl />}
+            {activeTab === "equation" && (
+              <EquationBuilder oscillatorIndex={oscillatorIndex} />
+            )}
+            {activeTab === "harmonic" && (
+              <HarmonicsControl oscillatorIndex={oscillatorIndex} />
+            )}
           </Box>
         </Paper>
       </Box>

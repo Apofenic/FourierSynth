@@ -78,17 +78,6 @@ jest.mock("./VariableControlPanel", () => {
   };
 });
 
-// Mock contexts
-jest.mock("../../contexts/EquationBuilderContext", () => ({
-  EquationBuilderProvider: ({ children }: any) => <div>{children}</div>,
-  useEquationBuilder: () => ({
-    expression: "",
-    variables: {},
-    validationResult: { isValid: true, errors: [] },
-    updateExpression: jest.fn(),
-  }),
-}));
-
 // Mock react-dnd
 jest.mock("react-dnd", () => ({
   DndProvider: ({ children }: any) => <div>{children}</div>,

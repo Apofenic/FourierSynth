@@ -17,11 +17,13 @@ class AudioNodeManager {
 
   constructor() {
     // Initialize 4 empty oscillator slots
-    this.oscillators = Array(4).fill(null).map(() => ({
-      sourceNode: null,
-      gainNode: null,
-      waveformBuffer: null,
-    }));
+    this.oscillators = Array(4)
+      .fill(null)
+      .map(() => ({
+        sourceNode: null,
+        gainNode: null,
+        waveformBuffer: null,
+      }));
   }
 
   /**
@@ -240,7 +242,11 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           if (!oscState.isActive) continue;
 
           const oscParams = synthControls.oscillators[i];
-          if (!oscParams || !oscParams.waveformData || oscParams.waveformData.length === 0) {
+          if (
+            !oscParams ||
+            !oscParams.waveformData ||
+            oscParams.waveformData.length === 0
+          ) {
             console.warn(`Oscillator ${i}: no waveform data available`);
             continue;
           }
@@ -308,7 +314,8 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           const oscParams = synthControls.oscillators[oscIndex];
           if (oscParams && oscParams.waveformData) {
             const baseCycleFrequency =
-              audioNodes.audioContext.sampleRate / oscParams.waveformData.length;
+              audioNodes.audioContext.sampleRate /
+              oscParams.waveformData.length;
             const time = audioNodes.audioContext.currentTime;
 
             nodeSet.sourceNode.playbackRate.exponentialRampToValueAtTime(
@@ -372,13 +379,21 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           const oscParams = synthControls.oscillators[oscIndex];
           const oscState = state.oscillators[oscIndex];
 
-          if (!oscParams || !oscParams.waveformData || oscParams.waveformData.length === 0) {
-            console.warn(`Cannot enable oscillator ${oscIndex}: no waveform data`);
+          if (
+            !oscParams ||
+            !oscParams.waveformData ||
+            oscParams.waveformData.length === 0
+          ) {
+            console.warn(
+              `Cannot enable oscillator ${oscIndex}: no waveform data`
+            );
             return;
           }
 
           if (!audioNodes.audioContext || !audioNodes.mixerGainNode) {
-            console.warn(`Cannot enable oscillator ${oscIndex}: audio context not initialized`);
+            console.warn(
+              `Cannot enable oscillator ${oscIndex}: audio context not initialized`
+            );
             return;
           }
 
@@ -400,7 +415,10 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           const nodeSet = audioNodes.oscillators[oscIndex];
           if (nodeSet && nodeSet.gainNode && audioNodes.audioContext) {
             const time = audioNodes.audioContext.currentTime;
-            nodeSet.gainNode.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+            nodeSet.gainNode.gain.exponentialRampToValueAtTime(
+              0.001,
+              time + 0.05
+            );
 
             // Stop and cleanup after fade
             setTimeout(() => {
@@ -473,7 +491,10 @@ useEquationBuilderStore.subscribe((state, prevState) => {
 // Subscribe to oscillator changes to recreate audio
 useSynthControlsStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
-  if (audioEngineState.isPlaying && state.oscillators !== prevState.oscillators) {
+  if (
+    audioEngineState.isPlaying &&
+    state.oscillators !== prevState.oscillators
+  ) {
     audioEngineState._recreateAudio();
   }
 });

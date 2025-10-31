@@ -15,12 +15,15 @@ describe("useSynthControlsStore", () => {
   it("initializes with correct default state", () => {
     const { result } = renderHook(() => useSynthControlsStore());
 
-    expect(result.current.harmonics).toHaveLength(8);
-    expect(result.current.harmonics[0]).toEqual({
+    expect(result.current.oscillators).toHaveLength(4);
+    expect(result.current.oscillators[0].harmonics).toHaveLength(8);
+    expect(result.current.oscillators[0].harmonics[0]).toEqual({
       amplitude: 1.0,
       phase: 0.5 * Math.PI,
     });
-    expect(result.current.harmonics[1].amplitude).toBe(0.0);
+    expect(result.current.oscillators[0].harmonics[1].amplitude).toBe(0.0);
+    expect(result.current.oscillators[0].isActive).toBe(true);
+    expect(result.current.oscillators[1].isActive).toBe(false);
     expect(result.current.keyboardNotes).toHaveLength(17);
     expect(result.current.activeKey).toBeNull();
     expect(result.current.keyboardEnabled).toBe(true);
@@ -32,37 +35,48 @@ describe("useSynthControlsStore", () => {
       const { result } = renderHook(() => useSynthControlsStore());
 
       act(() => {
-        result.current.updateHarmonic(1, "amplitude", 0.75);
+        result.current.updateHarmonic(0, 1, "amplitude", 0.75);
       });
 
-      expect(result.current.harmonics[1].amplitude).toBe(0.75);
-      expect(result.current.harmonics[1].phase).toBe(0.5 * Math.PI);
-      expect(result.current.harmonics[0].amplitude).toBe(1.0);
+      expect(result.current.oscillators[0].harmonics[1].amplitude).toBe(0.75);
+      expect(result.current.oscillators[0].harmonics[1].phase).toBe(0.5 * Math.PI);
+      expect(result.current.oscillators[0].harmonics[0].amplitude).toBe(1.0);
     });
 
     it("updates harmonic phase correctly", () => {
       const { result } = renderHook(() => useSynthControlsStore());
 
       act(() => {
-        result.current.updateHarmonic(2, "phase", Math.PI);
+        result.current.updateHarmonic(0, 2, "phase", Math.PI);
       });
 
-      expect(result.current.harmonics[2].phase).toBe(Math.PI);
-      expect(result.current.harmonics[2].amplitude).toBe(0.0);
+      expect(result.current.oscillators[0].harmonics[2].phase).toBe(Math.PI);
+      expect(result.current.oscillators[0].harmonics[2].amplitude).toBe(0.0);
     });
 
     it("does not affect other harmonics", () => {
       const { result } = renderHook(() => useSynthControlsStore());
-      const originalHarmonics = [...result.current.harmonics];
+      const originalHarmonics = [...result.current.oscillators[0].harmonics];
 
       act(() => {
-        result.current.updateHarmonic(3, "amplitude", 0.5);
+        result.current.updateHarmonic(0, 3, "amplitude", 0.5);
       });
 
       for (let i = 0; i < 8; i++) {
         if (i === 3) continue;
-        expect(result.current.harmonics[i]).toEqual(originalHarmonics[i]);
+        expect(result.current.oscillators[0].harmonics[i]).toEqual(originalHarmonics[i]);
       }
+    });
+
+    it("only affects the specified oscillator", () => {
+      const { result } = renderHook(() => useSynthControlsStore());
+
+      act(() => {
+        result.current.updateHarmonic(1, 0, "amplitude", 0.8);
+      });
+
+      expect(result.current.oscillators[1].harmonics[0].amplitude).toBe(0.8);
+      expect(result.current.oscillators[0].harmonics[0].amplitude).toBe(1.0); // unchanged
     });
   });
 
@@ -153,15 +167,33 @@ describe("useSynthControlsStore", () => {
   });
 
   describe("waveformData", () => {
-    it("sets waveform data", () => {
+    it("sets waveform data per oscillator", () => {
       const { result } = renderHook(() => useSynthControlsStore());
       const testData = new Float32Array(2048).fill(0.5);
 
       act(() => {
-        result.current.setWaveformData(testData);
+        result.current.updateOscillatorParam(0, "waveformData", testData);
       });
 
-      expect(result.current.waveformData).toEqual(testData);
+      expect(result.current.oscillators[0].waveformData).toEqual(testData);
+    });
+  });
+
+  describe("toggleOscillator", () => {
+    it("toggles oscillator active state", () => {
+      const { result } = renderHook(() => useSynthControlsStore());
+
+      act(() => {
+        result.current.toggleOscillator(1, true);
+      });
+
+      expect(result.current.oscillators[1].isActive).toBe(true);
+
+      act(() => {
+        result.current.toggleOscillator(1, false);
+      });
+
+      expect(result.current.oscillators[1].isActive).toBe(false);
     });
   });
 });

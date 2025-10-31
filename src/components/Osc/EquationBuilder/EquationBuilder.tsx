@@ -21,10 +21,14 @@ import EquationInput, { EquationInputHandle } from "./EquationInput";
 import { EquationPreview } from "./EquationPreview";
 import { VariableControlPanel } from "./VariableControlPanel";
 
+interface EquationBuilderProps {
+  oscillatorIndex?: number;
+}
+
 /**
  * Inner component that has access to context
  */
-const EquationBuilderInner: React.FC = () => {
+const EquationBuilderInner: React.FC<EquationBuilderProps> = ({ oscillatorIndex = 0 }) => {
   const inputRef = useRef<EquationInputHandle>(null);
 
   /**
@@ -151,8 +155,8 @@ const EquationBuilderInner: React.FC = () => {
  *
  * Note: Relies on EquationBuilderProvider being available in parent component tree
  */
-export const EquationBuilder: React.FC = () => {
-  return <EquationBuilderInner />;
+export const EquationBuilder: React.FC<EquationBuilderProps> = ({ oscillatorIndex = 0 }) => {
+  return <EquationBuilderInner oscillatorIndex={oscillatorIndex} />;
 };
 
 export default EquationBuilder;

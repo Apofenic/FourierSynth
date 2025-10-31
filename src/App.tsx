@@ -28,7 +28,10 @@ function App() {
   const isPlaying = useAudioEngineStore((state) => state.isPlaying);
   const startAudio = useAudioEngineStore((state) => state.startAudio);
   const stopAudio = useAudioEngineStore((state) => state.stopAudio);
-  const updateFrequency = useAudioEngineStore((state) => state.updateFrequency);
+  const oscillators = useAudioEngineStore((state) => state.oscillators);
+  const updateOscillatorFrequency = useAudioEngineStore(
+    (state) => state.updateOscillatorFrequency
+  );
 
   const keyboardNotes = useSynthControlsStore((state) => state.keyboardNotes);
   const keyboardEnabled = useSynthControlsStore(
@@ -45,6 +48,7 @@ function App() {
   const isPlayingRef = useRef(isPlaying);
   const activeKeyRef = useRef(activeKey);
   const keyboardEnabledRef = useRef(keyboardEnabled);
+  const oscillatorsRef = useRef(oscillators);
 
   // Update refs when state changes
   useEffect(() => {
@@ -52,7 +56,8 @@ function App() {
     isPlayingRef.current = isPlaying;
     activeKeyRef.current = activeKey;
     keyboardEnabledRef.current = keyboardEnabled;
-  }, [keyboardNotes, isPlaying, activeKey, keyboardEnabled]);
+    oscillatorsRef.current = oscillators;
+  }, [keyboardNotes, isPlaying, activeKey, keyboardEnabled, oscillators]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -63,7 +68,13 @@ function App() {
       const note = keyboardNotesRef.current.find((n) => n.key === keyPressed);
 
       if (note) {
-        updateFrequency(note.frequency);
+        // Update frequency for all active oscillators
+        oscillatorsRef.current.forEach((osc, index) => {
+          if (osc.isActive) {
+            updateOscillatorFrequency(index, note.frequency);
+          }
+        });
+
         updateKeyboardNoteState(keyPressed, true);
         setActiveKey(keyPressed);
 
@@ -72,7 +83,12 @@ function App() {
         }
       }
     },
-    [updateFrequency, updateKeyboardNoteState, setActiveKey, startAudio]
+    [
+      updateOscillatorFrequency,
+      updateKeyboardNoteState,
+      setActiveKey,
+      startAudio,
+    ]
   );
 
   const handleKeyUp = useCallback(
@@ -203,10 +219,10 @@ function App() {
                 <Tab label="Osc 4" />
               </Tabs>
               <Box sx={{ flex: 1, overflow: "hidden", minHeight: 0 }}>
-                {activeOsc === 0 && <OscControls />}
-                {activeOsc === 1 && <OscControls />}
-                {activeOsc === 2 && <OscControls />}
-                {activeOsc === 3 && <OscControls />}
+                {activeOsc === 0 && <OscControls oscillatorIndex={0} />}
+                {activeOsc === 1 && <OscControls oscillatorIndex={1} />}
+                {activeOsc === 2 && <OscControls oscillatorIndex={2} />}
+                {activeOsc === 3 && <OscControls oscillatorIndex={3} />}
               </Box>
             </Box>
           </Box>

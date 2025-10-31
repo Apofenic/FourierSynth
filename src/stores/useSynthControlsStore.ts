@@ -1,13 +1,20 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { HarmonicParam, OscillatorParams, SynthControlsStore } from "../types";
+import type {
+  HarmonicParam,
+  OscillatorParams,
+  SynthControlsStore,
+} from "../types";
 import { calculateWaveform } from "../utils/helperFunctions";
 import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
 
 /**
  * Create default oscillator parameters
  */
-const createDefaultOscillator = (id: number, isActive: boolean): OscillatorParams => {
+const createDefaultOscillator = (
+  id: number,
+  isActive: boolean
+): OscillatorParams => {
   const harmonics: HarmonicParam[] = isActive
     ? [
         { amplitude: 1.0, phase: 0.5 * Math.PI },
@@ -226,5 +233,9 @@ export const selectNonZeroHarmonics = (
   oscIndex: number,
   state: ReturnType<typeof useSynthControlsStore.getState>
 ) => {
-  return state.oscillators[oscIndex]?.harmonics.filter((h: HarmonicParam) => h.amplitude > 0) || [];
+  return (
+    state.oscillators[oscIndex]?.harmonics.filter(
+      (h: HarmonicParam) => h.amplitude > 0
+    ) || []
+  );
 };
