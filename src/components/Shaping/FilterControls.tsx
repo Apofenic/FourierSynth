@@ -1,6 +1,7 @@
 import React from "react";
 import { Paper, Typography, Box, Tooltip, Stack } from "@mui/material";
 import { Dial } from "../Dial";
+import { useAudioEngineStore } from "../../stores/useAudioEngineStore";
 
 interface FilterControlsProps {
   cutoffFrequency: number;
@@ -15,6 +16,13 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
   onCutoffChange,
   onResonanceChange,
 }) => {
+  const filterEnvelopeAmount = useAudioEngineStore(
+    (state) => state.filterEnvelopeAmount
+  );
+  const updateFilterEnvelopeAmount = useAudioEngineStore(
+    (state) => state.updateFilterEnvelopeAmount
+  );
+
   const handleCutoffChange = (value: number) => {
     // Convert linear dial value (0-100) to logarithmic frequency (20-20000 Hz)
     const normalizedValue = value / 100;
@@ -111,13 +119,13 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             hideCenterNumber={true}
           />
           <Dial
-            value={50}
+            value={filterEnvelopeAmount}
             min={0}
             max={100}
-            onChange={() => {}}
+            onChange={updateFilterEnvelopeAmount}
             label="Envelope Amt"
             size={100}
-            ringColor="#9b59b6"
+            ringColor="#e67e22"
             numberFontSize={18}
             minMaxFontSize={10}
             hideCenterNumber={true}

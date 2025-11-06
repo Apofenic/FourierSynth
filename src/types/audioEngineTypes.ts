@@ -5,6 +5,7 @@ export interface OscillatorNodeSet {
   sourceNode: AudioBufferSourceNode | null;
   gainNode: GainNode | null;
   waveformBuffer: AudioBuffer | null;
+  ampEnvelopeNode: GainNode | null; // ADSR envelope for amplitude
 }
 
 /**
@@ -26,6 +27,7 @@ export interface AudioEngineState {
   masterVolume: number; // 0-100 range
   cutoffFrequency: number;
   resonance: number;
+  filterEnvelopeAmount: number; // 0-100 range for filter envelope depth
 
   // Actions
   startAudio: () => void;
@@ -35,9 +37,31 @@ export interface AudioEngineState {
   updateMasterVolume: (volume: number) => void;
   toggleOscillator: (oscIndex: number, isActive: boolean) => void;
   updateFilter: (cutoff: number, resonance: number) => void;
+  updateFilterEnvelopeAmount: (amount: number) => void;
   setIsPlaying: (playing: boolean) => void;
+  triggerNoteOn: () => void;
+  triggerNoteOff: () => void;
+  getMaxReleaseTime: () => number;
 
   // Internal methods
   _initializeAudioContext: () => void;
   _recreateAudio: () => void;
+}
+/**
+ * ADSR Envelope Helper Types and Functions
+ */
+export interface EnvelopeOperation {
+  method:
+    | "cancelScheduledValues"
+    | "setValueAtTime"
+    | "linearRampToValueAtTime"
+    | "exponentialRampToValueAtTime";
+  args: number[];
+}
+
+export interface ADSRTimes {
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
 }

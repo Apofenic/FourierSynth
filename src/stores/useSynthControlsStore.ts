@@ -85,6 +85,18 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
       activeKey: null,
       keyboardEnabled: true,
       activeTab: "equation",
+      ampADSR: {
+        attack: 10,
+        decay: 20,
+        sustain: 70,
+        release: 30,
+      },
+      filterADSR: {
+        attack: 10,
+        decay: 20,
+        sustain: 70,
+        release: 30,
+      },
 
       // Actions
       updateHarmonic: (oscIndex, harmonicIndex, paramType, value) =>
@@ -230,6 +242,30 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           },
           false,
           "updateDetune"
+        ),
+
+      updateAmpADSR: (param, value) =>
+        set(
+          (state) => ({
+            ampADSR: {
+              ...state.ampADSR,
+              [param]: value,
+            },
+          }),
+          false,
+          "updateAmpADSR"
+        ),
+
+      updateFilterADSR: (param, value) =>
+        set(
+          (state) => ({
+            filterADSR: {
+              ...state.filterADSR,
+              [param]: value,
+            },
+          }),
+          false,
+          "updateFilterADSR"
         ),
     }),
     {
