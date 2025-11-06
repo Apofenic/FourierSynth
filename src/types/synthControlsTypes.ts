@@ -23,6 +23,16 @@ export interface OscillatorParams {
 }
 
 /**
+ * Interface for ADSR envelope parameters
+ */
+export interface ADSRParams {
+  attack: number; // 0-100 (will be mapped to seconds)
+  decay: number; // 0-100 (will be mapped to seconds)
+  sustain: number; // 0-100 (sustain level as percentage)
+  release: number; // 0-100 (will be mapped to seconds)
+}
+
+/**
  * Interface for keyboard note mapping
  */
 export interface KeyboardNote {
@@ -39,6 +49,8 @@ export interface SynthControlsStore {
   activeKey: string | null;
   keyboardEnabled: boolean;
   activeTab: "equation" | "harmonic";
+  ampADSR: ADSRParams;
+  filterADSR: ADSRParams;
   // Actions
   updateHarmonic: (
     oscIndex: number,
@@ -68,4 +80,6 @@ export interface SynthControlsStore {
     detuneType: "octave" | "semitone" | "cent",
     value: number
   ) => void;
+  updateAmpADSR: (param: keyof ADSRParams, value: number) => void;
+  updateFilterADSR: (param: keyof ADSRParams, value: number) => void;
 }

@@ -29,6 +29,11 @@ function App() {
   const isPlaying = useAudioEngineStore((state) => state.isPlaying);
   const startAudio = useAudioEngineStore((state) => state.startAudio);
   const stopAudio = useAudioEngineStore((state) => state.stopAudio);
+  const triggerNoteOn = useAudioEngineStore((state) => state.triggerNoteOn);
+  const triggerNoteOff = useAudioEngineStore((state) => state.triggerNoteOff);
+  const getMaxReleaseTime = useAudioEngineStore(
+    (state) => state.getMaxReleaseTime
+  );
   const oscillators = useAudioEngineStore((state) => state.oscillators);
   const updateOscillatorFrequency = useAudioEngineStore(
     (state) => state.updateOscillatorFrequency
@@ -99,6 +104,9 @@ function App() {
         if (!isPlayingRef.current) {
           startAudio();
         }
+
+        // Trigger ADSR envelopes
+        triggerNoteOn();
       }
     },
     [
@@ -106,6 +114,7 @@ function App() {
       updateKeyboardNoteState,
       setActiveKey,
       startAudio,
+      triggerNoteOn,
     ]
   );
 
@@ -128,11 +137,25 @@ function App() {
         );
 
         if (!anyKeysActive && isPlayingRef.current) {
-          stopAudio();
+          // Trigger release envelope before stopping
+          triggerNoteOff();
+
+          // Stop audio after release phase completes
+          // Calculate actual release time dynamically based on current ADSR settings
+          const releaseTime = getMaxReleaseTime();
+          setTimeout(() => {
+            stopAudio();
+          }, releaseTime);
         }
       }
     },
-    [updateKeyboardNoteState, setActiveKey, stopAudio]
+    [
+      updateKeyboardNoteState,
+      setActiveKey,
+      stopAudio,
+      triggerNoteOff,
+      getMaxReleaseTime,
+    ]
   );
 
   // Global keyboard event listeners

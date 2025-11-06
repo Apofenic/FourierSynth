@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
 import { useSynthControlsStore } from "./useSynthControlsStore";
-import { AudioEngineState, OscillatorNodeSet } from "../types";
+import {
+  AudioEngineState,
+  OscillatorNodeSet,
+  ADSRTimes,
+  EnvelopeOperation,
+} from "../types";
 
 /**
  * External manager class for Web Audio API nodes
@@ -13,7 +18,8 @@ class AudioNodeManager {
   oscillators: OscillatorNodeSet[] = [];
   mixerGainNode: GainNode | null = null;
   masterGainNode: GainNode | null = null;
-  filterNode: BiquadFilterNode | null = null;
+  filterNodes: BiquadFilterNode[] = [];
+  filterEnvelopeNode: GainNode | null = null; // For filter envelope modulation
 
   constructor() {
     // Initialize 4 empty oscillator slots
@@ -23,6 +29,7 @@ class AudioNodeManager {
         sourceNode: null,
         gainNode: null,
         waveformBuffer: null,
+        ampEnvelopeNode: null,
       }));
   }
 
@@ -38,7 +45,7 @@ class AudioNodeManager {
   }
 
   /**
-   * Create an oscillator chain (source + gain node)
+   * Create an oscillator chain (source + gain + envelope nodes)
    */
   createOscillatorChain(
     audioContext: AudioContext,
@@ -53,6 +60,7 @@ class AudioNodeManager {
         sourceNode: null,
         gainNode: null,
         waveformBuffer: null,
+        ampEnvelopeNode: null,
       };
     }
 
@@ -79,13 +87,19 @@ class AudioNodeManager {
     const gainNode = audioContext.createGain();
     gainNode.gain.value = volume;
 
-    // Connect source -> gain
+    // Create GainNode for ADSR envelope (starts at 0)
+    const ampEnvelopeNode = audioContext.createGain();
+    ampEnvelopeNode.gain.value = 0;
+
+    // Connect source -> gain -> envelope
     sourceNode.connect(gainNode);
+    gainNode.connect(ampEnvelopeNode);
 
     return {
       sourceNode,
       gainNode,
       waveformBuffer: buffer,
+      ampEnvelopeNode,
     };
   }
 
@@ -116,6 +130,7 @@ class AudioNodeManager {
       sourceNode: null,
       gainNode: null,
       waveformBuffer: null,
+      ampEnvelopeNode: null,
     };
   }
 
@@ -147,12 +162,129 @@ class AudioNodeManager {
       this.masterGainNode = null;
     }
 
-    this.filterNode = null;
+    this.filterNodes = [];
+
+    if (this.filterEnvelopeNode) {
+      try {
+        this.filterEnvelopeNode.disconnect();
+      } catch (e) {
+        console.warn("Error disconnecting filter envelope:", e);
+      }
+      this.filterEnvelopeNode = null;
+    }
   }
 }
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
+
+/**
+ * Convert ADSR parameters (0-100) to time values in seconds
+ */
+const convertADSRToTimes = (adsr: {
+  attack: number;
+  decay: number;
+  sustain: number;
+  release: number;
+}): ADSRTimes => ({
+  attack: 0.001 + (adsr.attack / 100) * 1.999,
+  decay: 0.001 + (adsr.decay / 100) * 1.999,
+  sustain: adsr.sustain / 100,
+  release: 0.001 + (adsr.release / 100) * 3.999,
+});
+
+/**
+ * Generate amplitude envelope operations
+ */
+const createAmpEnvelopeOps = (
+  times: ADSRTimes,
+  startTime: number,
+  isNoteOn: boolean
+): EnvelopeOperation[] => {
+  if (isNoteOn) {
+    return [
+      { method: "cancelScheduledValues", args: [startTime] },
+      { method: "setValueAtTime", args: [0, startTime] },
+      {
+        method: "linearRampToValueAtTime",
+        args: [1.0, startTime + times.attack],
+      },
+      {
+        method: "linearRampToValueAtTime",
+        args: [times.sustain, startTime + times.attack + times.decay],
+      },
+    ];
+  } else {
+    return [
+      { method: "cancelScheduledValues", args: [startTime] },
+      { method: "setValueAtTime", args: [startTime] }, // Will use current value
+      {
+        method: "linearRampToValueAtTime",
+        args: [0, startTime + times.release],
+      },
+    ];
+  }
+};
+
+/**
+ * Generate filter envelope operations
+ */
+const createFilterEnvelopeOps = (
+  times: ADSRTimes,
+  startTime: number,
+  baseCutoff: number,
+  envelopeAmount: number,
+  isNoteOn: boolean
+): EnvelopeOperation[] => {
+  if (isNoteOn) {
+    const maxCutoff = Math.min(20000, baseCutoff * 4);
+    const targetCutoff = baseCutoff + (maxCutoff - baseCutoff) * envelopeAmount;
+    const sustainCutoff =
+      baseCutoff + (targetCutoff - baseCutoff) * times.sustain;
+
+    return [
+      { method: "cancelScheduledValues", args: [startTime] },
+      { method: "setValueAtTime", args: [baseCutoff, startTime] },
+      {
+        method: "exponentialRampToValueAtTime",
+        args: [Math.max(20, targetCutoff), startTime + times.attack],
+      },
+      {
+        method: "exponentialRampToValueAtTime",
+        args: [
+          Math.max(20, sustainCutoff),
+          startTime + times.attack + times.decay,
+        ],
+      },
+    ];
+  } else {
+    return [
+      { method: "cancelScheduledValues", args: [startTime] },
+      { method: "setValueAtTime", args: [startTime] }, // Will use current value
+      {
+        method: "exponentialRampToValueAtTime",
+        args: [Math.max(20, baseCutoff), startTime + times.release],
+      },
+    ];
+  }
+};
+
+/**
+ * Apply envelope operations to an AudioParam
+ */
+const applyEnvelopeOps = (
+  param: AudioParam,
+  operations: EnvelopeOperation[]
+): void => {
+  operations.forEach((op) => {
+    if (op.method === "setValueAtTime" && op.args.length === 1) {
+      // Special case: use current value
+      param.setValueAtTime(param.value, op.args[0]);
+    } else {
+      (param[op.method] as any)(...op.args);
+    }
+  });
+};
 
 /**
  * Zustand store for AudioEngine
@@ -172,6 +304,7 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       masterVolume: 75,
       cutoffFrequency: 2000,
       resonance: 0,
+      filterEnvelopeAmount: 50, // 50% default envelope amount
 
       /**
        * Initialize audio context (called on mount)
@@ -212,29 +345,35 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         masterGain.gain.value = state.masterVolume / 100;
         audioNodes.masterGainNode = masterGain;
 
-        // Create 4-pole filter cascade
+        // Create 4-pole filter cascade with proper Q distribution
+        // Using a Moog-style ladder filter approach:
+        // - Equal frequency for all stages
+        // - Gradually increasing Q values for stability
+        // - Q scaling that prevents self-oscillation at high resonance
         const filter1 = audioContext.createBiquadFilter();
         filter1.type = "lowpass";
         filter1.frequency.value = state.cutoffFrequency;
-        filter1.Q.value = state.resonance;
+        // Base Q: map resonance (0-20) to a more reasonable Q range (0.5-4)
+        const baseQ = 0.5 + (state.resonance / 20) * 3.5;
+        filter1.Q.value = baseQ * 0.7;
 
         const filter2 = audioContext.createBiquadFilter();
         filter2.type = "lowpass";
         filter2.frequency.value = state.cutoffFrequency;
-        filter2.Q.value = state.resonance * 0.7;
+        filter2.Q.value = baseQ * 0.85;
 
         const filter3 = audioContext.createBiquadFilter();
         filter3.type = "lowpass";
         filter3.frequency.value = state.cutoffFrequency;
-        filter3.Q.value = state.resonance * 0.4;
+        filter3.Q.value = baseQ * 1.0;
 
         const filter4 = audioContext.createBiquadFilter();
         filter4.type = "lowpass";
         filter4.frequency.value = state.cutoffFrequency;
-        filter4.Q.value = state.resonance * 0.2;
+        filter4.Q.value = baseQ * 1.15;
 
-        // Store first filter for parameter updates
-        audioNodes.filterNode = filter1;
+        // Store all filters for parameter updates
+        audioNodes.filterNodes = [filter1, filter2, filter3, filter4];
 
         // Create oscillator chains for all active oscillators
         for (let i = 0; i < state.oscillators.length; i++) {
@@ -259,12 +398,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
             oscState.volume
           );
 
-          if (nodeSet.sourceNode && nodeSet.gainNode) {
+          if (nodeSet.sourceNode && nodeSet.ampEnvelopeNode) {
             // Store node set
             audioNodes.oscillators[i] = nodeSet;
 
-            // Connect to mixer
-            nodeSet.gainNode.connect(mixerGain);
+            // Connect envelope to mixer
+            nodeSet.ampEnvelopeNode.connect(mixerGain);
 
             // Start playback
             nodeSet.sourceNode.start();
@@ -434,17 +573,27 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       updateFilter: (cutoff: number, resonance: number) => {
         set({ cutoffFrequency: cutoff, resonance: resonance });
 
-        // If filter is currently active, update it in real-time
-        if (audioNodes.filterNode && audioNodes.audioContext) {
+        // If filters are currently active, update all 4 stages in real-time
+        if (audioNodes.filterNodes.length === 4 && audioNodes.audioContext) {
           const time = audioNodes.audioContext.currentTime;
-          audioNodes.filterNode.frequency.exponentialRampToValueAtTime(
-            cutoff,
-            time + 0.01
-          );
-          audioNodes.filterNode.Q.linearRampToValueAtTime(
-            resonance,
-            time + 0.01
-          );
+
+          // Calculate base Q value using same formula as creation
+          const baseQ = 0.5 + (resonance / 20) * 3.5;
+          const qValues = [
+            baseQ * 0.7,
+            baseQ * 0.85,
+            baseQ * 1.0,
+            baseQ * 1.15,
+          ];
+
+          // Update all 4 filter stages
+          audioNodes.filterNodes.forEach((filter, index) => {
+            filter.frequency.exponentialRampToValueAtTime(
+              Math.max(20, cutoff), // Clamp to min 20Hz for exponential ramp
+              time + 0.01
+            );
+            filter.Q.linearRampToValueAtTime(qValues[index], time + 0.01);
+          });
         }
       },
 
@@ -453,6 +602,115 @@ export const useAudioEngineStore = create<AudioEngineState>()(
        */
       setIsPlaying: (playing: boolean) => {
         set({ isPlaying: playing });
+      },
+
+      /**
+       * Update filter envelope amount
+       */
+      updateFilterEnvelopeAmount: (amount: number) => {
+        set({ filterEnvelopeAmount: amount });
+      },
+
+      /**
+       * Get the maximum release time in milliseconds
+       * Used to determine when it's safe to stop audio after note off
+       */
+      getMaxReleaseTime: (): number => {
+        const synthControls = useSynthControlsStore.getState();
+        const { ampADSR, filterADSR } = synthControls;
+
+        // Convert both release times to milliseconds
+        const ampRelease = (0.001 + (ampADSR.release / 100) * 3.999) * 1000;
+        const filterRelease =
+          (0.001 + (filterADSR.release / 100) * 3.999) * 1000;
+
+        // Return the longer of the two, plus a small buffer
+        return Math.max(ampRelease, filterRelease) + 50;
+      },
+
+      /**
+       * Trigger note on - starts ADSR envelopes
+       */
+      triggerNoteOn: () => {
+        if (!audioNodes.audioContext) return;
+
+        const synthControls = useSynthControlsStore.getState();
+        const { ampADSR, filterADSR } = synthControls;
+        const state = get();
+        const time = audioNodes.audioContext.currentTime;
+
+        // Convert ADSR parameters to time values
+        const ampTimes = convertADSRToTimes(ampADSR);
+        const filterTimes = convertADSRToTimes(filterADSR);
+
+        // Generate and apply amplitude envelope operations
+        const ampOps = createAmpEnvelopeOps(ampTimes, time, true);
+        audioNodes.oscillators
+          .filter(
+            (nodeSet, i) =>
+              nodeSet.ampEnvelopeNode && state.oscillators[i].isActive
+          )
+          .forEach((nodeSet) => {
+            applyEnvelopeOps(nodeSet.ampEnvelopeNode!.gain, ampOps);
+          });
+
+        // Generate and apply filter envelope operations
+        if (audioNodes.filterNodes.length === 4) {
+          const envelopeAmount = state.filterEnvelopeAmount / 100;
+          const filterOps = createFilterEnvelopeOps(
+            filterTimes,
+            time,
+            state.cutoffFrequency,
+            envelopeAmount,
+            true
+          );
+
+          audioNodes.filterNodes.forEach((filter) => {
+            applyEnvelopeOps(filter.frequency, filterOps);
+          });
+        }
+      },
+
+      /**
+       * Trigger note off - starts release phase of ADSR envelopes
+       */
+      triggerNoteOff: () => {
+        if (!audioNodes.audioContext) return;
+
+        const synthControls = useSynthControlsStore.getState();
+        const { ampADSR, filterADSR } = synthControls;
+        const state = get();
+        const time = audioNodes.audioContext.currentTime;
+
+        // Convert ADSR parameters to time values
+        const ampTimes = convertADSRToTimes(ampADSR);
+        const filterTimes = convertADSRToTimes(filterADSR);
+
+        // Generate and apply amplitude release operations
+        const ampOps = createAmpEnvelopeOps(ampTimes, time, false);
+        audioNodes.oscillators
+          .filter(
+            (nodeSet, i) =>
+              nodeSet.ampEnvelopeNode && state.oscillators[i].isActive
+          )
+          .forEach((nodeSet) => {
+            applyEnvelopeOps(nodeSet.ampEnvelopeNode!.gain, ampOps);
+          });
+
+        // Generate and apply filter release operations
+        if (audioNodes.filterNodes.length === 4) {
+          const filterOps = createFilterEnvelopeOps(
+            filterTimes,
+            time,
+            state.cutoffFrequency,
+            0, // Envelope amount doesn't matter for release
+            false
+          );
+
+          audioNodes.filterNodes.forEach((filter) => {
+            applyEnvelopeOps(filter.frequency, filterOps);
+          });
+        }
       },
     }),
     { name: "AudioEngine" }

@@ -1,19 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import { Paper, Typography, Box, Stack } from "@mui/material";
 import { Dial } from "../Dial";
+import { useSynthControlsStore } from "../../stores/useSynthControlsStore";
 
 export const EnvelopeControls: React.FC = () => {
-  // Amp ADSR state
-  const [ampAttack, setAmpAttack] = useState(10);
-  const [ampDecay, setAmpDecay] = useState(20);
-  const [ampSustain, setAmpSustain] = useState(70);
-  const [ampRelease, setAmpRelease] = useState(30);
-
-  // Filter ADSR state
-  const [filterAttack, setFilterAttack] = useState(10);
-  const [filterDecay, setFilterDecay] = useState(20);
-  const [filterSustain, setFilterSustain] = useState(70);
-  const [filterRelease, setFilterRelease] = useState(30);
+  const ampADSR = useSynthControlsStore((state) => state.ampADSR);
+  const filterADSR = useSynthControlsStore((state) => state.filterADSR);
+  const updateAmpADSR = useSynthControlsStore((state) => state.updateAmpADSR);
+  const updateFilterADSR = useSynthControlsStore(
+    (state) => state.updateFilterADSR
+  );
 
   return (
     <Paper
@@ -37,10 +33,10 @@ export const EnvelopeControls: React.FC = () => {
         sx={{ flexWrap: "wrap" }}
       >
         <Dial
-          value={ampAttack}
+          value={ampADSR.attack}
           min={0}
           max={100}
-          onChange={setAmpAttack}
+          onChange={(value) => updateAmpADSR("attack", value)}
           label="Attack"
           size={80}
           ringColor="#3498db"
@@ -48,10 +44,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={ampDecay}
+          value={ampADSR.decay}
           min={0}
           max={100}
-          onChange={setAmpDecay}
+          onChange={(value) => updateAmpADSR("decay", value)}
           label="Decay"
           size={80}
           ringColor="#9b59b6"
@@ -59,10 +55,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={ampSustain}
+          value={ampADSR.sustain}
           min={0}
           max={100}
-          onChange={setAmpSustain}
+          onChange={(value) => updateAmpADSR("sustain", value)}
           label="Sustain"
           size={80}
           ringColor="#e67e22"
@@ -70,10 +66,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={ampRelease}
+          value={ampADSR.release}
           min={0}
           max={100}
-          onChange={setAmpRelease}
+          onChange={(value) => updateAmpADSR("release", value)}
           label="Release"
           size={80}
           ringColor="#e74c3c"
@@ -92,10 +88,10 @@ export const EnvelopeControls: React.FC = () => {
         sx={{ flexWrap: "wrap" }}
       >
         <Dial
-          value={filterAttack}
+          value={filterADSR.attack}
           min={0}
           max={100}
-          onChange={setFilterAttack}
+          onChange={(value) => updateFilterADSR("attack", value)}
           label="Attack"
           size={80}
           ringColor="#3498db"
@@ -103,10 +99,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={filterDecay}
+          value={filterADSR.decay}
           min={0}
           max={100}
-          onChange={setFilterDecay}
+          onChange={(value) => updateFilterADSR("decay", value)}
           label="Decay"
           size={80}
           ringColor="#9b59b6"
@@ -114,10 +110,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={filterSustain}
+          value={filterADSR.sustain}
           min={0}
           max={100}
-          onChange={setFilterSustain}
+          onChange={(value) => updateFilterADSR("sustain", value)}
           label="Sustain"
           size={80}
           ringColor="#e67e22"
@@ -125,10 +121,10 @@ export const EnvelopeControls: React.FC = () => {
           minMaxFontSize={10}
         />
         <Dial
-          value={filterRelease}
+          value={filterADSR.release}
           min={0}
           max={100}
-          onChange={setFilterRelease}
+          onChange={(value) => updateFilterADSR("release", value)}
           label="Release"
           size={80}
           ringColor="#e74c3c"
