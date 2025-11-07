@@ -97,6 +97,12 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         sustain: 70,
         release: 30,
       },
+      modADSR: {
+        attack: 10,
+        decay: 20,
+        sustain: 70,
+        release: 30,
+      },
 
       // Actions
       updateHarmonic: (oscIndex, harmonicIndex, paramType, value) =>
@@ -266,6 +272,18 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           }),
           false,
           "updateFilterADSR"
+        ),
+
+      updateModADSR: (param, value) =>
+        set(
+          (state) => ({
+            modADSR: {
+              ...state.modADSR,
+              [param]: value,
+            },
+          }),
+          false,
+          "updateModADSR"
         ),
     }),
     {

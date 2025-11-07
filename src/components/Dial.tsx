@@ -9,9 +9,8 @@ interface DialProps {
   size?: number;
   onChange?: (value: number) => void;
   label?: string;
-  unit?: string;
   ringColor?: string;
-  backgroundColor?: string;
+  backgroundColor?: string; // custom solid color to override the gradient
   textColor?: string;
   sensitivity?: number; // pixels per unit value
   disableOuterRing?: boolean; // disables the outer progress ring if true
@@ -19,6 +18,9 @@ interface DialProps {
   numberFontSize?: number; // font size for the number in the center (in px)
   minMaxFontSize?: number; // font size for the min and max numbers (in px)
   hideCenterNumber?: boolean; // hides the number in the center if true
+  gap?: number; // spacing between label and dial (in theme spacing units)
+  hideStroke?: boolean; // removes the stroke/dropshadow from the center circle if true
+  disabled?: boolean; // disables the dial and makes it transparent
 }
 
 export const Dial: React.FC<DialProps> = ({
@@ -29,9 +31,8 @@ export const Dial: React.FC<DialProps> = ({
   size = 200,
   onChange,
   label,
-  unit = "",
   ringColor = "#2ecc71",
-  backgroundColor = "#2a2e35",
+  backgroundColor,
   textColor = "#ffffff",
   sensitivity = 2,
   disableOuterRing = false,
@@ -39,6 +40,9 @@ export const Dial: React.FC<DialProps> = ({
   numberFontSize,
   minMaxFontSize,
   hideCenterNumber = false,
+  gap = 0.5,
+  hideStroke = false,
+  disabled = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
@@ -107,12 +111,16 @@ export const Dial: React.FC<DialProps> = ({
   };
 
   // Handle mouse down
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    startY.current = e.clientY;
-    startValue.current = currentValueRef.current;
-  }, []);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (disabled) return;
+      e.preventDefault();
+      setIsDragging(true);
+      startY.current = e.clientY;
+      startValue.current = currentValueRef.current;
+    },
+    [disabled]
+  );
 
   // Handle mouse move
   const handleMouseMove = useCallback(
@@ -171,7 +179,7 @@ export const Dial: React.FC<DialProps> = ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 1,
+        gap: gap,
         userSelect: "none",
       }}
     >
@@ -184,10 +192,11 @@ export const Dial: React.FC<DialProps> = ({
       <Box
         onMouseDown={handleMouseDown}
         sx={{
-          cursor: isDragging ? "ns-resize" : "pointer",
+          cursor: disabled ? "default" : isDragging ? "ns-resize" : "pointer",
           position: "relative",
           width: size,
           height: size,
+          opacity: disabled ? 0.1 : 1,
         }}
       >
         <svg
@@ -207,7 +216,7 @@ export const Dial: React.FC<DialProps> = ({
           </defs>
 
           {/* Outer ring (background + progress arc) */}
-          {!disableOuterRing && (
+          {!disableOuterRing && !disabled && (
             <>
               {/* Background track (unfilled portion of progress ring) */}
               <path
@@ -238,32 +247,36 @@ export const Dial: React.FC<DialProps> = ({
             cx={centerX}
             cy={centerY}
             r={innerCircleRadius}
-            fill={`url(#dialGradient-${size})`}
-            stroke="rgba(0, 0, 0, 0.5)"
-            strokeWidth={2}
+            fill={
+              backgroundColor ? backgroundColor : `url(#dialGradient-${size})`
+            }
+            stroke={hideStroke || disabled ? "none" : "rgba(0, 0, 0, 0.5)"}
+            strokeWidth={hideStroke || disabled ? 0 : 2}
           />
 
           {/* Indicator triangle - rotated to align with radius, with rounded edges */}
-          <polygon
-            points={`${indicatorX},${indicatorY - triangleSize} ${
-              indicatorX - triangleSize * 0.866
-            },${indicatorY + triangleSize * 0.5} ${
-              indicatorX + triangleSize * 0.866
-            },${indicatorY + triangleSize * 0.5}`}
-            fill="rgba(200, 220, 240, 0.9)"
-            stroke="rgba(200, 220, 240, 0.9)"
-            strokeWidth={triangleSize * 0.85}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            style={{
-              transition: isDragging ? "none" : "all 0.1s ease-out",
-              transformOrigin: `${indicatorX}px ${indicatorY}px`,
-              transform: `rotate(${currentAngle}deg)`,
-            }}
-          />
+          {!disabled && (
+            <polygon
+              points={`${indicatorX},${indicatorY - triangleSize} ${
+                indicatorX - triangleSize * 0.866
+              },${indicatorY + triangleSize * 0.5} ${
+                indicatorX + triangleSize * 0.866
+              },${indicatorY + triangleSize * 0.5}`}
+              fill="rgba(200, 220, 240, 0.9)"
+              stroke="rgba(200, 220, 240, 0.9)"
+              strokeWidth={triangleSize * 0.85}
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              style={{
+                transition: isDragging ? "none" : "all 0.1s ease-out",
+                transformOrigin: `${indicatorX}px ${indicatorY}px`,
+                transform: `rotate(${currentAngle}deg)`,
+              }}
+            />
+          )}
 
           {/* Value text (center number) */}
-          {!hideCenterNumber && (
+          {!hideCenterNumber && !disabled && (
             <text
               x={centerX}
               y={centerY}
@@ -287,7 +300,7 @@ export const Dial: React.FC<DialProps> = ({
               {/* Min label - positioned outside ring at start angle */}
               <text
                 x={polarToCartesian(startAngle).x - strokeWidth * 1.5}
-                y={polarToCartesian(startAngle).y + strokeWidth * 0.8}
+                y={polarToCartesian(startAngle).y + strokeWidth * 1.5}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={textColor}
@@ -298,12 +311,12 @@ export const Dial: React.FC<DialProps> = ({
                 fontFamily="'Roboto', sans-serif"
                 style={{ pointerEvents: "none" }}
               >
-                {min}
+                {Number.isInteger(min) ? min : min.toFixed(2)}
               </text>
               {/* Max label - positioned outside ring at end angle */}
               <text
                 x={polarToCartesian(endAngle).x + strokeWidth * 1.5}
-                y={polarToCartesian(endAngle).y + strokeWidth * 0.8}
+                y={polarToCartesian(endAngle).y + strokeWidth * 1.5}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={textColor}
@@ -314,7 +327,7 @@ export const Dial: React.FC<DialProps> = ({
                 fontFamily="'Roboto', sans-serif"
                 style={{ pointerEvents: "none" }}
               >
-                {max}
+                {Number.isInteger(max) ? max : max.toFixed(2)}
               </text>
             </>
           )}

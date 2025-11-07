@@ -51,6 +51,7 @@ export interface SynthControlsStore {
   activeTab: "equation" | "harmonic";
   ampADSR: ADSRParams;
   filterADSR: ADSRParams;
+  modADSR: ADSRParams;
   // Actions
   updateHarmonic: (
     oscIndex: number,
@@ -82,4 +83,5 @@ export interface SynthControlsStore {
   ) => void;
   updateAmpADSR: (param: keyof ADSRParams, value: number) => void;
   updateFilterADSR: (param: keyof ADSRParams, value: number) => void;
+  updateModADSR: (param: keyof ADSRParams, value: number) => void;
 }

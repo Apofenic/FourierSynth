@@ -8,7 +8,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useAudioEngineStore, useSynthControlsStore } from "../stores";
-import { Dial } from "./Dial";
+import { Dial, ModDial } from "./";
 
 export const Mixer: React.FC = () => {
   // Connect to stores
@@ -83,7 +83,7 @@ export const Mixer: React.FC = () => {
             max={100}
             onChange={handleMasterVolumeChange}
             label="Master Volume"
-            size={100}
+            size={75}
             ringColor="#2ecc71"
           />
         </Stack>
@@ -94,7 +94,7 @@ export const Mixer: React.FC = () => {
             gridTemplateRows: "auto",
           }}
         >
-          <Dial
+          <ModDial
             value={oscillators[0].volume * 100}
             min={0}
             max={100}
@@ -103,7 +103,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[1].volume * 100}
             min={0}
             max={100}
@@ -112,7 +112,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[2].volume * 100}
             min={0}
             max={100}
@@ -121,7 +121,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[3].volume * 100}
             min={0}
             max={100}

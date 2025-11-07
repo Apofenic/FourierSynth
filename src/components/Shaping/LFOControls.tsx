@@ -10,7 +10,7 @@ import {
 import { Dial } from "../Dial";
 import { WaveformIcon } from "../WaveformIcon";
 
-export const LFOControls: React.FC = ({ id }: { id?: number }) => {
+export const LFOControls = ({ id }: { id: number }) => {
   // LFO state
   const [lfoRate, setLfoRate] = useState(2); // Hz
   const [lfoDepth, setLfoDepth] = useState(50); // 0-100
@@ -47,7 +47,7 @@ export const LFOControls: React.FC = ({ id }: { id?: number }) => {
       }}
     >
       <Typography variant="h3" align="center">
-        LFO (Low Frequency Oscillator)
+        LFO {id}
       </Typography>
 
       {/* LFO Rate and Depth Controls */}
@@ -64,7 +64,7 @@ export const LFOControls: React.FC = ({ id }: { id?: number }) => {
           max={20}
           step={0.1}
           onChange={setLfoRate}
-          label="Rate (Hz)"
+          label="Frequency (Hz)"
           size={90}
           ringColor="#1abc9c"
           numberFontSize={16}
@@ -75,7 +75,7 @@ export const LFOControls: React.FC = ({ id }: { id?: number }) => {
           min={0}
           max={100}
           onChange={setLfoDepth}
-          label="Depth"
+          label="Amount"
           size={90}
           ringColor="#16a085"
           numberFontSize={16}
@@ -107,31 +107,6 @@ export const LFOControls: React.FC = ({ id }: { id?: number }) => {
           </ToggleButton>
           <ToggleButton value="sawtooth" aria-label="sawtooth wave">
             <WaveformIcon type="sawtooth" size={15} />
-          </ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* LFO Target Selection */}
-      <Box>
-        <Typography variant="subtitle2" color="primary.main" gutterBottom>
-          Modulation Target
-        </Typography>
-        <ToggleButtonGroup
-          value={lfoTarget}
-          exclusive
-          onChange={handleTargetChange}
-          aria-label="LFO target"
-          fullWidth
-          size="small"
-        >
-          <ToggleButton value="pitch" aria-label="pitch">
-            Pitch
-          </ToggleButton>
-          <ToggleButton value="filter" aria-label="filter">
-            Filter
-          </ToggleButton>
-          <ToggleButton value="amplitude" aria-label="amplitude">
-            Amplitude
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>

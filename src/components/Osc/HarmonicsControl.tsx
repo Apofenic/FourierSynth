@@ -1,10 +1,11 @@
 import React from "react";
-import { Paper, Typography, Stack, Grid, Slider } from "@mui/material";
+import { Paper, Typography, Stack, Grid } from "@mui/material";
 import {
   useSynthControlsStore,
   useAudioEngineStore,
   useEquationBuilderStore,
 } from "../../stores";
+import { ModDial } from "../ModDial";
 
 interface HarmonicsControlProps {
   oscillatorIndex: number;
@@ -41,69 +42,60 @@ export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
       <Typography variant="h3" align="center">
         Harmonic Components (n={numHarmonicsToDisplay})
       </Typography>
-      <Stack spacing={1.5}>
+      <Grid container spacing={2}>
         {displayedHarmonics.map((harmonic, idx) => (
-          <Paper
-            key={idx}
-            sx={{
-              bgcolor: "rgba(97, 218, 251, 0.1)",
-              p: 1,
-              borderRadius: 1,
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{ mb: 0.5, color: "primary.main" }}
+          <Grid size={3} key={idx}>
+            <Paper
+              sx={{
+                bgcolor: "rgba(97, 218, 251, 0.1)",
+                p: 1,
+                borderRadius: 1,
+              }}
             >
-              H{idx + 1} ({(idx + 1) * oscillatorFrequency} Hz)
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid size={6}>
-                <Typography variant="caption" id={`amplitude-slider-${idx}`}>
-                  A (amplitude): {harmonic.amplitude.toFixed(2)}
-                </Typography>
-                <Slider
-                  size="small"
-                  value={harmonic.amplitude}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onChange={(_, value) =>
-                    updateHarmonic(
-                      oscillatorIndex,
-                      idx,
-                      "amplitude",
-                      value as number
-                    )
-                  }
-                  aria-labelledby={`amplitude-slider-${idx}`}
-                />
+              <Typography
+                variant="subtitle2"
+                sx={{ mb: 0.5, color: "primary.main" }}
+              >
+                H{idx + 1} ({(idx + 1) * oscillatorFrequency} Hz)
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid size={6}>
+                  <ModDial
+                    value={harmonic.amplitude}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onChange={(value) =>
+                      updateHarmonic(oscillatorIndex, idx, "amplitude", value)
+                    }
+                    label={`A: ${harmonic.amplitude.toFixed(2)}`}
+                    size={90}
+                    ringColor="#2ecc71"
+                    numberFontSize={16}
+                    minMaxFontSize={10}
+                  />
+                </Grid>
+                <Grid size={6}>
+                  <ModDial
+                    value={harmonic.phase}
+                    min={-Math.PI}
+                    max={Math.PI}
+                    step={0.01}
+                    onChange={(value) =>
+                      updateHarmonic(oscillatorIndex, idx, "phase", value)
+                    }
+                    label={`φ: ${(harmonic.phase / Math.PI).toFixed(2)}π`}
+                    size={90}
+                    ringColor="#3498db"
+                    numberFontSize={16}
+                    minMaxFontSize={10}
+                  />
+                </Grid>
               </Grid>
-              <Grid size={6}>
-                <Typography variant="caption" id={`phase-slider-${idx}`}>
-                  φ (phase): {(harmonic.phase / Math.PI).toFixed(2)}π
-                </Typography>
-                <Slider
-                  size="small"
-                  value={harmonic.phase}
-                  min={-Math.PI}
-                  max={Math.PI}
-                  step={0.01}
-                  onChange={(_, value) =>
-                    updateHarmonic(
-                      oscillatorIndex,
-                      idx,
-                      "phase",
-                      value as number
-                    )
-                  }
-                  aria-labelledby={`phase-slider-${idx}`}
-                />
-              </Grid>
-            </Grid>
-          </Paper>
+            </Paper>
+          </Grid>
         ))}
-      </Stack>
+      </Grid>
     </Paper>
   );
 };
