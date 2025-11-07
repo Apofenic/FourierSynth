@@ -1,6 +1,6 @@
 import React from "react";
 import { Paper, Typography, Box, Tooltip, Stack } from "@mui/material";
-import { Dial } from "../Dial";
+import { Dial, ModDial } from "../";
 import { useAudioEngineStore } from "../../stores/useAudioEngineStore";
 
 interface FilterControlsProps {
@@ -94,7 +94,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
         }}
       >
         <Stack spacing={1} alignItems="center" direction="row">
-          <Dial
+          <ModDial
             value={cutoffDialValue}
             min={0}
             max={100}
@@ -106,7 +106,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             minMaxFontSize={10}
             hideCenterNumber={true}
           />
-          <Dial
+          <ModDial
             value={resonanceDialValue}
             min={0}
             max={100}
@@ -124,7 +124,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             max={100}
             onChange={updateFilterEnvelopeAmount}
             label="Envelope Amt"
-            size={100}
+            size={75}
             ringColor="#e67e22"
             numberFontSize={18}
             minMaxFontSize={10}

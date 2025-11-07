@@ -7,7 +7,7 @@ import {
   Stack,
   Switch,
 } from "@mui/material";
-import { Dial } from "../Dial";
+import { Dial, ModDial } from "..";
 import { useSynthControlsStore } from "../../stores";
 
 interface TunerControlsProps {
@@ -26,9 +26,6 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
 
   return (
     <Paper>
-      <Typography variant="h3" align="center">
-        Tuner
-      </Typography>
       <Box
         sx={{ padding: 0, display: "flex", flexDirection: "column", gap: 2 }}
       >
@@ -56,7 +53,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             justifyContent="space-evenly"
             alignItems="center"
           >
-            <Dial
+            <ModDial
               value={detune.octave}
               min={-2}
               max={2}
@@ -69,7 +66,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
               numberFontSize={18}
               minMaxFontSize={10}
             />
-            <Dial
+            <ModDial
               value={detune.semitone}
               min={-12}
               max={12}
@@ -82,7 +79,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
               numberFontSize={18}
               minMaxFontSize={10}
             />
-            <Dial
+            <ModDial
               value={detune.cent}
               min={-100}
               max={100}

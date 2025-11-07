@@ -91,7 +91,14 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
         sustain: 70,
         release: 30,
       },
+      ampEnvelopeAmount: 100, // Default to 100% envelope effect
       filterADSR: {
+        attack: 10,
+        decay: 20,
+        sustain: 70,
+        release: 30,
+      },
+      modADSR: {
         attack: 10,
         decay: 20,
         sustain: 70,
@@ -267,6 +274,21 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           false,
           "updateFilterADSR"
         ),
+
+      updateModADSR: (param, value) =>
+        set(
+          (state) => ({
+            modADSR: {
+              ...state.modADSR,
+              [param]: value,
+            },
+          }),
+          false,
+          "updateModADSR"
+        ),
+
+      setAmpEnvelopeAmount: (amount) =>
+        set({ ampEnvelopeAmount: amount }, false, "setAmpEnvelopeAmount"),
     }),
     {
       name: "SynthControls",

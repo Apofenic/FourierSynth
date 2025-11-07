@@ -14,7 +14,6 @@ import {
   KeyboardControls,
   Mixer,
   OscControls,
-  ModulationMatrix,
   SequencerControls,
   EffectsControls,
 } from "./components";
@@ -313,15 +312,13 @@ function App() {
             }}
           >
             <Tab label="Subtractive Controls" />
-            <Tab label="Modulation Matrix" />
-            <Tab label="Sequencer Controls" />
-            <Tab label="Effects Controls" />
+            {/* <Tab label="Sequencer Controls" />
+            <Tab label="Effects Controls" /> */}
             <Tab label="Keyboard Layout" />
           </Tabs>
           {activeTab === 0 && <SubtractiveControls />}
-          {activeTab === 1 && <ModulationMatrix />}
-          {activeTab === 2 && <SequencerControls />}
-          {activeTab === 3 && <EffectsControls />}
+          {/* {activeTab === 2 && <SequencerControls />}
+          {activeTab === 3 && <EffectsControls />} */}
           {activeTab === 4 && <KeyboardControls />}
         </Paper>
       </Box>

@@ -8,7 +8,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useAudioEngineStore, useSynthControlsStore } from "../stores";
-import { Dial } from "./Dial";
+import { Dial, ModDial } from "./";
 
 export const Mixer: React.FC = () => {
   // Connect to stores
@@ -27,6 +27,12 @@ export const Mixer: React.FC = () => {
   const setKeyboardEnabled = useSynthControlsStore(
     (state) => state.setKeyboardEnabled
   );
+  const ampEnvelopeAmount = useSynthControlsStore(
+    (state) => state.ampEnvelopeAmount
+  );
+  const setAmpEnvelopeAmount = useSynthControlsStore(
+    (state) => state.setAmpEnvelopeAmount
+  );
 
   const handleKeyboardToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeyboardEnabled(event.target.checked);
@@ -39,6 +45,10 @@ export const Mixer: React.FC = () => {
 
   const handleMasterVolumeChange = (volume: number) => {
     updateMasterVolume(volume);
+  };
+
+  const handleAmpEnvelopeAmountChange = (amount: number) => {
+    setAmpEnvelopeAmount(amount);
   };
 
   return (
@@ -77,15 +87,26 @@ export const Mixer: React.FC = () => {
             }
             label="Enable Keyboard"
           />
-          <Dial
-            value={masterVolume}
-            min={0}
-            max={100}
-            onChange={handleMasterVolumeChange}
-            label="Master Volume"
-            size={100}
-            ringColor="#2ecc71"
-          />
+          <Box sx={{ flexDirection: "row", display: "flex", gap: 4 }}>
+            <Dial
+              value={masterVolume}
+              min={0}
+              max={100}
+              onChange={handleMasterVolumeChange}
+              label="Master"
+              size={75}
+              ringColor="#2ecc71"
+            />
+            <Dial
+              value={ampEnvelopeAmount}
+              min={0}
+              max={100}
+              onChange={handleAmpEnvelopeAmountChange}
+              label="Env Amount"
+              size={75}
+              ringColor="#3498db"
+            />
+          </Box>
         </Stack>
         <Box
           sx={{
@@ -94,7 +115,7 @@ export const Mixer: React.FC = () => {
             gridTemplateRows: "auto",
           }}
         >
-          <Dial
+          <ModDial
             value={oscillators[0].volume * 100}
             min={0}
             max={100}
@@ -103,7 +124,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[1].volume * 100}
             min={0}
             max={100}
@@ -112,7 +133,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[2].volume * 100}
             min={0}
             max={100}
@@ -121,7 +142,7 @@ export const Mixer: React.FC = () => {
             size={75}
             ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
           />
-          <Dial
+          <ModDial
             value={oscillators[3].volume * 100}
             min={0}
             max={100}
