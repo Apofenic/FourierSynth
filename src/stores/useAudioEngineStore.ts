@@ -199,28 +199,40 @@ const convertADSRToTimes = (adsr: {
 const createAmpEnvelopeOps = (
   times: ADSRTimes,
   startTime: number,
-  isNoteOn: boolean
+  isNoteOn: boolean,
+  envelopeAmount: number = 1.0 // 0-1 range, where 0 = no envelope effect, 1 = full envelope
 ): EnvelopeOperation[] => {
   if (isNoteOn) {
+    // Calculate the envelope range based on envelope amount
+    // At 0% (envelopeAmount=0): envelope stays at 1.0 (no modulation)
+    // At 100% (envelopeAmount=1): envelope goes from 0 to 1.0 (full modulation)
+    // At 50% (envelopeAmount=0.5): envelope goes from 0.5 to 1.0
+    const minValue = 1.0 - envelopeAmount;
+    const peakValue = 1.0;
+    const sustainValue = minValue + (peakValue - minValue) * times.sustain;
+
     return [
       { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [0, startTime] },
+      { method: "setValueAtTime", args: [minValue, startTime] },
       {
         method: "linearRampToValueAtTime",
-        args: [1.0, startTime + times.attack],
+        args: [peakValue, startTime + times.attack],
       },
       {
         method: "linearRampToValueAtTime",
-        args: [times.sustain, startTime + times.attack + times.decay],
+        args: [sustainValue, startTime + times.attack + times.decay],
       },
     ];
   } else {
+    // For release, always ramp to the minimum value based on envelope amount
+    const minValue = 1.0 - envelopeAmount;
+
     return [
       { method: "cancelScheduledValues", args: [startTime] },
       { method: "setValueAtTime", args: [startTime] }, // Will use current value
       {
         method: "linearRampToValueAtTime",
-        args: [0, startTime + times.release],
+        args: [minValue, startTime + times.release],
       },
     ];
   }
@@ -635,7 +647,7 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         if (!audioNodes.audioContext) return;
 
         const synthControls = useSynthControlsStore.getState();
-        const { ampADSR, filterADSR } = synthControls;
+        const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
@@ -643,8 +655,16 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
 
+        // Convert amp envelope amount from 0-100 to 0-1 range
+        const envelopeAmount = ampEnvelopeAmount / 100;
+
         // Generate and apply amplitude envelope operations
-        const ampOps = createAmpEnvelopeOps(ampTimes, time, true);
+        const ampOps = createAmpEnvelopeOps(
+          ampTimes,
+          time,
+          true,
+          envelopeAmount
+        );
         audioNodes.oscillators
           .filter(
             (nodeSet, i) =>
@@ -656,12 +676,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
 
         // Generate and apply filter envelope operations
         if (audioNodes.filterNodes.length === 4) {
-          const envelopeAmount = state.filterEnvelopeAmount / 100;
+          const filterEnvelopeAmount = state.filterEnvelopeAmount / 100;
           const filterOps = createFilterEnvelopeOps(
             filterTimes,
             time,
             state.cutoffFrequency,
-            envelopeAmount,
+            filterEnvelopeAmount,
             true
           );
 
@@ -678,7 +698,7 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         if (!audioNodes.audioContext) return;
 
         const synthControls = useSynthControlsStore.getState();
-        const { ampADSR, filterADSR } = synthControls;
+        const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
@@ -686,8 +706,16 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
 
+        // Convert amp envelope amount from 0-100 to 0-1 range
+        const envelopeAmount = ampEnvelopeAmount / 100;
+
         // Generate and apply amplitude release operations
-        const ampOps = createAmpEnvelopeOps(ampTimes, time, false);
+        const ampOps = createAmpEnvelopeOps(
+          ampTimes,
+          time,
+          false,
+          envelopeAmount
+        );
         audioNodes.oscillators
           .filter(
             (nodeSet, i) =>

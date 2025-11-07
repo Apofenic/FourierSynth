@@ -27,6 +27,12 @@ export const Mixer: React.FC = () => {
   const setKeyboardEnabled = useSynthControlsStore(
     (state) => state.setKeyboardEnabled
   );
+  const ampEnvelopeAmount = useSynthControlsStore(
+    (state) => state.ampEnvelopeAmount
+  );
+  const setAmpEnvelopeAmount = useSynthControlsStore(
+    (state) => state.setAmpEnvelopeAmount
+  );
 
   const handleKeyboardToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setKeyboardEnabled(event.target.checked);
@@ -39,6 +45,10 @@ export const Mixer: React.FC = () => {
 
   const handleMasterVolumeChange = (volume: number) => {
     updateMasterVolume(volume);
+  };
+
+  const handleAmpEnvelopeAmountChange = (amount: number) => {
+    setAmpEnvelopeAmount(amount);
   };
 
   return (
@@ -77,15 +87,26 @@ export const Mixer: React.FC = () => {
             }
             label="Enable Keyboard"
           />
-          <Dial
-            value={masterVolume}
-            min={0}
-            max={100}
-            onChange={handleMasterVolumeChange}
-            label="Master Volume"
-            size={75}
-            ringColor="#2ecc71"
-          />
+          <Box sx={{ flexDirection: "row", display: "flex", gap: 4 }}>
+            <Dial
+              value={masterVolume}
+              min={0}
+              max={100}
+              onChange={handleMasterVolumeChange}
+              label="Master"
+              size={75}
+              ringColor="#2ecc71"
+            />
+            <Dial
+              value={ampEnvelopeAmount}
+              min={0}
+              max={100}
+              onChange={handleAmpEnvelopeAmountChange}
+              label="Env Amount"
+              size={75}
+              ringColor="#3498db"
+            />
+          </Box>
         </Stack>
         <Box
           sx={{

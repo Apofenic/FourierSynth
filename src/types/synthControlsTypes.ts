@@ -52,6 +52,7 @@ export interface SynthControlsStore {
   ampADSR: ADSRParams;
   filterADSR: ADSRParams;
   modADSR: ADSRParams;
+  ampEnvelopeAmount: number; // 0-100 (percentage of envelope effect)
   // Actions
   updateHarmonic: (
     oscIndex: number,
@@ -84,4 +85,5 @@ export interface SynthControlsStore {
   updateAmpADSR: (param: keyof ADSRParams, value: number) => void;
   updateFilterADSR: (param: keyof ADSRParams, value: number) => void;
   updateModADSR: (param: keyof ADSRParams, value: number) => void;
+  setAmpEnvelopeAmount: (amount: number) => void;
 }
