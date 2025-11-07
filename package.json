@@ -2,6 +2,7 @@
   "name": "osc-app",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://Apofenic.github.io/FourierSynth",
   "packageManager": "yarn@1.22.0",
   "engines": {
     "node": ">=14.0.0",

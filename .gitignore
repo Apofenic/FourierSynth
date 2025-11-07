@@ -25,4 +25,5 @@ yarn-error.log*
 
 # IDE and tooling
 .vscode
-.github
+.github/*
+!.github/workflows/
