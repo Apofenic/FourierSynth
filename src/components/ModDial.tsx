@@ -137,16 +137,16 @@ export const ModDial: React.FC<ModDialProps> = ({
             sx={selectStyles}
           >
             <MenuItem value="none" sx={{ fontSize: "0.625rem" }}>
-              None
+              --
             </MenuItem>
-            <MenuItem value="pitch" sx={{ fontSize: "0.625rem" }}>
-              Pitch
+            <MenuItem value="env" sx={{ fontSize: "0.625rem" }}>
+              ENV
             </MenuItem>
-            <MenuItem value="filter" sx={{ fontSize: "0.625rem" }}>
-              Filter
+            <MenuItem value="lfo1" sx={{ fontSize: "0.625rem" }}>
+              LFO1
             </MenuItem>
-            <MenuItem value="amp" sx={{ fontSize: "0.625rem" }}>
-              Amp
+            <MenuItem value="lfo2" sx={{ fontSize: "0.625rem" }}>
+              LFO2
             </MenuItem>
           </Select>
         </Box>
@@ -179,16 +179,16 @@ export const ModDial: React.FC<ModDialProps> = ({
             sx={selectStyles}
           >
             <MenuItem value="none" sx={{ fontSize: "0.625rem" }}>
-              None
+              --
             </MenuItem>
-            <MenuItem value="pitch" sx={{ fontSize: "0.625rem" }}>
-              Pitch
+            <MenuItem value="env" sx={{ fontSize: "0.625rem" }}>
+              ENV
             </MenuItem>
-            <MenuItem value="filter" sx={{ fontSize: "0.625rem" }}>
-              Filter
+            <MenuItem value="lfo1" sx={{ fontSize: "0.625rem" }}>
+              LFO1
             </MenuItem>
-            <MenuItem value="amp" sx={{ fontSize: "0.625rem" }}>
-              Amp
+            <MenuItem value="lfo2" sx={{ fontSize: "0.625rem" }}>
+              LFO2
             </MenuItem>
           </Select>
         </Box>
