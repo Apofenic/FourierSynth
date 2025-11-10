@@ -3,7 +3,6 @@ import { WaveformVisualizer, HarmonicsControl } from "..";
 import { EquationBuilder } from "./EquationBuilder";
 import { Box, Paper, Tabs, Tab } from "@mui/material";
 import { TunerControls } from "./TunerControls";
-import { HybridWaveformSync } from "./HybridWaveformSync";
 import { useSynthControlsStore } from "../../stores";
 
 interface OscControlsProps {
@@ -36,9 +35,6 @@ export const OscControls: React.FC<OscControlsProps> = ({
         height: "100%",
       }}
     >
-      {/* Hybrid waveform sync component - combines equation + harmonics */}
-      <HybridWaveformSync oscillatorIndex={oscillatorIndex} />
-
       <Box
         sx={{
           gap: 1,

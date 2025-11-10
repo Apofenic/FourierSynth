@@ -494,6 +494,34 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
             false,
             "_generateWaveform"
           );
+
+          // Sync to SynthControls store if on equation tab
+          const { useSynthControlsStore } = require("./useSynthControlsStore");
+          const synthState = useSynthControlsStore.getState();
+
+          if (synthState.activeTab === "equation") {
+            // Convert to Float32Array and normalize
+            const combinedWaveform = new Float32Array(2048);
+            for (let i = 0; i < 2048; i++) {
+              combinedWaveform[i] = waveform[i] || 0;
+            }
+
+            // Normalize waveform to prevent clipping
+            const maxAmplitude = Math.max(
+              ...Array.from(combinedWaveform).map(Math.abs)
+            );
+            if (maxAmplitude > 1e-10) {
+              for (let i = 0; i < combinedWaveform.length; i++) {
+                combinedWaveform[i] /= maxAmplitude;
+              }
+            }
+
+            synthState.updateOscillatorParam(
+              oscIndex,
+              "waveformData",
+              combinedWaveform
+            );
+          }
         } catch (error) {
           console.error("Waveform generation error:", error);
           set(

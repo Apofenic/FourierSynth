@@ -5,7 +5,10 @@ import type {
   OscillatorParams,
   SynthControlsStore,
 } from "../types";
-import { calculateWaveform } from "../utils/helperFunctions";
+import {
+  calculateWaveform,
+  calculateWaveformFromExpression,
+} from "../utils/helperFunctions";
 import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
 
 /**
@@ -185,7 +188,63 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
       setKeyboardEnabled: (enabled) =>
         set({ keyboardEnabled: enabled }, false, "setKeyboardEnabled"),
 
-      setActiveTab: (tab) => set({ activeTab: tab }, false, "setActiveTab"),
+      setActiveTab: (tab) => {
+        const prevTab = useSynthControlsStore.getState().activeTab;
+
+        set({ activeTab: tab }, false, "setActiveTab");
+
+        // Need to get equation builder state
+        const {
+          useEquationBuilderStore,
+        } = require("./useEquationBuilderStore");
+        const eqState = useEquationBuilderStore.getState();
+
+        // Sync harmonics from equation when switching TO harmonic tab
+        if (prevTab === "equation" && tab === "harmonic") {
+          // Sync for all oscillators that have waveform data
+          for (let oscIndex = 0; oscIndex < 4; oscIndex++) {
+            const equationWaveformData =
+              eqState.oscillators[oscIndex].waveformData;
+            const variables = eqState.oscillators[oscIndex].variables;
+
+            if (equationWaveformData.length > 0) {
+              // Get the number of harmonics to extract from the 'n' variable
+              const nValue = Math.min(
+                Math.max(1, Math.round(variables.n?.value ?? 8)),
+                8
+              );
+
+              // Sync harmonics from the equation's waveform
+              useSynthControlsStore
+                .getState()
+                .syncHarmonicsFromWaveform(
+                  oscIndex,
+                  equationWaveformData,
+                  nValue
+                );
+            }
+          }
+        }
+
+        // Update waveform from harmonics when switching TO harmonic tab
+        if (tab === "harmonic") {
+          const synthState = useSynthControlsStore.getState();
+          for (let oscIndex = 0; oscIndex < 4; oscIndex++) {
+            const harmonics = synthState.oscillators[oscIndex].harmonics;
+            const variables = eqState.oscillators[oscIndex].variables;
+            const nValue = variables.n?.value ?? 1;
+            const maxHarmonics = Math.min(Math.round(nValue), harmonics.length);
+            const activeHarmonics = harmonics.slice(0, maxHarmonics);
+            const harmonicWaveform = calculateWaveform(activeHarmonics);
+
+            synthState.updateOscillatorParam(
+              oscIndex,
+              "waveformData",
+              harmonicWaveform
+            );
+          }
+        }
+      },
 
       syncHarmonicsFromWaveform: (oscIndex, waveform, numHarmonics) => {
         // Analyze waveform and extract harmonic components
