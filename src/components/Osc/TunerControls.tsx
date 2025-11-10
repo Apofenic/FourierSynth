@@ -29,7 +29,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
       <Box
         sx={{ padding: 0, display: "flex", flexDirection: "column", gap: 2 }}
       >
-        <Stack spacing={2} alignItems="start">
+        {/* <Stack spacing={2} alignItems="start">
           <FormControlLabel
             control={
               <Switch
@@ -42,7 +42,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             }
             label="Legato"
           />
-        </Stack>
+        </Stack> */}
         <Paper>
           <Typography variant="h3" align="center">
             Detune

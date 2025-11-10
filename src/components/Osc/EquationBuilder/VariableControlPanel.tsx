@@ -13,7 +13,6 @@ import React, { useState } from "react";
 import {
   Box,
   Typography,
-  Slider,
   TextField,
   IconButton,
   Dialog,
@@ -24,8 +23,8 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import { ModDial } from "../../ModDial";
 import SettingsIcon from "@mui/icons-material/Settings";
-import UndoIcon from "@mui/icons-material/Undo";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useEquationBuilderStore } from "../../../stores";
 import { VariableConfig } from "../../../types/equationBuilderTypes";
@@ -126,16 +125,6 @@ export function VariableControlPanel({
   };
 
   /**
-   * Handle slider value change
-   */
-  const handleSliderChange =
-    (name: string) => (_: Event, value: number | number[]) => {
-      if (typeof value === "number") {
-        updateVariable(oscillatorIndex, name, value);
-      }
-    };
-
-  /**
    * Handle text input value change
    */
   const handleInputChange =
@@ -159,28 +148,10 @@ export function VariableControlPanel({
     resetVariable(oscillatorIndex, name);
   };
 
-  // Empty state: no variables detected
-  if (variableNames.length === 0) {
-    return (
-      <Box
-        sx={{
-          padding: 3,
-          textAlign: "center",
-          color: "text.secondary",
-        }}
-      >
-        <Typography variant="body2">
-          No variables detected. Add variables to your equation.
-        </Typography>
-        <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-          Variables are single letters (a-z, A-Z) excluding reserved: t, i, e
-        </Typography>
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ padding: 2 }}>
+    <Box
+      sx={{ padding: 2, overflowY: "auto", height: "100%", maxHeight: "600px" }}
+    >
       <Box
         sx={{
           display: "flex",
@@ -210,7 +181,7 @@ export function VariableControlPanel({
               key={name}
               sx={{
                 display: "grid",
-                gridTemplateColumns: "80px 1fr 100px 40px 40px",
+                gridTemplateColumns: "auto auto auto",
                 gap: 1,
                 alignItems: "center",
               }}
@@ -227,54 +198,69 @@ export function VariableControlPanel({
                 {name}:
               </Typography>
 
-              {/* Slider */}
-              <Slider
+              {/* ModDial replaces Slider */}
+              <ModDial
                 value={variable.value}
                 min={variable.min}
                 max={variable.max}
                 step={variable.step}
-                onChange={handleSliderChange(name)}
-                valueLabelDisplay="auto"
-                valueLabelFormat={(value) => value.toFixed(2)}
-                sx={{ mx: 1 }}
+                onChange={(v) => updateVariable(oscillatorIndex, name, v)}
+                size={80}
               />
 
-              {/* Text input */}
-              <TextField
-                type="number"
-                value={variable.value.toFixed(2)}
-                onChange={handleInputChange(name)}
-                size="small"
-                inputProps={{
-                  min: variable.min,
-                  max: variable.max,
-                  step: variable.step,
-                  style: { textAlign: "right" },
-                }}
+              {/* Text input and buttons column */}
+              <Box
                 sx={{
-                  "& input": {
-                    fontFamily: "monospace",
-                  },
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 0.5,
                 }}
-              />
-
-              {/* Reset button */}
-              <Tooltip title="Reset to default value">
-                <IconButton
+              >
+                {/* Text input */}
+                <TextField
+                  type="number"
+                  value={variable.value.toFixed(2)}
+                  onChange={handleInputChange(name)}
                   size="small"
-                  onClick={() => handleReset(name)}
-                  disabled={variable.value === variable.defaultValue}
-                >
-                  <UndoIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+                  inputProps={{
+                    min: variable.min,
+                    max: variable.max,
+                    step: variable.step,
+                    style: { textAlign: "right" },
+                  }}
+                  sx={{
+                    "& input": {
+                      fontFamily: "monospace",
+                    },
+                  }}
+                />
 
-              {/* Settings button */}
-              <Tooltip title="Configure min/max/step">
-                <IconButton size="small" onClick={() => handleOpenConfig(name)}>
-                  <SettingsIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
+                {/* Buttons row */}
+                <Box
+                  sx={{ display: "flex", gap: 0.5, justifyContent: "center" }}
+                >
+                  {/* Reset button */}
+                  <Tooltip title="Reset to default value">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleReset(name)}
+                      disabled={variable.value === variable.defaultValue}
+                    >
+                      <RestartAltIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+
+                  {/* Settings button */}
+                  <Tooltip title="Configure min/max/step">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenConfig(name)}
+                    >
+                      <SettingsIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
             </Box>
           );
         })}

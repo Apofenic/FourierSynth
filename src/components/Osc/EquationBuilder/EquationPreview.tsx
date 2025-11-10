@@ -44,6 +44,7 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
   const [fontSize, setFontSize] = useState(24); // Starting font size in pixels
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null); // Separate ref for measurement
 
   const handleCopyLatex = async () => {
     try {
@@ -58,66 +59,51 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
     setCopySuccess(false);
   };
 
-  // Dynamic font sizing effect
+  // Dynamic font sizing to achieve 95% container width
   useEffect(() => {
     const adjustFontSize = () => {
-      if (!contentRef.current || !containerRef.current) return;
+      if (!measureRef.current || !containerRef.current) return;
 
       const container = containerRef.current;
-      const content = contentRef.current;
+      const measureElement = measureRef.current;
 
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
+      const targetWidth = container.clientWidth * 0.95; // 95% of container width
+      const minFontSize = 12; // Minimum readable size
+      const maxFontSize = 60; // Maximum size
 
-      // Start with a larger font size and reduce if needed
-      let currentFontSize = 32; // Start at 32px - reasonable default
-      const minFontSize = 14; // Minimum readable size
-      const maxFontSize = 36; // Maximum size - prevent oversized equations
-
-      // Set initial font size
-      content.style.fontSize = `${currentFontSize}px`;
-
-      // Give the browser time to render
+      // Use double requestAnimationFrame to ensure KaTeX has rendered
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          // Check if content overflows
-          const contentWidth = content.scrollWidth;
-          const contentHeight = content.scrollHeight;
+          // Binary search for optimal font size
+          let low = minFontSize;
+          let high = maxFontSize;
+          let bestFontSize = minFontSize;
 
-          // Reduce font size until it fits, with some padding
-          const paddingFactor = 0.95; // Use 95% of available space
+          while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            measureElement.style.fontSize = `${mid}px`;
 
-          while (
-            (contentWidth > containerWidth * paddingFactor ||
-              contentHeight > containerHeight * paddingFactor) &&
-            currentFontSize > minFontSize
-          ) {
-            currentFontSize -= 1;
-            content.style.fontSize = `${currentFontSize}px`;
+            // Force reflow and measure - wait for next frame
+            const contentWidth = measureElement.scrollWidth;
 
-            // Re-check dimensions
-            if (
-              content.scrollWidth <= containerWidth * paddingFactor &&
-              content.scrollHeight <= containerHeight * paddingFactor
-            ) {
-              break;
+            if (contentWidth <= targetWidth) {
+              bestFontSize = mid;
+              low = mid + 1; // Try larger
+            } else {
+              high = mid - 1; // Try smaller
             }
           }
 
-          // Cap at max font size for small equations
-          if (currentFontSize > maxFontSize) {
-            currentFontSize = maxFontSize;
-          }
-
-          setFontSize(currentFontSize);
+          // Set the optimal font size once
+          setFontSize(bestFontSize);
         });
       });
     };
 
-    // Adjust on mount and when equation changes
+    // Initial adjustment on mount and when equation changes
     adjustFontSize();
 
-    // Add resize observer to handle container size changes
+    // Add resize observer to handle viewport/container size changes
     const resizeObserver = new ResizeObserver(() => {
       adjustFontSize();
     });
@@ -129,7 +115,7 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
     return () => {
       resizeObserver.disconnect();
     };
-  }, [latexExpression, expression]);
+  }, [latexExpression]); // Re-run when equation updates
 
   const renderLatex = () => {
     // Empty expression case
@@ -148,15 +134,15 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
       );
     }
 
-    // Try to render LaTeX - BlockMath will handle errors internally
-    return (
+    // The equation content to render (both visible and hidden for measurement)
+    const equationContent = (refProp?: any) => (
       <Box
-        ref={contentRef}
+        ref={refProp}
         sx={{
           display: "flex",
           alignItems: "center",
           gap: 2,
-          transition: "font-size 0.2s ease-out",
+          fontSize: `${fontSize}px`,
         }}
       >
         <Typography
@@ -164,7 +150,7 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
           component="span"
           sx={{
             fontFamily: "serif",
-            fontSize: `${fontSize}px`,
+            fontSize: "inherit",
           }}
         >
           f(t) =
@@ -172,8 +158,7 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
         <Box
           sx={{
             overflow: "visible",
-            maxWidth: "100%",
-            fontSize: `${fontSize}px`,
+            fontSize: "inherit",
             "& .katex": {
               fontSize: "inherit",
             },
@@ -182,6 +167,23 @@ export function EquationPreview({ oscillatorIndex }: EquationPreviewProps) {
           <BlockMath math={latexExpression} errorColor="#d32f2f" />
         </Box>
       </Box>
+    );
+
+    // Return both visible equation and hidden measurement element
+    return (
+      <>
+        {equationContent(contentRef)}
+        {/* Hidden element for measurement - same structure but invisible */}
+        <Box
+          sx={{
+            position: "absolute",
+            visibility: "hidden",
+            pointerEvents: "none",
+          }}
+        >
+          {equationContent(measureRef)}
+        </Box>
+      </>
     );
   };
 

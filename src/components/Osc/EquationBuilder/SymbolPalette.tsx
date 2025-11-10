@@ -25,7 +25,7 @@ import {
   getSymbolsByCategory,
   getCategories,
   getCategoryDisplayName,
-} from "../../../data/symbols";
+} from "./symbols";
 
 /**
  * Props for SymbolPalette component

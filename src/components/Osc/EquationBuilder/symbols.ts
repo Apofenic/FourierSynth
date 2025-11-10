@@ -5,7 +5,7 @@
  * organized by category for easy browsing and insertion into equations.
  */
 
-import { Symbol } from "../types/equationBuilderTypes";
+import { Symbol } from "../../../types/equationBuilderTypes";
 
 /**
  * All available symbols organized by category

@@ -23,6 +23,7 @@ export interface OscillatorState {
 export interface AudioEngineState {
   // Playback state
   isPlaying: boolean;
+  isNoteHeld: boolean; // Track if a note is currently being held
   oscillators: OscillatorState[];
   masterVolume: number; // 0-100 range
   cutoffFrequency: number;

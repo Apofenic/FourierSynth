@@ -30,6 +30,10 @@ export const SubtractiveControls = () => {
       sx={{
         display: "grid",
         gridTemplateColumns: "1fr 1fr 1fr",
+        "@media (max-width: 1200px)": {
+          gridTemplateColumns: "1fr",
+          gridTemplateRows: "auto auto auto",
+        },
         gap: 1,
         height: "100%",
         overflow: "hidden",
@@ -47,6 +51,9 @@ export const SubtractiveControls = () => {
         sx={{
           display: "grid",
           gridRow: 1,
+          "@media (max-width: 1200px)": {
+            gridRow: 2,
+          },
           gap: 1,
           gridTemplateRows: "1fr 1fr 1fr",
           minHeight: "100%",
@@ -63,8 +70,11 @@ export const SubtractiveControls = () => {
       </Box>
       <Box
         sx={{
-          gridRow: 1,
           display: "grid",
+          gridRow: 1,
+          "@media (max-width: 1200px)": {
+            gridRow: 3,
+          },
           gridTemplateColumns: "1fr 1fr",
           gap: 1,
           minHeight: "100%",

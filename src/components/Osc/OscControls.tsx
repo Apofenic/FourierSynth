@@ -25,6 +25,10 @@ export const OscControls: React.FC<OscControlsProps> = ({
       sx={{
         display: "grid",
         gridTemplateColumns: "1fr 3.5fr",
+        "@media (max-width: 1600px)": {
+          gridTemplateColumns: "auto",
+          gridTemplateRows: "1fr 2fr",
+        },
         gap: 1,
         padding: 1,
         overflow: "hidden",

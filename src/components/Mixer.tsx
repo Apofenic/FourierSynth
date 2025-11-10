@@ -52,111 +52,112 @@ export const Mixer: React.FC = () => {
   };
 
   return (
-    <Box
+    <Paper
+      elevation={2}
       sx={{
+        p: 2,
+        flex: 1,
         display: "flex",
         flexDirection: "column",
-        height: "100%",
         gap: 2,
+        minHeight: 0,
         overflow: "hidden",
+        "@media (max-width: 1999px)": {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-evenly",
+          height: "auto",
+        },
       }}
     >
-      <Paper
-        elevation={2}
-        sx={{
-          p: 2,
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          minHeight: 0,
-          overflow: "hidden",
-        }}
-      >
-        <Typography variant="h3" align="center" gutterBottom>
-          Mixer Controls
-        </Typography>
-        <Stack spacing={2} alignItems="center">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={keyboardEnabled}
-                onChange={handleKeyboardToggle}
-                color="primary"
-              />
-            }
-            label="Enable Keyboard"
-          />
-          <Box sx={{ flexDirection: "row", display: "flex", gap: 4 }}>
-            <Dial
-              value={masterVolume}
-              min={0}
-              max={100}
-              onChange={handleMasterVolumeChange}
-              label="Master"
-              size={75}
-              ringColor="#2ecc71"
+      <Typography variant="h3" align="center" gutterBottom>
+        Mixer Controls
+      </Typography>
+      <Stack spacing={2} alignItems="center">
+        <FormControlLabel
+          control={
+            <Switch
+              checked={keyboardEnabled}
+              onChange={handleKeyboardToggle}
+              color="primary"
             />
-            <Dial
-              value={ampEnvelopeAmount}
-              min={0}
-              max={100}
-              onChange={handleAmpEnvelopeAmountChange}
-              label="Env Amount"
-              size={75}
-              ringColor="#3498db"
-            />
-          </Box>
-        </Stack>
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gridTemplateRows: "auto",
-          }}
-        >
-          <ModDial
-            value={oscillators[0].volume * 100}
+          }
+          label="Enable Keyboard"
+        />
+        <Box sx={{ flexDirection: "row", display: "flex", gap: 4 }}>
+          <Dial
+            value={masterVolume}
             min={0}
             max={100}
-            onChange={(vol) => handleOscVolumeChange(0, vol)}
-            label="Osc 1 Volume"
+            onChange={handleMasterVolumeChange}
+            label="Master"
             size={75}
-            ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
+            ringColor="#2ecc71"
           />
-          <ModDial
-            value={oscillators[1].volume * 100}
+          <Dial
+            value={ampEnvelopeAmount}
             min={0}
             max={100}
-            onChange={(vol) => handleOscVolumeChange(1, vol)}
-            label="Osc 2 Volume"
+            onChange={handleAmpEnvelopeAmountChange}
+            label="Env Amount"
             size={75}
-            ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
-          />
-          <ModDial
-            value={oscillators[2].volume * 100}
-            min={0}
-            max={100}
-            onChange={(vol) => handleOscVolumeChange(2, vol)}
-            label="Osc 3 Volume"
-            size={75}
-            ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
-          />
-          <ModDial
-            value={oscillators[3].volume * 100}
-            min={0}
-            max={100}
-            onChange={(vol) => handleOscVolumeChange(3, vol)}
-            label="Osc 4 Volume"
-            size={75}
-            ringColor={oscillators[3].isActive ? "#2ecc71" : "#95a5a6"}
-            numberFontSize={18}
-            minMaxFontSize={10}
+            ringColor="#3498db"
           />
         </Box>
+      </Stack>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "auto",
+          "@media (max-width: 1999px)": {
+            gridTemplateColumns: "1fr 1fr 1fr 1fr",
+            gridTemplateRows: "1fr",
+          },
+        }}
+      >
+        <ModDial
+          value={oscillators[0].volume * 100}
+          min={0}
+          max={100}
+          onChange={(vol) => handleOscVolumeChange(0, vol)}
+          label="Osc 1 Volume"
+          size={75}
+          ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
+        />
+        <ModDial
+          value={oscillators[1].volume * 100}
+          min={0}
+          max={100}
+          onChange={(vol) => handleOscVolumeChange(1, vol)}
+          label="Osc 2 Volume"
+          size={75}
+          ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
+        />
+        <ModDial
+          value={oscillators[2].volume * 100}
+          min={0}
+          max={100}
+          onChange={(vol) => handleOscVolumeChange(2, vol)}
+          label="Osc 3 Volume"
+          size={75}
+          ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
+        />
+        <ModDial
+          value={oscillators[3].volume * 100}
+          min={0}
+          max={100}
+          onChange={(vol) => handleOscVolumeChange(3, vol)}
+          label="Osc 4 Volume"
+          size={75}
+          ringColor={oscillators[3].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
+        />
+      </Box>
 
-        <Stack spacing={2} alignItems="center">
-          <FormControlLabel
+      <Stack spacing={2} alignItems="center">
+        {/* <FormControlLabel
             control={
               <Switch
                 size="small"
@@ -167,9 +168,8 @@ export const Mixer: React.FC = () => {
               />
             }
             label="unison"
-          />
-        </Stack>
-      </Paper>
-    </Box>
+          /> */}
+      </Stack>
+    </Paper>
   );
 };

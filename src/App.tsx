@@ -183,11 +183,17 @@ function App() {
         sx={{
           display: "grid",
           gridTemplateColumns: "repeat(12, 1fr)",
-          gridTemplateRows: "1fr 20fr 15fr",
+          gridTemplateRows: "auto minmax(600px, 20fr) minmax(450px, 15fr)",
           gap: 1,
           padding: "0.5rem",
+          minHeight: "100vh",
           height: "100vh",
-          overflow: "hidden",
+          overflowY: "auto",
+          overflowX: "auto",
+          "@media (max-width: 1999px)": {
+            gridTemplateRows: "auto auto auto",
+            height: "auto",
+          },
         }}
       >
         {/* Header Section - Row 1, spans all 12 columns */}
@@ -202,12 +208,16 @@ function App() {
             gridColumn: "1 / -1",
             gridRow: 2,
             display: "grid",
-            gridTemplateColumns: "8fr 1fr",
+            gridTemplateColumns: "minmax(900px, 8fr) minmax(150px, 1fr)",
+            "@media (max-width: 1999px)": {
+              gridTemplateColumns: "1fr",
+              gridTemplateRows: "auto 1fr",
+            },
             gap: 1,
             padding: 1,
             paddingLeft: 0,
             overflow: "hidden",
-            minHeight: 0,
+            height: "100%",
           }}
         >
           <Box
@@ -217,6 +227,9 @@ function App() {
               minHeight: 0,
               overflow: "hidden",
               height: "100%",
+              "@media (max-width: 1999px)": {
+                order: 2,
+              },
             }}
           >
             <Box
@@ -273,6 +286,9 @@ function App() {
               minHeight: 0,
               overflow: "hidden",
               height: "100%",
+              "@media (max-width: 1999px)": {
+                order: 1,
+              },
             }}
           >
             <Mixer />

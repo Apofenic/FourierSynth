@@ -42,7 +42,7 @@ export const LFOControls = ({ id }: { id: number }) => {
         flexDirection: "column",
         gap: 2,
         padding: 2,
-        overflow: "auto",
+        overflow: "hidden",
         height: "100%",
       }}
     >

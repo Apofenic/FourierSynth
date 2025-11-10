@@ -73,13 +73,13 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
           >
             {/* Left Panel - Symbol Palette (30% width) */}
             <Grid
-              size={{ xs: 12, md: 4, lg: 2 }}
+              size={{ xs: 12, md: 12, lg: 2 }}
               sx={{
-                height: { xs: "auto", md: "100%" },
-                maxHeight: { xs: "300px", md: "100%" },
+                height: { xs: "auto", md: "auto", lg: "100%" },
+                maxHeight: { xs: "300px", md: "300px", lg: "100%" },
                 overflow: "auto",
 
-                borderBottom: { xs: 1, md: 0 },
+                borderBottom: { xs: 1, md: 1, lg: 0 },
                 borderColor: "divider",
               }}
             >
@@ -88,9 +88,9 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
 
             {/* Right Panel - Input, Preview, Variables (70% width) */}
             <Grid
-              size={{ xs: 12, md: 8, lg: 6 }}
+              size={{ xs: 12, md: 12, lg: 6 }}
               sx={{
-                height: { xs: "auto", md: "100%" },
+                height: { xs: "auto", md: "auto", lg: "100%" },
                 overflow: "auto",
                 display: "flex",
                 flexDirection: "column",
@@ -134,9 +134,9 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
               </Box>
             </Grid>
             <Grid
-              size={{ xs: 12, md: 8, lg: 4 }}
+              size={{ xs: 12, md: 12, lg: 4 }}
               sx={{
-                height: { xs: "auto", md: "100%" },
+                height: { xs: "auto", md: "auto", lg: "100%" },
                 overflow: "auto",
                 display: "flex",
                 flexDirection: "column",

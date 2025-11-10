@@ -307,6 +307,7 @@ export const useAudioEngineStore = create<AudioEngineState>()(
     (set, get) => ({
       // Initial state - 4 oscillators (all active)
       isPlaying: false,
+      isNoteHeld: false,
       oscillators: [
         { frequency: 220, volume: 0.75, isActive: true },
         { frequency: 220, volume: 0.75, isActive: true },
@@ -646,6 +647,9 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       triggerNoteOn: () => {
         if (!audioNodes.audioContext) return;
 
+        // Mark that a note is being held
+        set({ isNoteHeld: true });
+
         const synthControls = useSynthControlsStore.getState();
         const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
         const state = get();
@@ -696,6 +700,9 @@ export const useAudioEngineStore = create<AudioEngineState>()(
        */
       triggerNoteOff: () => {
         if (!audioNodes.audioContext) return;
+
+        // Mark that note is no longer being held
+        set({ isNoteHeld: false });
 
         const synthControls = useSynthControlsStore.getState();
         const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
@@ -773,7 +780,11 @@ useEquationBuilderStore.subscribe((state, prevState) => {
         osc.waveformData !== prevState.oscillators[index].waveformData
     );
     if (waveformChanged) {
-      audioEngineState._recreateAudio();
+      // Only recreate if no note is currently being held (to avoid cutting out sustained notes)
+      if (!audioEngineState.isNoteHeld) {
+        audioEngineState._recreateAudio();
+      }
+      // If a note is being held, the waveform change will take effect on next note trigger
     }
   }
 });
@@ -823,7 +834,11 @@ useSynthControlsStore.subscribe((state, prevState) => {
         });
       }
     } else {
-      audioEngineState._recreateAudio();
+      // Only recreate if no note is currently being held
+      if (!audioEngineState.isNoteHeld) {
+        audioEngineState._recreateAudio();
+      }
+      // If a note is being held, changes will take effect on next note trigger
     }
   }
 });
