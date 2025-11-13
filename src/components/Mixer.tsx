@@ -61,19 +61,22 @@ export const Mixer: React.FC = () => {
         flexDirection: "column",
         gap: 2,
         minHeight: 0,
+        minWidth: "200px",
         overflow: "hidden",
         "@media (max-width: 1999px)": {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-evenly",
           height: "auto",
+          minWidth: "800px",
+        },
+        "@media (max-width: 900px)": {
+          flexDirection: "column",
+          minWidth: "300px",
         },
       }}
     >
-      <Typography variant="h3" align="center" gutterBottom>
-        Mixer Controls
-      </Typography>
-      <Stack spacing={2} alignItems="center">
+      <Stack spacing={2} alignItems="center" sx={{ minWidth: "150px" }}>
         <FormControlLabel
           control={
             <Switch
@@ -93,6 +96,8 @@ export const Mixer: React.FC = () => {
             label="Master"
             size={75}
             ringColor="#2ecc71"
+            numberFontSize={18}
+            minMaxFontSize={10}
           />
           <Dial
             value={ampEnvelopeAmount}
@@ -102,6 +107,8 @@ export const Mixer: React.FC = () => {
             label="Env Amount"
             size={75}
             ringColor="#3498db"
+            numberFontSize={18}
+            minMaxFontSize={10}
           />
         </Box>
       </Stack>
@@ -110,9 +117,17 @@ export const Mixer: React.FC = () => {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gridTemplateRows: "auto",
+          gap: 1,
+          minWidth: "300px",
           "@media (max-width: 1999px)": {
             gridTemplateColumns: "1fr 1fr 1fr 1fr",
             gridTemplateRows: "1fr",
+            minWidth: "400px",
+          },
+          "@media (max-width: 900px)": {
+            gridTemplateColumns: "1fr 1fr",
+            gridTemplateRows: "auto",
+            minWidth: "300px",
           },
         }}
       >
@@ -124,6 +139,8 @@ export const Mixer: React.FC = () => {
           label="Osc 1 Volume"
           size={75}
           ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[1].volume * 100}
@@ -133,6 +150,8 @@ export const Mixer: React.FC = () => {
           label="Osc 2 Volume"
           size={75}
           ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[2].volume * 100}
@@ -142,6 +161,8 @@ export const Mixer: React.FC = () => {
           label="Osc 3 Volume"
           size={75}
           ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[3].volume * 100}

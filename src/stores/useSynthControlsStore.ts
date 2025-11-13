@@ -9,7 +9,10 @@ import {
   calculateWaveform,
   calculateWaveformFromExpression,
 } from "../utils/helperFunctions";
-import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
+import {
+  analyzeWaveformToHarmonics,
+  extractHarmonics,
+} from "../utils/fourierAnalysis";
 
 /**
  * Create default oscillator parameters
@@ -37,7 +40,7 @@ const createDefaultOscillator = (
     id,
     harmonics,
     waveformData,
-    volume: 75,
+    volume: 100,
     isActive,
     detune: {
       octave: 0,
@@ -89,23 +92,23 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
       keyboardEnabled: true,
       activeTab: "equation",
       ampADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
       ampEnvelopeAmount: 100, // Default to 100% envelope effect
       filterADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
       modADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
 
       // Actions
@@ -209,9 +212,10 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
 
             if (equationWaveformData.length > 0) {
               // Get the number of harmonics to extract from the 'n' variable
+              // Allow up to a reasonable maximum (e.g., 32 harmonics)
               const nValue = Math.min(
                 Math.max(1, Math.round(variables.n?.value ?? 8)),
-                8
+                32
               );
 
               // Sync harmonics from the equation's waveform
@@ -231,11 +235,8 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
           const synthState = useSynthControlsStore.getState();
           for (let oscIndex = 0; oscIndex < 4; oscIndex++) {
             const harmonics = synthState.oscillators[oscIndex].harmonics;
-            const variables = eqState.oscillators[oscIndex].variables;
-            const nValue = variables.n?.value ?? 1;
-            const maxHarmonics = Math.min(Math.round(nValue), harmonics.length);
-            const activeHarmonics = harmonics.slice(0, maxHarmonics);
-            const harmonicWaveform = calculateWaveform(activeHarmonics);
+            // Use all harmonics - those beyond 'n' should have zero amplitude
+            const harmonicWaveform = calculateWaveform(harmonics);
 
             synthState.updateOscillatorParam(
               oscIndex,
@@ -247,26 +248,22 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
       },
 
       syncHarmonicsFromWaveform: (oscIndex, waveform, numHarmonics) => {
-        // Analyze waveform and extract harmonic components
-        const extractedHarmonics = analyzeWaveformToHarmonics(
-          waveform,
-          numHarmonics
-        );
+        // Extract harmonic components WITHOUT normalization to preserve original scale
+        const extractedHarmonics = extractHarmonics(waveform, numHarmonics);
 
-        // Pad with zeros if we have fewer harmonics than the fixed 8
-        while (extractedHarmonics.length < 8) {
+        // Keep all extracted harmonics (no artificial limit)
+        // If we need a minimum for UI, pad with zeros
+        const minHarmonics = 8;
+        while (extractedHarmonics.length < minHarmonics) {
           extractedHarmonics.push({ amplitude: 0, phase: 0 });
         }
-
-        // Trim if we extracted more than 8
-        const finalHarmonics = extractedHarmonics.slice(0, 8);
 
         set(
           (state) => {
             const updatedOscillators = [...state.oscillators];
             updatedOscillators[oscIndex] = {
               ...updatedOscillators[oscIndex],
-              harmonics: finalHarmonics,
+              harmonics: extractedHarmonics,
             };
             return { oscillators: updatedOscillators };
           },

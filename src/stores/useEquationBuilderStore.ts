@@ -37,7 +37,7 @@ const prevParsedExpressions: (ParsedExpression | null)[] = [
  * Create initial state for a single oscillator
  */
 const createInitialOscillatorState = (): EquationBuilderState => {
-  const initialExpression = "sin(i*t)";
+  const initialExpression = "(1/i)*sin(i*t)";
   const initialParsed = parseExpression(initialExpression);
   const initialCompiled = compileExpression(initialParsed);
   const initialLatex = generateLatex(initialExpression);
@@ -45,11 +45,11 @@ const createInitialOscillatorState = (): EquationBuilderState => {
   const initialVariables: Record<string, VariableConfig> = {
     n: {
       name: "n",
-      value: 1,
+      value: 10,
       min: 1,
       max: 20,
       step: 1,
-      defaultValue: 1,
+      defaultValue: 10,
     },
   };
 
@@ -93,6 +93,47 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
       ],
 
       // Public Actions
+
+      /**
+       * Initialize waveforms by syncing to SynthControls store
+       * Called once after store creation to ensure initial waveforms are displayed
+       */
+      initializeWaveforms: () => {
+        const state = get();
+        const { useSynthControlsStore } = require("./useSynthControlsStore");
+        const synthState = useSynthControlsStore.getState();
+
+        // Only sync if we're on the equation tab
+        if (synthState.activeTab === "equation") {
+          for (let oscIndex = 0; oscIndex < 4; oscIndex++) {
+            const osc = state.oscillators[oscIndex];
+
+            if (osc.waveformData && osc.waveformData.length > 0) {
+              // Convert to Float32Array and normalize
+              const combinedWaveform = new Float32Array(2048);
+              for (let i = 0; i < 2048; i++) {
+                combinedWaveform[i] = osc.waveformData[i] || 0;
+              }
+
+              // Normalize waveform to prevent clipping
+              const maxAmplitude = Math.max(
+                ...Array.from(combinedWaveform).map(Math.abs)
+              );
+              if (maxAmplitude > 1e-10) {
+                for (let i = 0; i < combinedWaveform.length; i++) {
+                  combinedWaveform[i] /= maxAmplitude;
+                }
+              }
+
+              synthState.updateOscillatorParam(
+                oscIndex,
+                "waveformData",
+                combinedWaveform
+              );
+            }
+          }
+        }
+      },
 
       /**
        * Update expression with 300ms debounce for parsing

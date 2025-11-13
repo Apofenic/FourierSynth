@@ -23,7 +23,7 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
-import { ModDial } from "../../ModDial";
+import { ModDial } from "../../Custom_UI_Components/ModDial";
 import SettingsIcon from "@mui/icons-material/Settings";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useEquationBuilderStore } from "../../../stores";

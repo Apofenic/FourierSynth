@@ -7,8 +7,8 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from "@mui/material";
-import { Dial } from "../Dial";
-import { WaveformIcon } from "../WaveformIcon";
+import { Dial } from "../Custom_UI_Components/Dial";
+import { WaveformIcon } from "../Custom_UI_Components/WaveformIcon";
 
 export const LFOControls = ({ id }: { id: number }) => {
   // LFO state

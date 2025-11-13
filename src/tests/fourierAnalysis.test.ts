@@ -1,7 +1,7 @@
 import {
   extractHarmonics,
   analyzeWaveformToHarmonics,
-} from "./fourierAnalysis";
+} from "../utils/fourierAnalysis";
 
 describe("Fourier Analysis", () => {
   describe("extractHarmonics", () => {

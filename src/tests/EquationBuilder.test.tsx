@@ -21,10 +21,10 @@ import {
   within,
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import EquationBuilder from "./EquationBuilder";
+import EquationBuilder from "../components/Osc/EquationBuilder/EquationBuilder";
 
 // Mock child components to simplify integration testing
-jest.mock("./SymbolPalette", () => {
+jest.mock("../components/Osc/EquationBuilder/SymbolPalette", () => {
   return function MockSymbolPalette({ onSymbolClick }: any) {
     return (
       <div data-testid="symbol-palette">
@@ -35,7 +35,7 @@ jest.mock("./SymbolPalette", () => {
   };
 });
 
-jest.mock("./EquationInput", () => {
+jest.mock("../components/Osc/EquationBuilder/EquationInput", () => {
   const React = require("react");
   return {
     __esModule: true,
@@ -62,7 +62,7 @@ jest.mock("./EquationInput", () => {
   };
 });
 
-jest.mock("./EquationPreview", () => {
+jest.mock("../components/Osc/EquationBuilder/EquationPreview", () => {
   return {
     EquationPreview: function MockEquationPreview() {
       return <div data-testid="equation-preview">Preview</div>;
@@ -70,7 +70,7 @@ jest.mock("./EquationPreview", () => {
   };
 });
 
-jest.mock("./VariableControlPanel", () => {
+jest.mock("../components/Osc/EquationBuilder/VariableControlPanel", () => {
   return {
     VariableControlPanel: function MockVariableControlPanel() {
       return <div data-testid="variable-control-panel">Variables</div>;

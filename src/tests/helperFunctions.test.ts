@@ -2,8 +2,8 @@
  * Tests for helper functions including waveform generation
  */
 
-import { calculateWaveformFromExpression } from './helperFunctions';
-import { parseExpression, compileExpression } from './expressionParser';
+import { calculateWaveformFromExpression } from '../utils/helperFunctions';
+import { parseExpression, compileExpression } from '../utils/expressionParser';
 import { VariableConfig } from '../types/equationBuilderTypes';
 
 describe('calculateWaveformFromExpression', () => {

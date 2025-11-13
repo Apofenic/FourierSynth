@@ -5,7 +5,7 @@ import {
   useAudioEngineStore,
   useEquationBuilderStore,
 } from "../../stores";
-import { ModDial } from "../ModDial";
+import { ModDial } from "../Custom_UI_Components/ModDial";
 
 interface HarmonicsControlProps {
   oscillatorIndex: number;
@@ -42,9 +42,27 @@ export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
       <Typography variant="h3" align="center">
         Harmonic Components (n={numHarmonicsToDisplay})
       </Typography>
-      <Grid container spacing={2}>
+      <Grid
+        container
+        spacing={2}
+        columns={12}
+        sx={{
+          "@media (max-width: 800px)": {
+            "& > .MuiGrid-root": {
+              flexBasis: "50%",
+              maxWidth: "50%",
+            },
+          },
+          "@media (max-width: 600px)": {
+            "& > .MuiGrid-root": {
+              flexBasis: "100%",
+              maxWidth: "100%",
+            },
+          },
+        }}
+      >
         {displayedHarmonics.map((harmonic, idx) => (
-          <Grid size={3} key={idx}>
+          <Grid size={2.4} key={idx}>
             <Paper
               sx={{
                 bgcolor: "rgba(97, 218, 251, 0.1)",
@@ -73,6 +91,7 @@ export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
                     ringColor="#2ecc71"
                     numberFontSize={16}
                     minMaxFontSize={10}
+                    baselineResolution={101}
                   />
                 </Grid>
                 <Grid size={6}>
@@ -89,6 +108,8 @@ export const HarmonicsControl: React.FC<HarmonicsControlProps> = ({
                     ringColor="#3498db"
                     numberFontSize={16}
                     minMaxFontSize={10}
+                    minLabel="-π"
+                    maxLabel="π"
                   />
                 </Grid>
               </Grid>

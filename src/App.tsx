@@ -17,7 +17,12 @@ import {
   SequencerControls,
   EffectsControls,
 } from "./components";
-import { useSynthControlsStore, useAudioEngineStore } from "./stores";
+import { PatchPresetControls } from "./components/PatchPresetControls";
+import {
+  useSynthControlsStore,
+  useAudioEngineStore,
+  useEquationBuilderStore,
+} from "./stores";
 import { theme } from "./theme";
 import { calculateDetunedFrequency } from "./utils/helperFunctions";
 
@@ -48,6 +53,16 @@ function App() {
   const updateKeyboardNoteState = useSynthControlsStore(
     (state) => state.updateKeyboardNoteState
   );
+
+  // Initialize equation builder waveforms on mount
+  const initializeWaveforms = useEquationBuilderStore(
+    (state) => state.initializeWaveforms
+  );
+
+  useEffect(() => {
+    // Sync initial waveforms from equation builder to synth controls
+    initializeWaveforms();
+  }, [initializeWaveforms]);
 
   // Use refs to access the latest state without triggering effect re-runs
   const keyboardNotesRef = useRef(keyboardNotes);
@@ -197,10 +212,50 @@ function App() {
         }}
       >
         {/* Header Section - Row 1, spans all 12 columns */}
-        <Box sx={{ gridColumn: "1 / -1", gridRow: 1 }}>
-          <Typography variant="h1" align="left" sx={{ margin: 0 }}>
+        <Box
+          sx={{
+            gridColumn: "1 / -1",
+            gridRow: 1,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 2,
+            minWidth: "600px",
+            flexWrap: "nowrap",
+            "@media (max-width: 800px)": {
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: "300px",
+            },
+          }}
+        >
+          <Typography
+            variant="h1"
+            align="left"
+            sx={{
+              margin: 0,
+              whiteSpace: "nowrap",
+              minWidth: "fit-content",
+              "@media (max-width: 800px)": {
+                textAlign: "center",
+              },
+            }}
+          >
             Sigmatron
           </Typography>
+          <Box
+            sx={{
+              minWidth: "250px",
+              "@media (max-width: 800px)": {
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+              },
+            }}
+          >
+            <PatchPresetControls />
+          </Box>
         </Box>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
         <Paper
