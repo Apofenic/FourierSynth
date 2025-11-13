@@ -1,4 +1,4 @@
-import { calculateDetunedFrequency } from "./helperFunctions";
+import { calculateDetunedFrequency } from "../utils/helperFunctions";
 
 describe("calculateDetunedFrequency", () => {
   const A4 = 440; // Standard A4 pitch

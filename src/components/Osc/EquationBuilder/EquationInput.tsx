@@ -62,9 +62,13 @@ export interface EquationInputHandle {
 }
 
 export const equationPresets = [
-  { name: "Sine", value: "sin(i*t)" },
-  { name: "Sawtooth", value: "(1/i)*sin(i*t)" },
-  { name: "Square", value: "((4/pi)*(1/(2*i-1)))*sin((2*i-1)*t)" },
+  { name: "Sine", value: "sin(i*t)", defaultN: 1 },
+  { name: "Sawtooth", value: "(1/i)*sin(i*t)", defaultN: 10 },
+  {
+    name: "Square",
+    value: "((4/pi)*(1/(2*i-1)))*sin((2*i-1)*t)",
+    defaultN: 10,
+  },
 ];
 
 /**
@@ -82,6 +86,9 @@ export const EquationInput = forwardRef<
   );
   const updateExpression = useEquationBuilderStore(
     (state) => state.updateExpression
+  );
+  const updateVariable = useEquationBuilderStore(
+    (state) => state.updateVariable
   );
 
   const [cursorPosition, setCursorPosition] = useState<number>(0);
@@ -265,12 +272,27 @@ export const EquationInput = forwardRef<
           <Select
             labelId="preset-equations-label"
             id="preset-equations-select"
-            value=""
+            value={
+              equationPresets.find((p) => p.value === expression)?.value || ""
+            }
             label="Preset Equations"
             onChange={(event) => {
               const selectedValue = event.target.value as string;
+              const selectedPreset = equationPresets.find(
+                (p) => p.value === selectedValue
+              );
+
               setLocalExpression(selectedValue);
               updateExpression(oscillatorIndex, selectedValue);
+
+              // Set the default n value for the preset after a short delay
+              // to allow the expression to be parsed and variables to be created
+              if (selectedPreset?.defaultN !== undefined) {
+                setTimeout(() => {
+                  updateVariable(oscillatorIndex, "n", selectedPreset.defaultN);
+                }, 100);
+              }
+
               inputRef.current?.focus();
             }}
           >

@@ -1,5 +1,5 @@
 import { renderHook, act } from "@testing-library/react";
-import { useSynthControlsStore } from "../useSynthControlsStore";
+import { useSynthControlsStore } from "../../stores/useSynthControlsStore";
 
 describe("useSynthControlsStore", () => {
   beforeEach(() => {

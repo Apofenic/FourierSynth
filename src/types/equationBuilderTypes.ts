@@ -113,6 +113,7 @@ export interface EquationBuilderStore {
   resetVariable: (oscIndex: number, name: string) => void;
   resetAllVariables: (oscIndex: number) => void;
   loadTemplate: (oscIndex: number, template: EquationTemplate) => void;
+  initializeWaveforms: () => void;
 
   // Internal actions (prefixed with _)
   _parseExpression: (oscIndex: number) => void;

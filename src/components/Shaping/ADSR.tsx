@@ -1,6 +1,6 @@
 import React from "react";
 import { Paper, Typography, Stack } from "@mui/material";
-import { Dial } from "../Dial";
+import { Dial } from "../Custom_UI_Components/Dial";
 import { ADSRParams } from "../../types";
 
 export const ADSR = ({

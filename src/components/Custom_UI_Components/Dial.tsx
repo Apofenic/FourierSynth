@@ -21,6 +21,7 @@ interface DialProps {
   gap?: number; // spacing between label and dial (in theme spacing units)
   hideStroke?: boolean; // removes the stroke/dropshadow from the center circle if true
   disabled?: boolean; // disables the dial and makes it transparent
+  baselineResolution?: number; // total number of baseline positions for rotation (creates quantized "clicky" feel)
 }
 
 export const Dial: React.FC<DialProps> = ({
@@ -43,11 +44,12 @@ export const Dial: React.FC<DialProps> = ({
   gap = 0.5,
   hideStroke = false,
   disabled = false,
+  baselineResolution = 100,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
   const startY = useRef(0);
-  const startValue = useRef(value);
+  const startBaselinePosition = useRef(0);
   const currentValueRef = useRef(value);
   const onChangeRef = useRef(onChange);
 
@@ -110,6 +112,26 @@ export const Dial: React.FC<DialProps> = ({
     ].join(" ");
   };
 
+  // Convert value to baseline position
+  const valueToBaselinePosition = useCallback(
+    (val: number) => {
+      const normalizedValue = (val - min) / (max - min);
+      return Math.round(normalizedValue * (baselineResolution - 1));
+    },
+    [min, max, baselineResolution]
+  );
+
+  // Convert baseline position to value
+  const baselinePositionToValue = useCallback(
+    (position: number) => {
+      const normalizedPosition = position / (baselineResolution - 1);
+      const rawValue = min + normalizedPosition * (max - min);
+      // Apply step quantization
+      return Math.round(rawValue / step) * step;
+    },
+    [min, max, step, baselineResolution]
+  );
+
   // Handle mouse down
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -117,9 +139,11 @@ export const Dial: React.FC<DialProps> = ({
       e.preventDefault();
       setIsDragging(true);
       startY.current = e.clientY;
-      startValue.current = currentValueRef.current;
+      startBaselinePosition.current = valueToBaselinePosition(
+        currentValueRef.current
+      );
     },
-    [disabled]
+    [disabled, valueToBaselinePosition]
   );
 
   // Handle mouse move
@@ -128,21 +152,40 @@ export const Dial: React.FC<DialProps> = ({
       if (!isDragging) return;
 
       const deltaY = startY.current - e.clientY; // Inverted so dragging up increases
-      const deltaValue = deltaY / sensitivity;
-      let newValue = startValue.current + deltaValue * step;
+      const deltaBaselinePositions = deltaY / sensitivity;
 
-      // Clamp value
-      newValue = Math.max(min, Math.min(max, newValue));
+      // Calculate new baseline position
+      let newBaselinePosition =
+        startBaselinePosition.current + deltaBaselinePositions;
 
-      // Round to step
-      newValue = Math.round(newValue / step) * step;
+      // Clamp baseline position
+      newBaselinePosition = Math.max(
+        0,
+        Math.min(baselineResolution - 1, newBaselinePosition)
+      );
 
-      if (newValue !== currentValueRef.current) {
-        setCurrentValue(newValue);
-        onChangeRef.current?.(newValue);
+      // Round to nearest baseline position for discrete steps
+      newBaselinePosition = Math.round(newBaselinePosition);
+
+      // Convert baseline position to actual value
+      const newValue = baselinePositionToValue(newBaselinePosition);
+
+      // Clamp to min/max after conversion
+      const clampedValue = Math.max(min, Math.min(max, newValue));
+
+      if (clampedValue !== currentValueRef.current) {
+        setCurrentValue(clampedValue);
+        onChangeRef.current?.(clampedValue);
       }
     },
-    [isDragging, sensitivity, step, min, max]
+    [
+      isDragging,
+      sensitivity,
+      baselineResolution,
+      baselinePositionToValue,
+      min,
+      max,
+    ]
   );
 
   // Handle mouse up

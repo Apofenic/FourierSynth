@@ -1,5 +1,5 @@
-import { analyzeWaveformToHarmonics } from "./fourierAnalysis";
-import { calculateWaveform } from "./helperFunctions";
+import { analyzeWaveformToHarmonics } from "../utils/fourierAnalysis";
+import { calculateWaveform } from "../utils/helperFunctions";
 
 describe("Fourier Analysis Round-Trip", () => {
   it("should preserve waveform phase through analysis and resynthesis", () => {

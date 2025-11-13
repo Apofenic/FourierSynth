@@ -21,21 +21,22 @@ interface ModDialProps {
   hideCenterNumber?: boolean;
   gap?: number;
   hideStroke?: boolean;
+  baselineResolution?: number;
 }
 
 /**
  * ModDial - A wrapper around the Dial component with two smaller dials and select inputs
  * Accepts all Dial props and passes them through
  */
-export const ModDial: React.FC<ModDialProps> = ({
-  value,
-  min = 0,
-  max = 100,
-  step = 1,
-  onChange,
-  label,
-  ...dialProps
-}) => {
+export const ModDial: React.FC<ModDialProps> = (props) => {
+  const {
+    value,
+    min = 0,
+    max = 100,
+    step = 1,
+    onChange,
+    baselineResolution,
+  } = props;
   const [mod1Target, setMod1Target] = useState<string>("none");
   const [mod2Target, setMod2Target] = useState<string>("none");
 
@@ -88,15 +89,7 @@ export const ModDial: React.FC<ModDialProps> = ({
 
   return (
     <Box>
-      <Dial
-        value={value}
-        min={min}
-        max={max}
-        step={step}
-        onChange={onChange}
-        label={label}
-        {...dialProps}
-      />
+      <Dial {...props} />
       <Box
         sx={{
           overflow: "hidden",
@@ -128,6 +121,7 @@ export const ModDial: React.FC<ModDialProps> = ({
             backgroundColor="#202020ff"
             gap={0}
             hideStroke
+            baselineResolution={baselineResolution}
             disabled={mod1Target === "none"}
           />
           <Select
@@ -147,6 +141,18 @@ export const ModDial: React.FC<ModDialProps> = ({
             </MenuItem>
             <MenuItem value="lfo2" sx={{ fontSize: "0.625rem" }}>
               LFO2
+            </MenuItem>
+            <MenuItem value="osc1" sx={{ fontSize: "0.625rem" }}>
+              OSC1
+            </MenuItem>
+            <MenuItem value="osc2" sx={{ fontSize: "0.625rem" }}>
+              OSC2
+            </MenuItem>
+            <MenuItem value="osc3" sx={{ fontSize: "0.625rem" }}>
+              OSC3
+            </MenuItem>
+            <MenuItem value="osc4" sx={{ fontSize: "0.625rem" }}>
+              OSC4
             </MenuItem>
           </Select>
         </Box>
@@ -170,6 +176,7 @@ export const ModDial: React.FC<ModDialProps> = ({
             numberFontSize={10}
             backgroundColor="#202020ff"
             gap={0}
+            baselineResolution={baselineResolution}
             disabled={mod2Target === "none"}
           />
           <Select

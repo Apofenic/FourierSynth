@@ -5,7 +5,7 @@ import {
   useAudioEngineStore,
   useEquationBuilderStore,
 } from "../../stores";
-import { ModDial } from "../ModDial";
+import { ModDial } from "../Custom_UI_Components/ModDial";
 
 interface HarmonicsControlProps {
   oscillatorIndex: number;

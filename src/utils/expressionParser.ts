@@ -74,7 +74,6 @@ mathWithSum.import(
  * - t: time variable (always present in waveform functions)
  * - i: used for summation index and imaginary unit
  * - e: Euler's number
- * - n: commonly used for summation upper bound
  */
 const RESERVED_VARIABLES = new Set(["t", "i", "e"]);
 

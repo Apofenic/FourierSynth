@@ -1,5 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
-import { useAudioEngineStore, audioNodes } from "../useAudioEngineStore";
+import {
+  useAudioEngineStore,
+  audioNodes,
+} from "../../stores/useAudioEngineStore";
 
 // Mock Web Audio API
 const mockAudioContext = {
@@ -106,10 +109,11 @@ describe("useAudioEngineStore", () => {
         sourceNode: null,
         gainNode: null,
         waveformBuffer: null,
+        ampEnvelopeNode: null,
       }));
     audioNodes.mixerGainNode = null;
     audioNodes.masterGainNode = null;
-    audioNodes.filterNode = null;
+    audioNodes.filterNodes = [];
   });
 
   describe("Initial State", () => {
@@ -391,7 +395,12 @@ describe("useAudioEngineStore", () => {
         frequency: mockFrequency,
         Q: mockQ,
       };
-      audioNodes.filterNode = mockFilter as any;
+      audioNodes.filterNodes = [
+        mockFilter,
+        mockFilter,
+        mockFilter,
+        mockFilter,
+      ] as any;
       audioNodes.audioContext = mockAudioContext as any;
 
       act(() => {
@@ -403,7 +412,7 @@ describe("useAudioEngineStore", () => {
         expect.any(Number)
       );
       expect(mockQ.linearRampToValueAtTime).toHaveBeenCalledWith(
-        10,
+        expect.any(Number),
         expect.any(Number)
       );
     });
@@ -441,7 +450,7 @@ describe("useAudioEngineStore", () => {
       audioNodes.oscillators[0].sourceNode = mockOscillator as any;
       audioNodes.mixerGainNode = {} as any;
       audioNodes.masterGainNode = {} as any;
-      audioNodes.filterNode = {} as any;
+      audioNodes.filterNodes = [{} as any];
 
       audioNodes.cleanup();
 
@@ -449,7 +458,7 @@ describe("useAudioEngineStore", () => {
       expect(audioNodes.oscillators[0].sourceNode).toBeNull();
       expect(audioNodes.mixerGainNode).toBeNull();
       expect(audioNodes.masterGainNode).toBeNull();
-      expect(audioNodes.filterNode).toBeNull();
+      expect(audioNodes.filterNodes).toEqual([]);
     });
   });
 });

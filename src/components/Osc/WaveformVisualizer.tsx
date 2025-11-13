@@ -47,6 +47,7 @@ export const WaveformVisualizer: React.FC<WaveformVisualizerProps> = ({
     ctx.lineWidth = 2;
 
     // Start the path at the first point
+    // Note: canvas Y coordinates increase downward, so we subtract to move positive values UP
     ctx.moveTo(0, centerY - waveformData[0] * scaleY);
 
     // Connect all subsequent points

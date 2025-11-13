@@ -43,55 +43,50 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             label="Legato"
           />
         </Stack> */}
-        <Paper>
-          <Typography variant="h3" align="center">
-            Detune
-          </Typography>
-          <Box
-            display="flex"
-            flexDirection="row"
-            justifyContent="space-evenly"
-            alignItems="center"
-          >
-            <ModDial
-              value={detune.octave}
-              min={-2}
-              max={2}
-              onChange={(value) =>
-                updateDetune(oscillatorIndex, "octave", value)
-              }
-              label="Octave"
-              size={75}
-              ringColor="#2ecc71"
-              numberFontSize={18}
-              minMaxFontSize={10}
-            />
-            <ModDial
-              value={detune.semitone}
-              min={-12}
-              max={12}
-              onChange={(value) =>
-                updateDetune(oscillatorIndex, "semitone", value)
-              }
-              label="Semitone"
-              size={75}
-              ringColor="#2ecc71"
-              numberFontSize={18}
-              minMaxFontSize={10}
-            />
-            <ModDial
-              value={detune.cent}
-              min={-100}
-              max={100}
-              onChange={(value) => updateDetune(oscillatorIndex, "cent", value)}
-              label="cent"
-              size={75}
-              ringColor="#2ecc71"
-              numberFontSize={18}
-              minMaxFontSize={10}
-            />
-          </Box>
-        </Paper>
+
+        <Box
+          display="flex"
+          flexDirection="row"
+          justifyContent="space-evenly"
+          alignItems="center"
+        >
+          <ModDial
+            value={detune.octave}
+            min={-2}
+            max={2}
+            onChange={(value) => updateDetune(oscillatorIndex, "octave", value)}
+            label="Octave"
+            size={75}
+            ringColor="#2ecc71"
+            numberFontSize={18}
+            minMaxFontSize={10}
+            baselineResolution={100}
+          />
+          <ModDial
+            value={detune.semitone}
+            min={-12}
+            max={12}
+            onChange={(value) =>
+              updateDetune(oscillatorIndex, "semitone", value)
+            }
+            label="Semitone"
+            size={75}
+            ringColor="#2ecc71"
+            numberFontSize={18}
+            minMaxFontSize={10}
+          />
+          <ModDial
+            value={detune.cent}
+            min={-100}
+            max={100}
+            onChange={(value) => updateDetune(oscillatorIndex, "cent", value)}
+            label="cent"
+            size={75}
+            ringColor="#2ecc71"
+            numberFontSize={18}
+            minMaxFontSize={10}
+          />
+        </Box>
       </Box>
     </Paper>
   );
