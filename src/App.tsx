@@ -219,12 +219,43 @@ function App() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: 2,
+            minWidth: "600px",
+            flexWrap: "nowrap",
+            "@media (max-width: 800px)": {
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              minWidth: "300px",
+            },
           }}
         >
-          <Typography variant="h1" align="left" sx={{ margin: 0 }}>
+          <Typography
+            variant="h1"
+            align="left"
+            sx={{
+              margin: 0,
+              whiteSpace: "nowrap",
+              minWidth: "fit-content",
+              "@media (max-width: 800px)": {
+                textAlign: "center",
+              },
+            }}
+          >
             Sigmatron
           </Typography>
-          <PatchPresetControls />
+          <Box
+            sx={{
+              minWidth: "250px",
+              "@media (max-width: 800px)": {
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+              },
+            }}
+          >
+            <PatchPresetControls />
+          </Box>
         </Box>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
         <Paper

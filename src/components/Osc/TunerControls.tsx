@@ -109,6 +109,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             ringColor="#2ecc71"
             numberFontSize={18}
             minMaxFontSize={10}
+            baselineResolution={201}
           />
         </Box>
       </Box>

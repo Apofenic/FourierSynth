@@ -61,19 +61,22 @@ export const Mixer: React.FC = () => {
         flexDirection: "column",
         gap: 2,
         minHeight: 0,
+        minWidth: "200px",
         overflow: "hidden",
         "@media (max-width: 1999px)": {
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-evenly",
           height: "auto",
+          minWidth: "800px",
+        },
+        "@media (max-width: 900px)": {
+          flexDirection: "column",
+          minWidth: "300px",
         },
       }}
     >
-      <Typography variant="h3" align="center" gutterBottom>
-        Mixer Controls
-      </Typography>
-      <Stack spacing={2} alignItems="center">
+      <Stack spacing={2} alignItems="center" sx={{ minWidth: "150px" }}>
         <FormControlLabel
           control={
             <Switch
@@ -114,9 +117,17 @@ export const Mixer: React.FC = () => {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gridTemplateRows: "auto",
+          gap: 1,
+          minWidth: "300px",
           "@media (max-width: 1999px)": {
             gridTemplateColumns: "1fr 1fr 1fr 1fr",
             gridTemplateRows: "1fr",
+            minWidth: "400px",
+          },
+          "@media (max-width: 900px)": {
+            gridTemplateColumns: "1fr 1fr",
+            gridTemplateRows: "auto",
+            minWidth: "300px",
           },
         }}
       >

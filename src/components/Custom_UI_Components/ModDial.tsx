@@ -22,6 +22,8 @@ interface ModDialProps {
   gap?: number;
   hideStroke?: boolean;
   baselineResolution?: number;
+  minLabel?: string;
+  maxLabel?: string;
 }
 
 /**
