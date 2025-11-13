@@ -37,7 +37,7 @@ const createDefaultOscillator = (
     id,
     harmonics,
     waveformData,
-    volume: 75,
+    volume: 100,
     isActive,
     detune: {
       octave: 0,
@@ -89,23 +89,23 @@ export const useSynthControlsStore = create<SynthControlsStore>()(
       keyboardEnabled: true,
       activeTab: "equation",
       ampADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
       ampEnvelopeAmount: 100, // Default to 100% envelope effect
       filterADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
       modADSR: {
-        attack: 10,
-        decay: 20,
-        sustain: 70,
-        release: 30,
+        attack: 0,
+        decay: 0,
+        sustain: 100,
+        release: 0,
       },
 
       // Actions

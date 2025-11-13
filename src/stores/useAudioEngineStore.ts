@@ -309,13 +309,13 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       isPlaying: false,
       isNoteHeld: false,
       oscillators: [
-        { frequency: 220, volume: 0.75, isActive: true },
-        { frequency: 220, volume: 0.75, isActive: true },
-        { frequency: 220, volume: 0.75, isActive: true },
-        { frequency: 220, volume: 0.75, isActive: true },
+        { frequency: 220, volume: 1.0, isActive: true },
+        { frequency: 220, volume: 1.0, isActive: true },
+        { frequency: 220, volume: 1.0, isActive: true },
+        { frequency: 220, volume: 1.0, isActive: true },
       ],
-      masterVolume: 75,
-      cutoffFrequency: 2000,
+      masterVolume: 100,
+      cutoffFrequency: 632,
       resonance: 0,
       filterEnvelopeAmount: 50, // 50% default envelope amount
 

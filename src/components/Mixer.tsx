@@ -93,6 +93,8 @@ export const Mixer: React.FC = () => {
             label="Master"
             size={75}
             ringColor="#2ecc71"
+            numberFontSize={18}
+            minMaxFontSize={10}
           />
           <Dial
             value={ampEnvelopeAmount}
@@ -102,6 +104,8 @@ export const Mixer: React.FC = () => {
             label="Env Amount"
             size={75}
             ringColor="#3498db"
+            numberFontSize={18}
+            minMaxFontSize={10}
           />
         </Box>
       </Stack>
@@ -124,6 +128,8 @@ export const Mixer: React.FC = () => {
           label="Osc 1 Volume"
           size={75}
           ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[1].volume * 100}
@@ -133,6 +139,8 @@ export const Mixer: React.FC = () => {
           label="Osc 2 Volume"
           size={75}
           ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[2].volume * 100}
@@ -142,6 +150,8 @@ export const Mixer: React.FC = () => {
           label="Osc 3 Volume"
           size={75}
           ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
+          numberFontSize={18}
+          minMaxFontSize={10}
         />
         <ModDial
           value={oscillators[3].volume * 100}

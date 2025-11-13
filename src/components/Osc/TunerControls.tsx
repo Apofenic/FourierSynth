@@ -29,7 +29,7 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
       <Box
         sx={{ padding: 0, display: "flex", flexDirection: "column", gap: 2 }}
       >
-        {/* <Stack spacing={2} alignItems="start">
+        <Stack direction="row" spacing={2}>
           <FormControlLabel
             control={
               <Switch
@@ -42,7 +42,31 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             }
             label="Legato"
           />
-        </Stack> */}
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={legato}
+                onChange={(e) => setLegato(e.target.checked)}
+                color="primary"
+                disabled
+              />
+            }
+            label="Glide"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                size="small"
+                checked={legato}
+                onChange={(e) => setLegato(e.target.checked)}
+                color="primary"
+                disabled
+              />
+            }
+            label="Key Tracking"
+          />
+        </Stack>
 
         <Box
           display="flex"
