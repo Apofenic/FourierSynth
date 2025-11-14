@@ -55,13 +55,13 @@ export const Mixer: React.FC = () => {
     <Paper
       elevation={2}
       sx={{
-        p: 2,
+        p: 1.5,
         flex: 1,
         display: "flex",
         flexDirection: "column",
-        gap: 2,
+        gap: 1.5,
         minHeight: 0,
-        minWidth: "200px",
+        minWidth: "180px",
         overflow: "hidden",
         "@media (max-width: 1999px)": {
           flexDirection: "row",
@@ -69,10 +69,14 @@ export const Mixer: React.FC = () => {
           justifyContent: "space-evenly",
           height: "auto",
           minWidth: "800px",
+          p: 2,
+          gap: 2,
         },
         "@media (max-width: 900px)": {
           flexDirection: "column",
           minWidth: "300px",
+          p: 2,
+          gap: 2,
         },
       }}
     >
@@ -117,17 +121,19 @@ export const Mixer: React.FC = () => {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gridTemplateRows: "auto",
-          gap: 1,
-          minWidth: "300px",
+          gap: 0.5,
+          minWidth: "180px",
           "@media (max-width: 1999px)": {
             gridTemplateColumns: "1fr 1fr 1fr 1fr",
             gridTemplateRows: "1fr",
             minWidth: "400px",
+            gap: 1,
           },
           "@media (max-width: 900px)": {
             gridTemplateColumns: "1fr 1fr",
             gridTemplateRows: "auto",
             minWidth: "300px",
+            gap: 1,
           },
         }}
       >

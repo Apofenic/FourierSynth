@@ -151,25 +151,16 @@ function App() {
         );
 
         if (!anyKeysActive && isPlayingRef.current) {
-          // Trigger release envelope before stopping
+          // Trigger release envelope
           triggerNoteOff();
 
-          // Stop audio after release phase completes
-          // Calculate actual release time dynamically based on current ADSR settings
-          const releaseTime = getMaxReleaseTime();
-          setTimeout(() => {
-            stopAudio();
-          }, releaseTime);
+          // Don't stop audio - let the release envelope fade naturally
+          // The audio will keep playing at zero volume after release completes
+          // This prevents abrupt cutoff and allows smooth release
         }
       }
     },
-    [
-      updateKeyboardNoteState,
-      setActiveKey,
-      stopAudio,
-      triggerNoteOff,
-      getMaxReleaseTime,
-    ]
+    [updateKeyboardNoteState, setActiveKey, triggerNoteOff]
   );
 
   // Global keyboard event listeners
@@ -263,7 +254,7 @@ function App() {
             gridColumn: "1 / -1",
             gridRow: 2,
             display: "grid",
-            gridTemplateColumns: "minmax(900px, 8fr) minmax(150px, 1fr)",
+            gridTemplateColumns: "minmax(900px, 8fr) minmax(200px, 1.2fr)",
             "@media (max-width: 1999px)": {
               gridTemplateColumns: "1fr",
               gridTemplateRows: "auto 1fr",
