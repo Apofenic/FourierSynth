@@ -110,6 +110,7 @@ describe("useAudioEngineStore", () => {
         gainNode: null,
         waveformBuffer: null,
         ampEnvelopeNode: null,
+        crossfadeGainNode: null,
       }));
     audioNodes.mixerGainNode = null;
     audioNodes.masterGainNode = null;

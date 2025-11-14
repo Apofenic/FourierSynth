@@ -25,6 +25,14 @@ const parseTimeoutIds: (ReturnType<typeof setTimeout> | null)[] = [
   null,
 ];
 
+// Timeout IDs for debounced waveform generation (one per oscillator)
+const waveformTimeoutIds: (ReturnType<typeof setTimeout> | null)[] = [
+  null,
+  null,
+  null,
+  null,
+];
+
 // Previous parsed expressions for change detection (one per oscillator)
 const prevParsedExpressions: (ParsedExpression | null)[] = [
   null,
@@ -208,8 +216,66 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
           "updateVariable"
         );
 
-        // Regenerate waveform with new variable value
-        get()._generateWaveform(oscIndex);
+        // Update audio immediately for real-time response
+        const osc = get().oscillators[oscIndex];
+        if (osc.compiledFunction) {
+          try {
+            const waveform = calculateWaveformFromExpression(
+              osc.compiledFunction,
+              osc.variables,
+              2048
+            );
+
+            // Sync to SynthControls store (audio engine) immediately
+            const {
+              useSynthControlsStore,
+            } = require("./useSynthControlsStore");
+            const synthState = useSynthControlsStore.getState();
+
+            if (synthState.activeTab === "equation") {
+              const combinedWaveform = new Float32Array(2048);
+              for (let i = 0; i < 2048; i++) {
+                combinedWaveform[i] = waveform[i] || 0;
+              }
+
+              const maxAmplitude = Math.max(
+                ...Array.from(combinedWaveform).map(Math.abs)
+              );
+              if (maxAmplitude > 1e-10) {
+                for (let i = 0; i < combinedWaveform.length; i++) {
+                  combinedWaveform[i] /= maxAmplitude;
+                }
+              }
+
+              synthState.updateOscillatorParam(
+                oscIndex,
+                "waveformData",
+                combinedWaveform
+              );
+            }
+
+            // Debounce visualization update to prevent UI choppiness
+            if (waveformTimeoutIds[oscIndex]) {
+              clearTimeout(waveformTimeoutIds[oscIndex]!);
+            }
+            waveformTimeoutIds[oscIndex] = setTimeout(() => {
+              set(
+                (state) => {
+                  const oscillators = [...state.oscillators];
+                  oscillators[oscIndex] = {
+                    ...oscillators[oscIndex],
+                    waveformData: waveform,
+                  };
+                  return { oscillators };
+                },
+                false,
+                "_updateVisualization"
+              );
+            }, 50);
+          } catch (error) {
+            console.error("Waveform update error:", error);
+          }
+        }
       },
 
       /**

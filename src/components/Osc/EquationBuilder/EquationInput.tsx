@@ -62,52 +62,80 @@ export interface EquationInputHandle {
 }
 
 export const equationPresets = [
-  { name: "Sine", value: "sin(i*t)", defaultN: 1 },
-  { name: "Sawtooth", value: "(1/i)*sin(i*t)", defaultN: 10 },
+  { name: "Sine", value: "sin(i*t)", defaultN: 1, defaultVars: {} },
+  { name: "Sawtooth", value: "(1/i)*sin(i*t)", defaultN: 10, defaultVars: {} },
   {
     name: "Square",
     value: "((4/pi)*(1/(2*i-1)))*sin((2*i-1)*t)",
     defaultN: 10,
+    defaultVars: {},
   },
   {
     name: "Triangle",
     value: "((8/(pi^2))*((-1)^((i-1)/2))*(1/((2*i-1)^2)))*sin((2*i-1)*t)",
     defaultN: 10,
+    defaultVars: {},
   },
   {
-    name: "Pulse (25%)",
-    value: "(2/pi)*((1/i)*sin(i*pi*0.25))*sin(i*t)",
-    defaultN: 15,
+    name: "Pulse Width",
+    value: "(1/i)*sin(i*pi*w)*sin(i*t)",
+    defaultN: 12,
+    defaultVars: { w: 0.5 }, // 0.01-0.99: duty cycle (0.5 = 50%)
+    varConfigs: {
+      w: { min: 0.01, max: 0.99, step: 0.01 },
+    },
   },
   {
     name: "Even Harmonics",
-    value: "(1/(2*i))*sin(2*i*t)",
-    defaultN: 8,
+    value: "(1/i)*sin(2*i*t)",
+    defaultN: 10,
+    defaultVars: {},
   },
   {
     name: "Odd Harmonics",
-    value: "(1/(2*i-1))*sin((2*i-1)*t)",
-    defaultN: 10,
+    value: "(1/i)*sin((2*i-1)*t)",
+    defaultN: 12,
+    defaultVars: {},
   },
   {
     name: "Metallic",
-    value: "(1/(i^1.5))*sin((i^1.2)*t)",
-    defaultN: 12,
+    value: "(1/(i^d))*sin((i^s)*t)",
+    defaultN: 16,
+    defaultVars: { d: 0.7, s: 1.3 }, // d: 0.3-1.2 brightness, s: 1.0-2.0 stretch
+    varConfigs: {
+      d: { min: 0.3, max: 1.2, step: 0.01 },
+      s: { min: 1.0, max: 2.0, step: 0.01 },
+    },
   },
   {
-    name: "Bell-like",
-    value: "(1/(i^2))*sin(i*t)*cos(i*t*0.5)",
-    defaultN: 15,
+    name: "Bell",
+    value: "(1/(i^d))*sin((i+i*w*sin(i))*t)",
+    defaultN: 18,
+    defaultVars: { d: 1.5, w: 0.2 }, // d: 1.0-2.5 decay, w: 0.0-0.5 shimmer
+    varConfigs: {
+      d: { min: 1.0, max: 2.5, step: 0.01 },
+      w: { min: 0.0, max: 0.5, step: 0.01 },
+    },
   },
   {
     name: "Formant",
-    value: "exp(-i*0.3)*sin(i*t)+0.5*exp(-i*0.5)*sin(i*2*t)",
-    defaultN: 8,
+    value: "(1/i)*(1+a*exp(-((i-f)^2)/q))*sin(i*t)",
+    defaultN: 12,
+    defaultVars: { a: 0.8, f: 3, q: 4 }, // a: 0.2-2.0 strength, f: 1-8 center, q: 2-8 width
+    varConfigs: {
+      a: { min: 0.2, max: 2.0, step: 0.01 },
+      f: { min: 1, max: 8, step: 0.1 },
+      q: { min: 2, max: 8, step: 0.1 },
+    },
   },
   {
     name: "Inharmonic",
-    value: "(1/i)*sin((1+(i*0.7))*t)",
-    defaultN: 12,
+    value: "(1/i)*sin((1+(i*s))*t)",
+    defaultN: 14,
+    defaultVars: { s: 0.85 }, // s: 0.3-1.5 stretch factor
+    varConfigs: {
+      s: { min: 0.3, max: 1.5, step: 0.01 },
+    },
   },
 ];
 
@@ -129,6 +157,9 @@ export const EquationInput = forwardRef<
   );
   const updateVariable = useEquationBuilderStore(
     (state) => state.updateVariable
+  );
+  const updateVariableConfig = useEquationBuilderStore(
+    (state) => state.updateVariableConfig
   );
 
   const [cursorPosition, setCursorPosition] = useState<number>(0);
@@ -325,11 +356,40 @@ export const EquationInput = forwardRef<
               setLocalExpression(selectedValue);
               updateExpression(oscillatorIndex, selectedValue);
 
-              // Set the default n value for the preset after a short delay
+              // Set the default n value and other variables for the preset after a short delay
               // to allow the expression to be parsed and variables to be created
-              if (selectedPreset?.defaultN !== undefined) {
+              if (selectedPreset) {
                 setTimeout(() => {
-                  updateVariable(oscillatorIndex, "n", selectedPreset.defaultN);
+                  if (selectedPreset.defaultN !== undefined) {
+                    updateVariable(
+                      oscillatorIndex,
+                      "n",
+                      selectedPreset.defaultN
+                    );
+                  }
+
+                  // Set default values and configurations for other variables
+                  if (selectedPreset.defaultVars) {
+                    Object.entries(selectedPreset.defaultVars).forEach(
+                      ([varName, value]) => {
+                        updateVariable(oscillatorIndex, varName, value);
+
+                        // Apply variable configuration if specified
+                        if (selectedPreset.varConfigs) {
+                          const varConfig = (
+                            selectedPreset.varConfigs as Record<string, any>
+                          )[varName];
+                          if (varConfig) {
+                            updateVariableConfig(
+                              oscillatorIndex,
+                              varName,
+                              varConfig
+                            );
+                          }
+                        }
+                      }
+                    );
+                  }
                 }, 100);
               }
 

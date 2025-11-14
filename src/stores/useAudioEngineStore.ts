@@ -30,6 +30,7 @@ class AudioNodeManager {
         gainNode: null,
         waveformBuffer: null,
         ampEnvelopeNode: null,
+        crossfadeGainNode: null,
       }));
   }
 
@@ -61,6 +62,7 @@ class AudioNodeManager {
         gainNode: null,
         waveformBuffer: null,
         ampEnvelopeNode: null,
+        crossfadeGainNode: null,
       };
     }
 
@@ -91,15 +93,21 @@ class AudioNodeManager {
     const ampEnvelopeNode = audioContext.createGain();
     ampEnvelopeNode.gain.value = 0;
 
-    // Connect source -> gain -> envelope
+    // Create GainNode for crossfade control (starts at 1.0)
+    const crossfadeGainNode = audioContext.createGain();
+    crossfadeGainNode.gain.value = 1.0;
+
+    // Connect source -> gain -> crossfade -> envelope
     sourceNode.connect(gainNode);
-    gainNode.connect(ampEnvelopeNode);
+    gainNode.connect(crossfadeGainNode);
+    crossfadeGainNode.connect(ampEnvelopeNode);
 
     return {
       sourceNode,
       gainNode,
       waveformBuffer: buffer,
       ampEnvelopeNode,
+      crossfadeGainNode,
     };
   }
 
@@ -131,6 +139,7 @@ class AudioNodeManager {
       gainNode: null,
       waveformBuffer: null,
       ampEnvelopeNode: null,
+      crossfadeGainNode: null,
     };
   }
 
@@ -172,6 +181,102 @@ class AudioNodeManager {
       }
       this.filterEnvelopeNode = null;
     }
+  }
+
+  /**
+   * Crossfade to a new waveform for a specific oscillator
+   * Creates a new oscillator with the new waveform and smoothly transitions
+   */
+  crossfadeWaveform(
+    oscIndex: number,
+    waveformData: Float32Array,
+    frequency: number,
+    volume: number,
+    crossfadeTimeMs: number = 30
+  ): void {
+    if (!this.audioContext || !this.mixerGainNode) {
+      console.warn("Cannot crossfade: audio context not initialized");
+      return;
+    }
+
+    const oldNodeSet = this.oscillators[oscIndex];
+    if (!oldNodeSet || !oldNodeSet.sourceNode) {
+      console.warn(`Cannot crossfade: oscillator ${oscIndex} not active`);
+      return;
+    }
+
+    // Create new oscillator chain with new waveform
+    const newNodeSet = this.createOscillatorChain(
+      this.audioContext,
+      waveformData,
+      frequency,
+      volume
+    );
+
+    if (!newNodeSet.sourceNode || !newNodeSet.crossfadeGainNode) {
+      console.warn(`Failed to create new oscillator chain for ${oscIndex}`);
+      return;
+    }
+
+    const time = this.audioContext.currentTime;
+    const crossfadeTime = crossfadeTimeMs / 1000;
+
+    // New oscillator starts at 0 volume and fades in
+    newNodeSet.crossfadeGainNode.gain.setValueAtTime(0, time);
+    newNodeSet.crossfadeGainNode.gain.linearRampToValueAtTime(
+      1.0,
+      time + crossfadeTime
+    );
+
+    // Copy envelope state from old to new oscillator
+    if (oldNodeSet.ampEnvelopeNode && newNodeSet.ampEnvelopeNode) {
+      const currentEnvValue = oldNodeSet.ampEnvelopeNode.gain.value;
+      newNodeSet.ampEnvelopeNode.gain.setValueAtTime(currentEnvValue, time);
+    }
+
+    // Connect new oscillator to mixer
+    newNodeSet.ampEnvelopeNode!.connect(this.mixerGainNode);
+
+    // Start new oscillator
+    newNodeSet.sourceNode.start();
+
+    // Old oscillator fades out
+    if (oldNodeSet.crossfadeGainNode) {
+      oldNodeSet.crossfadeGainNode.gain.setValueAtTime(1.0, time);
+      oldNodeSet.crossfadeGainNode.gain.linearRampToValueAtTime(
+        0,
+        time + crossfadeTime
+      );
+    }
+
+    // Store new node set
+    this.oscillators[oscIndex] = newNodeSet;
+
+    // Clean up old oscillator after crossfade completes
+    setTimeout(() => {
+      if (oldNodeSet.sourceNode) {
+        try {
+          oldNodeSet.sourceNode.stop();
+          oldNodeSet.sourceNode.disconnect();
+        } catch (e) {
+          console.warn("Error stopping old oscillator:", e);
+        }
+      }
+      if (oldNodeSet.gainNode) {
+        try {
+          oldNodeSet.gainNode.disconnect();
+        } catch (e) {
+          console.warn("Error disconnecting old gain node:", e);
+        }
+      }
+      if (oldNodeSet.crossfadeGainNode) {
+        try {
+          oldNodeSet.crossfadeGainNode.disconnect();
+        } catch (e) {
+          console.warn("Error disconnecting old crossfade node:", e);
+        }
+      }
+    }, crossfadeTimeMs + 50);
   }
 }
 
@@ -774,17 +879,44 @@ export const selectAudioParameters = (
 useEquationBuilderStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
   if (audioEngineState.isPlaying) {
-    // Check if any oscillator's waveform data changed
-    const waveformChanged = state.oscillators.some(
-      (osc, index) =>
-        osc.waveformData !== prevState.oscillators[index].waveformData
-    );
-    if (waveformChanged) {
-      // Only recreate if no note is currently being held (to avoid cutting out sustained notes)
-      if (!audioEngineState.isNoteHeld) {
+    // Check which oscillators had waveform changes
+    const changedOscillators = state.oscillators
+      .map((osc, index) => ({
+        index,
+        changed: osc.waveformData !== prevState.oscillators[index].waveformData,
+        waveformData: osc.waveformData,
+      }))
+      .filter((osc) => osc.changed && osc.waveformData.length > 0);
+
+    if (changedOscillators.length > 0) {
+      if (audioEngineState.isNoteHeld) {
+        // Note is being held: use crossfade for smooth transition
+        const synthControls = useSynthControlsStore.getState();
+
+        changedOscillators.forEach(({ index, waveformData }) => {
+          const oscState = audioEngineState.oscillators[index];
+          const oscParams = synthControls.oscillators[index];
+
+          if (oscState.isActive && oscParams?.waveformData) {
+            // Convert waveformData to Float32Array if needed
+            const waveformFloat32 =
+              waveformData instanceof Float32Array
+                ? waveformData
+                : new Float32Array(waveformData);
+
+            audioNodes.crossfadeWaveform(
+              index,
+              waveformFloat32,
+              oscState.frequency,
+              oscState.volume,
+              30 // 30ms crossfade
+            );
+          }
+        });
+      } else {
+        // No note held: recreate audio (existing behavior)
         audioEngineState._recreateAudio();
       }
-      // If a note is being held, the waveform change will take effect on next note trigger
     }
   }
 });

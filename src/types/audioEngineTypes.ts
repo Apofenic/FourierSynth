@@ -5,7 +5,8 @@ export interface OscillatorNodeSet {
   sourceNode: AudioBufferSourceNode | null;
   gainNode: GainNode | null;
   waveformBuffer: AudioBuffer | null;
-  ampEnvelopeNode: GainNode | null; // ADSR envelope for amplitude
+  ampEnvelopeNode: GainNode | null;
+  crossfadeGainNode: GainNode | null; // For smooth waveform transitions
 }
 
 /**

@@ -104,7 +104,6 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#3498db"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
           />
           <ModDial
             value={resonanceDialValue}
@@ -116,7 +115,6 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#9b59b6"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
           />
           <Dial
             value={filterEnvelopeAmount}
@@ -128,7 +126,6 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#e67e22"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
           />
         </Stack>
       </Box>
