@@ -24,6 +24,7 @@ interface ModDialProps {
   baselineResolution?: number;
   minLabel?: string;
   maxLabel?: string;
+  enableCenterDoubleClick?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export const ModDial: React.FC<ModDialProps> = (props) => {
     step = 1,
     onChange,
     baselineResolution,
+    enableCenterDoubleClick,
   } = props;
   const [mod1Target, setMod1Target] = useState<string>("none");
   const [mod2Target, setMod2Target] = useState<string>("none");
@@ -125,6 +127,7 @@ export const ModDial: React.FC<ModDialProps> = (props) => {
             hideStroke
             baselineResolution={baselineResolution}
             disabled={mod1Target === "none"}
+            enableCenterDoubleClick={enableCenterDoubleClick}
           />
           <Select
             size="small"
@@ -180,6 +183,7 @@ export const ModDial: React.FC<ModDialProps> = (props) => {
             gap={0}
             baselineResolution={baselineResolution}
             disabled={mod2Target === "none"}
+            enableCenterDoubleClick={enableCenterDoubleClick}
           />
           <Select
             size="small"

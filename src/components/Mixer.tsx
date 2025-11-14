@@ -147,6 +147,7 @@ export const Mixer: React.FC = () => {
           ringColor={oscillators[0].isActive ? "#2ecc71" : "#95a5a6"}
           numberFontSize={18}
           minMaxFontSize={10}
+          enableCenterDoubleClick={true}
         />
         <ModDial
           value={oscillators[1].volume * 100}
@@ -158,6 +159,7 @@ export const Mixer: React.FC = () => {
           ringColor={oscillators[1].isActive ? "#2ecc71" : "#95a5a6"}
           numberFontSize={18}
           minMaxFontSize={10}
+          enableCenterDoubleClick={true}
         />
         <ModDial
           value={oscillators[2].volume * 100}
@@ -169,6 +171,7 @@ export const Mixer: React.FC = () => {
           ringColor={oscillators[2].isActive ? "#2ecc71" : "#95a5a6"}
           numberFontSize={18}
           minMaxFontSize={10}
+          enableCenterDoubleClick={true}
         />
         <ModDial
           value={oscillators[3].volume * 100}
@@ -180,6 +183,7 @@ export const Mixer: React.FC = () => {
           ringColor={oscillators[3].isActive ? "#2ecc71" : "#95a5a6"}
           numberFontSize={18}
           minMaxFontSize={10}
+          enableCenterDoubleClick={true}
         />
       </Box>
 

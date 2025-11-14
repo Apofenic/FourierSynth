@@ -69,6 +69,46 @@ export const equationPresets = [
     value: "((4/pi)*(1/(2*i-1)))*sin((2*i-1)*t)",
     defaultN: 10,
   },
+  {
+    name: "Triangle",
+    value: "((8/(pi^2))*((-1)^((i-1)/2))*(1/((2*i-1)^2)))*sin((2*i-1)*t)",
+    defaultN: 10,
+  },
+  {
+    name: "Pulse (25%)",
+    value: "(2/pi)*((1/i)*sin(i*pi*0.25))*sin(i*t)",
+    defaultN: 15,
+  },
+  {
+    name: "Even Harmonics",
+    value: "(1/(2*i))*sin(2*i*t)",
+    defaultN: 8,
+  },
+  {
+    name: "Odd Harmonics",
+    value: "(1/(2*i-1))*sin((2*i-1)*t)",
+    defaultN: 10,
+  },
+  {
+    name: "Metallic",
+    value: "(1/(i^1.5))*sin((i^1.2)*t)",
+    defaultN: 12,
+  },
+  {
+    name: "Bell-like",
+    value: "(1/(i^2))*sin(i*t)*cos(i*t*0.5)",
+    defaultN: 15,
+  },
+  {
+    name: "Formant",
+    value: "exp(-i*0.3)*sin(i*t)+0.5*exp(-i*0.5)*sin(i*2*t)",
+    defaultN: 8,
+  },
+  {
+    name: "Inharmonic",
+    value: "(1/i)*sin((1+(i*0.7))*t)",
+    defaultN: 12,
+  },
 ];
 
 /**
