@@ -140,3 +140,96 @@ export type ModulationSourceValuesMap = Record<ModulationSource, number>;
  * Registry of all modulatable parameters with their valid ranges and update functions.
  */
 export type ParameterMetadataMap = Record<string, ParameterMetadata>;
+
+/**
+ * Modulation Store State
+ *
+ * Core state structure for the modulation matrix store.
+ */
+export interface ModulationState {
+  /** Map of parameter ID to modulation routes */
+  routes: ModulationRoutesMap;
+
+  /** Current values of all modulation sources (normalized -1 to +1) */
+  sourceValues: ModulationSourceValuesMap;
+
+  /** Registry of all modulatable parameters with metadata */
+  parameters: ParameterMetadataMap;
+
+  /** Set of currently active modulation sources (for lazy reading optimization) */
+  activeSources: Set<ModulationSource>;
+}
+
+/**
+ * Modulation Store Actions
+ *
+ * Action methods for managing modulation routing and state.
+ */
+export interface ModulationActions {
+  /**
+   * Register a modulatable parameter with metadata.
+   * Must be called before parameter can be modulated.
+   */
+  registerParameter: (metadata: ParameterMetadata) => void;
+
+  /**
+   * Add or update a modulation route.
+   * If a route already exists for the slot, it will be replaced.
+   */
+  addModulationRoute: (
+    paramId: string,
+    slotIndex: number,
+    source: ModulationSource,
+    amount: number,
+    bipolar?: boolean
+  ) => void;
+
+  /**
+   * Remove a modulation route for a specific slot.
+   */
+  removeModulationRoute: (paramId: string, slotIndex: number) => void;
+
+  /**
+   * Update the modulation amount for an existing route.
+   */
+  updateModulationAmount: (
+    paramId: string,
+    slotIndex: number,
+    amount: number
+  ) => void;
+
+  /**
+   * Update the current value of a modulation source.
+   * Called per frame by the master modulation loop.
+   */
+  updateSourceValue: (source: ModulationSource, value: number) => void;
+
+  /**
+   * Calculate the modulated value for a parameter.
+   * Returns base value if no routes exist.
+   */
+  getModulatedValue: (paramId: string, baseValue: number) => number;
+
+  /**
+   * Get all modulation routes for a specific parameter.
+   */
+  getRoutesForParameter: (paramId: string) => ModulationRoute[];
+
+  /**
+   * Get the set of currently active modulation sources.
+   * Used for lazy reading optimization.
+   */
+  getActiveSources: () => Set<ModulationSource>;
+
+  /**
+   * Clear all modulation routes (useful for reset/initialization).
+   */
+  clearAllRoutes: () => void;
+}
+
+/**
+ * Combined Modulation Store Type
+ *
+ * Complete store interface combining state and actions.
+ */
+export type ModulationStore = ModulationState & ModulationActions;
