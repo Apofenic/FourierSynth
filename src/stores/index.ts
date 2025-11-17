@@ -9,11 +9,13 @@
 import { useSynthControlsStore } from "./useSynthControlsStore";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
 import { useAudioEngineStore } from "./useAudioEngineStore";
+import { useSettingsStore } from "./useSettingsStore";
 
 // Store exports
 export { useSynthControlsStore } from "./useSynthControlsStore";
 export { useEquationBuilderStore } from "./useEquationBuilderStore";
 export { useAudioEngineStore, audioNodes } from "./useAudioEngineStore";
+export { useSettingsStore } from "./useSettingsStore";
 
 // Re-export types for convenience
 export type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";
@@ -41,3 +43,5 @@ export {
 } from "./useEquationBuilderStore";
 
 export { selectIsPlaying, selectAudioParameters } from "./useAudioEngineStore";
+
+export { selectBufferSize } from "./useSettingsStore";

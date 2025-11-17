@@ -61,6 +61,10 @@ const createInitialOscillatorState = (): EquationBuilderState => {
     },
   };
 
+  // Get buffer size from settings store
+  const { useSettingsStore } = require("./useSettingsStore");
+  const bufferSize = useSettingsStore.getState().bufferSize;
+
   return {
     expression: initialExpression,
     parsedExpression: initialParsed,
@@ -71,7 +75,7 @@ const createInitialOscillatorState = (): EquationBuilderState => {
     waveformData: calculateWaveformFromExpression(
       initialCompiled,
       initialVariables,
-      2048
+      bufferSize
     ),
   };
 };
@@ -109,7 +113,9 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
       initializeWaveforms: () => {
         const state = get();
         const { useSynthControlsStore } = require("./useSynthControlsStore");
+        const { useSettingsStore } = require("./useSettingsStore");
         const synthState = useSynthControlsStore.getState();
+        const bufferSize = useSettingsStore.getState().bufferSize;
 
         // Only sync if we're on the equation tab
         if (synthState.activeTab === "equation") {
@@ -118,8 +124,8 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
 
             if (osc.waveformData && osc.waveformData.length > 0) {
               // Convert to Float32Array and normalize
-              const combinedWaveform = new Float32Array(2048);
-              for (let i = 0; i < 2048; i++) {
+              const combinedWaveform = new Float32Array(bufferSize);
+              for (let i = 0; i < bufferSize; i++) {
                 combinedWaveform[i] = osc.waveformData[i] || 0;
               }
 
@@ -220,10 +226,13 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
         const osc = get().oscillators[oscIndex];
         if (osc.compiledFunction) {
           try {
+            const { useSettingsStore } = require("./useSettingsStore");
+            const bufferSize = useSettingsStore.getState().bufferSize;
+
             const waveform = calculateWaveformFromExpression(
               osc.compiledFunction,
               osc.variables,
-              2048
+              bufferSize
             );
 
             // Sync to SynthControls store (audio engine) immediately
@@ -233,8 +242,8 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
             const synthState = useSynthControlsStore.getState();
 
             if (synthState.activeTab === "equation") {
-              const combinedWaveform = new Float32Array(2048);
-              for (let i = 0; i < 2048; i++) {
+              const combinedWaveform = new Float32Array(bufferSize);
+              for (let i = 0; i < bufferSize; i++) {
                 combinedWaveform[i] = waveform[i] || 0;
               }
 
@@ -584,10 +593,13 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
         }
 
         try {
+          const { useSettingsStore } = require("./useSettingsStore");
+          const bufferSize = useSettingsStore.getState().bufferSize;
+
           const waveform = calculateWaveformFromExpression(
             osc.compiledFunction,
             osc.variables,
-            2048
+            bufferSize
           );
           set(
             (state) => {
@@ -608,8 +620,8 @@ export const useEquationBuilderStore = create<EquationBuilderStore>()(
 
           if (synthState.activeTab === "equation") {
             // Convert to Float32Array and normalize
-            const combinedWaveform = new Float32Array(2048);
-            for (let i = 0; i < 2048; i++) {
+            const combinedWaveform = new Float32Array(bufferSize);
+            for (let i = 0; i < bufferSize; i++) {
               combinedWaveform[i] = waveform[i] || 0;
             }
 
