@@ -17,6 +17,7 @@ import {
   createFilterEnvelopeOps,
   applyEnvelopeOps,
 } from "./helperFunctions";
+import { registerAllParameters } from "./parameterRegistry";
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
@@ -88,10 +89,57 @@ const masterModulationLoop = () => {
   }
 
   // ==========================================
-  // PHASE 2: Apply modulations
+  // PHASE 2: Apply modulations to parameters
   // ==========================================
-  // This phase will be implemented in Task 5.3/5.4
-  // For now, we're just updating source values
+  
+  // Get all registered parameters
+  const registeredParams = modStore.parameters;
+  const synthState = useSynthControlsStore.getState();
+  const engineState = useAudioEngineStore.getState();
+  
+  // Iterate through all registered parameters and apply modulation
+  Object.entries(registeredParams).forEach(([paramId, metadata]) => {
+    // Get base value from state
+    let baseValue = metadata.default; // Fallback to default
+    
+    // Get current base value from stores based on parameter ID
+    if (paramId.startsWith('osc')) {
+      const oscMatch = paramId.match(/^osc(\d+)_(.+)$/);
+      if (oscMatch) {
+        const oscIndex = parseInt(oscMatch[1]) - 1;
+        const paramName = oscMatch[2];
+        
+        if (paramName === 'frequency') {
+          baseValue = engineState.oscillators[oscIndex].frequency;
+        } else if (paramName === 'volume') {
+          baseValue = engineState.oscillators[oscIndex].volume;
+        } else if (paramName.startsWith('detune_')) {
+          // Detune values come from synthControls
+          const synthOsc = synthState.oscillators[oscIndex];
+          const detuneType = paramName.replace('detune_', '') as 'octave' | 'semitone' | 'cent';
+          baseValue = synthOsc.detune[detuneType];
+        }
+      }
+    } else if (paramId.startsWith('filter_')) {
+      const paramName = paramId.replace('filter_', '');
+      if (paramName === 'cutoff') baseValue = engineState.cutoffFrequency;
+      else if (paramName === 'resonance') baseValue = engineState.resonance;
+    } else if (paramId.startsWith('lfo')) {
+      const lfoMatch = paramId.match(/^lfo(\d+)_(.+)$/);
+      if (lfoMatch) {
+        const lfoIndex = parseInt(lfoMatch[1]) - 1;
+        const paramName = lfoMatch[2];
+        
+        if (paramName === 'frequency') baseValue = engineState.lfos[lfoIndex].frequency;
+      }
+    }
+    
+    // Calculate modulated value (this handles all routing, scaling, clamping)
+    const modulatedValue = modStore.getModulatedValue(paramId, baseValue);
+    
+    // Apply modulated value using the parameter's update function
+    metadata.updateFn(modulatedValue);
+  });
 
   // Performance monitoring
   const frameTime = performance.now() - frameStartTime;
@@ -824,3 +872,6 @@ useSynthControlsStore.subscribe((state, prevState) => {
 
 // Initialize audio context on module load
 audioNodes.initializeAudioContext();
+
+// Register all modulatable parameters
+registerAllParameters();
