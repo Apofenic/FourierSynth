@@ -161,11 +161,12 @@ export const registerAllParameters = () => {
         const nodeSet = audioNodes.oscillators[i];
         if (nodeSet && nodeSet.sourceNode && audioNodes.audioContext) {
           const time = audioNodes.audioContext.currentTime;
+          // Audio-rate parameter: 1ms ramp to prevent zipper noise
           // Note: This is a simplified version - actual implementation
           // needs to calculate playback rate based on waveform buffer
           nodeSet.sourceNode.playbackRate.exponentialRampToValueAtTime(
-            Math.max(0.001, value / 220), // Prevent zero
-            time + 0.001
+            Math.max(0.001, value / 220), // Prevent zero for exponential
+            time + 0.001 // 1ms ramp
           );
         }
       }
@@ -216,6 +217,7 @@ export const registerAllParameters = () => {
       const nodeSet = audioNodes.oscillators[i];
       if (nodeSet && nodeSet.gainNode && audioNodes.audioContext) {
         const time = audioNodes.audioContext.currentTime;
+        // Volume parameter: 10ms linear ramp for smooth transitions
         nodeSet.gainNode.gain.linearRampToValueAtTime(value, time + 0.01);
       }
     });
@@ -232,10 +234,11 @@ export const registerAllParameters = () => {
     (value: number) => {
       if (audioNodes.filterNodes.length === 4 && audioNodes.audioContext) {
         const time = audioNodes.audioContext.currentTime;
+        // Filter frequency: 10ms exponential ramp for smooth, musical sweeps
         audioNodes.filterNodes.forEach((filter) => {
           filter.frequency.exponentialRampToValueAtTime(
-            Math.max(20, value), // Clamp to min 20Hz
-            time + 0.01
+            Math.max(20, value), // Prevent zero for exponential
+            time + 0.01 // 10ms ramp
           );
         });
       }
@@ -249,8 +252,9 @@ export const registerAllParameters = () => {
       // Calculate Q values using same formula as filter creation
       const baseQ = 0.5 + (value / 20) * 3.5;
       const qValues = [baseQ * 0.7, baseQ * 0.85, baseQ * 1.0, baseQ * 1.15];
+      // Filter Q: 10ms linear ramp for smooth resonance changes
       audioNodes.filterNodes.forEach((filter, index) => {
-        filter.Q.linearRampToValueAtTime(qValues[index], time + 0.01);
+        filter.Q.linearRampToValueAtTime(qValues[index], time + 0.01); // 10ms ramp
       });
     }
   });
@@ -269,8 +273,10 @@ export const registerAllParameters = () => {
         const lfoNodes = audioNodes.lfoNodes[i];
         if (lfoNodes && lfoNodes.oscillator && audioNodes.audioContext) {
           const time = audioNodes.audioContext.currentTime;
+          // Control-rate parameter: use setValueAtTime for immediate update
+          // LFO frequency changes don't need ramping as they're slow modulation sources
           lfoNodes.oscillator.frequency.setValueAtTime(
-            Math.max(0.01, value),
+            Math.max(0.01, value), // Prevent zero for exponential
             time
           );
         }
