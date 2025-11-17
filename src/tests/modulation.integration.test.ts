@@ -58,8 +58,16 @@ describe("Modulation System Integration Tests", () => {
       const paramRange = 20000 - 20; // 19980
       const testPoints = [
         { phase: "min", value: 0.0, expected: baseValue }, // No modulation at min (unipolar clamps negative to 0)
-        { phase: "quarter", value: 0.5, expected: baseValue + (0.5 * 0.5 * paramRange) }, // Mid modulation: 1000 + 4995 = 5995
-        { phase: "max", value: 1.0, expected: baseValue + (1.0 * 0.5 * paramRange) }, // Full modulation: 1000 + 9990 = 10990
+        {
+          phase: "quarter",
+          value: 0.5,
+          expected: baseValue + 0.5 * 0.5 * paramRange,
+        }, // Mid modulation: 1000 + 4995 = 5995
+        {
+          phase: "max",
+          value: 1.0,
+          expected: baseValue + 1.0 * 0.5 * paramRange,
+        }, // Full modulation: 1000 + 9990 = 10990
       ];
 
       testPoints.forEach(({ phase, value, expected }) => {
@@ -153,8 +161,18 @@ describe("Modulation System Integration Tests", () => {
       const stages = [
         { name: "attack", envValue: 0.5, normalizedEnv: 0.0, expected: 0.8 }, // normalized=0, modAmount=0
         { name: "peak", envValue: 1.0, normalizedEnv: 1.0, expected: 1.0 }, // normalized=1, modAmount=1.0, result clamped to 1.0
-        { name: "decay", envValue: 0.7, normalizedEnv: 0.4, expected: 0.8 + (0.4 * 1.0 * paramRange) }, // 0.8 + 0.4 = 1.2, clamped to 1.0
-        { name: "sustain", envValue: 0.6, normalizedEnv: 0.2, expected: 0.8 + (0.2 * 1.0 * paramRange) }, // 0.8 + 0.2 = 1.0
+        {
+          name: "decay",
+          envValue: 0.7,
+          normalizedEnv: 0.4,
+          expected: 0.8 + 0.4 * 1.0 * paramRange,
+        }, // 0.8 + 0.4 = 1.2, clamped to 1.0
+        {
+          name: "sustain",
+          envValue: 0.6,
+          normalizedEnv: 0.2,
+          expected: 0.8 + 0.2 * 1.0 * paramRange,
+        }, // 0.8 + 0.2 = 1.0
         { name: "release", envValue: 0.2, normalizedEnv: -0.6, expected: 0.8 }, // negative, clamped to 0
         { name: "off", envValue: 0.0, normalizedEnv: -1.0, expected: 0.8 }, // negative, clamped to 0
       ];
@@ -255,10 +273,7 @@ describe("Modulation System Integration Tests", () => {
         result.current.updateSourceValue(ModulationSource.OSC2, -0.3);
       });
 
-      const modulated = result.current.getModulatedValue(
-        "osc3_frequency",
-        330
-      );
+      const modulated = result.current.getModulatedValue("osc3_frequency", 330);
 
       // Should be modulated by sum of both oscillators
       expect(modulated).not.toBe(330);
@@ -302,10 +317,7 @@ describe("Modulation System Integration Tests", () => {
         result.current.updateSourceValue(ModulationSource.MOD_ENV, 0.6);
       });
 
-      const modulated = result.current.getModulatedValue(
-        "filter_cutoff",
-        1000
-      );
+      const modulated = result.current.getModulatedValue("filter_cutoff", 1000);
 
       // Should be sum of both modulations
       expect(modulated).toBeGreaterThan(1000);
@@ -553,8 +565,8 @@ describe("Modulation System Integration Tests", () => {
       // Simulate fast attack, fast decay
       const envelopeStages = [
         { env: 0.0, normalized: -1.0 }, // Silent -> negative, unipolar=0
-        { env: 1.0, normalized: 1.0 },  // Attack peak -> full mod
-        { env: 0.6, normalized: 0.2 },  // Decay -> partial mod
+        { env: 1.0, normalized: 1.0 }, // Attack peak -> full mod
+        { env: 0.6, normalized: 0.2 }, // Decay -> partial mod
         { env: 0.3, normalized: -0.4 }, // Sustain -> negative, unipolar=0
         { env: 0.1, normalized: -0.8 }, // Release -> negative, unipolar=0
         { env: 0.0, normalized: -1.0 }, // Off -> negative, unipolar=0

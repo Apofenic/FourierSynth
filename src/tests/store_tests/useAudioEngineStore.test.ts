@@ -39,6 +39,23 @@ const mockAudioContext = {
   createBuffer: jest.fn(() => ({
     copyToChannel: jest.fn(),
   })),
+  createAnalyser: jest.fn(() => ({
+    fftSize: 2048,
+    getByteTimeDomainData: jest.fn(),
+    connect: jest.fn(),
+    disconnect: jest.fn(),
+  })),
+  createOscillator: jest.fn(() => ({
+    frequency: {
+      value: 0,
+      setValueAtTime: jest.fn(),
+    },
+    type: "sine",
+    connect: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    disconnect: jest.fn(),
+  })),
   destination: {},
 };
 
@@ -101,6 +118,25 @@ describe("useAudioEngineStore", () => {
       copyToChannel: jest.fn(),
     } as any);
 
+    mockAudioContext.createAnalyser.mockReturnValue({
+      fftSize: 2048,
+      getByteTimeDomainData: jest.fn(),
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+    } as any);
+
+    mockAudioContext.createOscillator.mockReturnValue({
+      frequency: {
+        value: 0,
+        setValueAtTime: jest.fn(),
+      },
+      type: "sine",
+      connect: jest.fn(),
+      start: jest.fn(),
+      stop: jest.fn(),
+      disconnect: jest.fn(),
+    } as any);
+
     // Reset audioNodes and set mock audio context
     audioNodes.audioContext = mockAudioContext as any;
     audioNodes.oscillators = Array(4)
@@ -111,10 +147,18 @@ describe("useAudioEngineStore", () => {
         waveformBuffer: null,
         ampEnvelopeNode: null,
         crossfadeGainNode: null,
+        analyserNode: null,
       }));
     audioNodes.mixerGainNode = null;
     audioNodes.masterGainNode = null;
     audioNodes.filterNodes = [];
+    audioNodes.lfoNodes = Array(2)
+      .fill(null)
+      .map(() => ({
+        oscillator: null,
+        gainNode: null,
+        analyser: null,
+      }));
   });
 
   describe("Initial State", () => {
