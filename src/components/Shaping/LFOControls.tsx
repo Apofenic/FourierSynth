@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Paper,
   Typography,
@@ -9,31 +9,48 @@ import {
 } from "@mui/material";
 import { Dial } from "../Custom_UI_Components/Dial";
 import { WaveformIcon } from "../Custom_UI_Components/WaveformIcon";
+import { useAudioEngineStore } from "../../stores";
+import { LFOWaveform } from "../../types";
 
 export const LFOControls = ({ id }: { id: number }) => {
-  // LFO state
-  const [lfoRate, setLfoRate] = useState(2); // Hz
-  const [lfoDepth, setLfoDepth] = useState(50); // 0-100
-  const [lfoWaveform, setLfoWaveform] = useState<string>("sine");
-  const [lfoTarget, setLfoTarget] = useState<string>("pitch");
+  const lfoIndex = id - 1; // Convert 1-based ID to 0-based index
+
+  // Get LFO state from AudioEngine store
+  const lfo = useAudioEngineStore((state) => state.lfos[lfoIndex]);
+  const updateLFOFrequency = useAudioEngineStore(
+    (state) => state.updateLFOFrequency
+  );
+  const updateLFOWaveform = useAudioEngineStore(
+    (state) => state.updateLFOWaveform
+  );
+  const toggleLFO = useAudioEngineStore((state) => state.toggleLFO);
 
   const handleWaveformChange = (
     event: React.MouseEvent<HTMLElement>,
     newWaveform: string | null
   ) => {
     if (newWaveform !== null) {
-      setLfoWaveform(newWaveform);
+      // Map string to LFOWaveform enum
+      const waveformMap: Record<string, LFOWaveform> = {
+        sine: LFOWaveform.SINE,
+        triangle: LFOWaveform.TRIANGLE,
+        square: LFOWaveform.SQUARE,
+        sawtooth: LFOWaveform.SAWTOOTH,
+      };
+      updateLFOWaveform(lfoIndex, waveformMap[newWaveform]);
     }
   };
 
-  const handleTargetChange = (
-    event: React.MouseEvent<HTMLElement>,
-    newTarget: string | null
-  ) => {
-    if (newTarget !== null) {
-      setLfoTarget(newTarget);
+  const handleFrequencyChange = (frequency: number) => {
+    updateLFOFrequency(lfoIndex, frequency);
+    // Auto-enable LFO when frequency is adjusted
+    if (!lfo.isActive) {
+      toggleLFO(lfoIndex, true);
     }
   };
+
+  // Map LFOWaveform enum back to string for UI
+  const waveformString = lfo.waveform.toLowerCase();
 
   return (
     <Paper
@@ -44,13 +61,24 @@ export const LFOControls = ({ id }: { id: number }) => {
         padding: 2,
         overflow: "hidden",
         height: "100%",
+        opacity: lfo.isActive ? 1 : 0.7,
+        transition: "opacity 0.3s",
       }}
     >
       <Typography variant="h3" align="center">
         LFO {id}
+        {lfo.isActive && (
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{ ml: 1, color: "success.main" }}
+          >
+            ●
+          </Typography>
+        )}
       </Typography>
 
-      {/* LFO Rate and Depth Controls */}
+      {/* LFO Rate Control */}
       <Stack
         direction="row"
         spacing={3}
@@ -59,25 +87,14 @@ export const LFOControls = ({ id }: { id: number }) => {
         sx={{ flexWrap: "wrap" }}
       >
         <Dial
-          value={lfoRate}
+          value={lfo.frequency}
           min={0.1}
           max={20}
           step={0.1}
-          onChange={setLfoRate}
+          onChange={handleFrequencyChange}
           label="Frequency (Hz)"
           size={90}
-          ringColor="#1abc9c"
-          numberFontSize={16}
-          minMaxFontSize={10}
-        />
-        <Dial
-          value={lfoDepth}
-          min={0}
-          max={100}
-          onChange={setLfoDepth}
-          label="Amount"
-          size={90}
-          ringColor="#16a085"
+          ringColor={lfo.isActive ? "#1abc9c" : "#7f8c8d"}
           numberFontSize={16}
           minMaxFontSize={10}
         />
@@ -89,7 +106,7 @@ export const LFOControls = ({ id }: { id: number }) => {
           Waveform
         </Typography>
         <ToggleButtonGroup
-          value={lfoWaveform}
+          value={waveformString}
           exclusive
           onChange={handleWaveformChange}
           aria-label="LFO waveform"

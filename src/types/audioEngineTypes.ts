@@ -7,6 +7,7 @@ export interface OscillatorNodeSet {
   waveformBuffer: AudioBuffer | null;
   ampEnvelopeNode: GainNode | null;
   crossfadeGainNode: GainNode | null; // For smooth waveform transitions
+  analyserNode: AnalyserNode | null; // For reading oscillator output as modulation source
 }
 
 /**
@@ -82,6 +83,9 @@ export interface AudioEngineState {
   triggerNoteOn: () => void;
   triggerNoteOff: () => void;
   getMaxReleaseTime: () => number;
+  updateLFOFrequency: (lfoIndex: number, frequency: number) => void;
+  updateLFOWaveform: (lfoIndex: number, waveform: LFOWaveform) => void;
+  toggleLFO: (lfoIndex: number, isActive: boolean) => void;
 
   // Internal methods
   _initializeAudioContext: () => void;

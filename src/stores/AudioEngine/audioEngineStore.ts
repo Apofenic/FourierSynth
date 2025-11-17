@@ -397,6 +397,19 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         // Convert amp envelope amount from 0-100 to 0-1 range
         const envelopeAmount = ampEnvelopeAmount / 100;
 
+        // Update envelope state tracking for modulation (per oscillator)
+        for (let i = 0; i < state.oscillators.length; i++) {
+          if (state.oscillators[i].isActive) {
+            audioNodes.setEnvelopeNoteOn(
+              i,
+              ampTimes.attack,
+              ampTimes.decay,
+              ampTimes.sustain,
+              ampTimes.release
+            );
+          }
+        }
+
         // Generate and apply amplitude envelope operations
         const ampOps = createAmpEnvelopeOps(
           ampTimes,
@@ -444,6 +457,13 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
+        // Update envelope state tracking for modulation (per oscillator)
+        for (let i = 0; i < state.oscillators.length; i++) {
+          if (state.oscillators[i].isActive) {
+            audioNodes.setEnvelopeNoteOff(i);
+          }
+        }
+
         // Convert ADSR parameters to time values
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
@@ -480,6 +500,82 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           audioNodes.filterNodes.forEach((filter) => {
             applyEnvelopeOps(filter.frequency, filterOps);
           });
+        }
+      },
+
+      /**
+       * Update LFO frequency in real-time
+       */
+      updateLFOFrequency: (lfoIndex: number, frequency: number) => {
+        set((state) => ({
+          lfos: state.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, frequency } : lfo
+          ),
+        }));
+
+        // If LFO is currently playing, update oscillator frequency in real-time
+        const lfoNodes = audioNodes.lfoNodes[lfoIndex];
+        if (lfoNodes && lfoNodes.oscillator && audioNodes.audioContext) {
+          const time = audioNodes.audioContext.currentTime;
+          lfoNodes.oscillator.frequency.setValueAtTime(frequency, time);
+        }
+      },
+
+      /**
+       * Update LFO waveform by recreating the oscillator
+       */
+      updateLFOWaveform: (lfoIndex: number, waveform: LFOWaveform) => {
+        const state = get();
+        const currentLFO = state.lfos[lfoIndex];
+
+        set((prevState) => ({
+          lfos: prevState.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, waveform } : lfo
+          ),
+        }));
+
+        // If LFO is currently playing, recreate it with new waveform
+        if (currentLFO.isActive && audioNodes.audioContext) {
+          audioNodes.cleanupLFO(lfoIndex);
+          const lfoNodes = audioNodes.createLFO(
+            audioNodes.audioContext,
+            currentLFO.frequency,
+            waveform
+          );
+          audioNodes.lfoNodes[lfoIndex] = lfoNodes;
+        }
+      },
+
+      /**
+       * Toggle LFO on/off
+       */
+      toggleLFO: (lfoIndex: number, isActive: boolean) => {
+        set((state) => ({
+          lfos: state.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, isActive } : lfo
+          ),
+        }));
+
+        if (!audioNodes.audioContext) {
+          audioNodes.initializeAudioContext();
+        }
+
+        const state = get();
+        const lfo = state.lfos[lfoIndex];
+
+        if (isActive) {
+          // Enable LFO: create and start nodes
+          if (audioNodes.audioContext) {
+            const lfoNodes = audioNodes.createLFO(
+              audioNodes.audioContext,
+              lfo.frequency,
+              lfo.waveform
+            );
+            audioNodes.lfoNodes[lfoIndex] = lfoNodes;
+          }
+        } else {
+          // Disable LFO: cleanup nodes
+          audioNodes.cleanupLFO(lfoIndex);
         }
       },
     }),

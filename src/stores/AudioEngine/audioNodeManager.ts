@@ -15,6 +15,17 @@ export class AudioNodeManager {
 
   // Reusable buffers for analyser data (performance optimization)
   private lfoBuffers: Float32Array[];
+  private oscillatorBuffers: Float32Array[]; // Buffers for oscillator output reading
+
+  // Track envelope state for each oscillator (for modulation source extraction)
+  private envelopeStates: Array<{
+    stage: "idle" | "attack" | "decay" | "sustain" | "release";
+    stageStartTime: number;
+    attackTime: number;
+    decayTime: number;
+    sustainLevel: number;
+    releaseTime: number;
+  }>;
 
   constructor() {
     // Initialize 4 empty oscillator slots
@@ -26,6 +37,7 @@ export class AudioNodeManager {
         waveformBuffer: null,
         ampEnvelopeNode: null,
         crossfadeGainNode: null,
+        analyserNode: null,
       }));
 
     // Initialize 2 empty LFO slots
@@ -39,6 +51,26 @@ export class AudioNodeManager {
 
     // Initialize reusable buffers for LFO reading (fftSize/2 = 64 samples)
     this.lfoBuffers = [new Float32Array(64), new Float32Array(64)];
+
+    // Initialize reusable buffers for oscillator reading (fftSize/2 = 64 samples)
+    this.oscillatorBuffers = [
+      new Float32Array(64),
+      new Float32Array(64),
+      new Float32Array(64),
+      new Float32Array(64),
+    ];
+
+    // Initialize envelope states for 4 oscillators
+    this.envelopeStates = Array(4)
+      .fill(null)
+      .map(() => ({
+        stage: "idle" as const,
+        stageStartTime: 0,
+        attackTime: 0,
+        decayTime: 0,
+        sustainLevel: 0,
+        releaseTime: 0,
+      }));
   }
 
   /**
@@ -70,6 +102,7 @@ export class AudioNodeManager {
         waveformBuffer: null,
         ampEnvelopeNode: null,
         crossfadeGainNode: null,
+        analyserNode: null,
       };
     }
 
@@ -104,10 +137,17 @@ export class AudioNodeManager {
     const crossfadeGainNode = audioContext.createGain();
     crossfadeGainNode.gain.value = 1.0;
 
+    // Create AnalyserNode for reading oscillator output as modulation source
+    const analyserNode = audioContext.createAnalyser();
+    analyserNode.fftSize = 128; // Efficient size for control-rate reading
+
     // Connect source -> gain -> crossfade -> envelope
     sourceNode.connect(gainNode);
     gainNode.connect(crossfadeGainNode);
     crossfadeGainNode.connect(ampEnvelopeNode);
+
+    // Connect crossfade -> analyser (parallel connection for reading)
+    crossfadeGainNode.connect(analyserNode);
 
     return {
       sourceNode,
@@ -115,7 +155,28 @@ export class AudioNodeManager {
       waveformBuffer: buffer,
       ampEnvelopeNode,
       crossfadeGainNode,
+      analyserNode,
     };
+  }
+
+  /**
+   * Generic cleanup for audio nodes
+   * Safely stops and disconnects nodes, suppressing errors
+   */
+  private cleanupNodes(...nodes: (AudioNode | null | undefined)[]): void {
+    nodes.forEach((node, index) => {
+      if (!node) return;
+
+      try {
+        // Stop if it's a source node (has stop method)
+        if ("stop" in node && typeof node.stop === "function") {
+          node.stop();
+        }
+        node.disconnect();
+      } catch (e) {
+        console.warn(`Error cleaning up node ${index}:`, e);
+      }
+    });
   }
 
   /**
@@ -125,21 +186,13 @@ export class AudioNodeManager {
     if (oscIndex < 0 || oscIndex >= this.oscillators.length) return;
 
     const osc = this.oscillators[oscIndex];
-    if (osc.sourceNode) {
-      try {
-        osc.sourceNode.stop();
-        osc.sourceNode.disconnect();
-      } catch (e) {
-        console.warn(`Error stopping oscillator ${oscIndex}:`, e);
-      }
-    }
-    if (osc.gainNode) {
-      try {
-        osc.gainNode.disconnect();
-      } catch (e) {
-        console.warn(`Error disconnecting gain node ${oscIndex}:`, e);
-      }
-    }
+    this.cleanupNodes(
+      osc.sourceNode,
+      osc.gainNode,
+      osc.crossfadeGainNode,
+      osc.ampEnvelopeNode,
+      osc.analyserNode
+    );
 
     this.oscillators[oscIndex] = {
       sourceNode: null,
@@ -147,6 +200,7 @@ export class AudioNodeManager {
       waveformBuffer: null,
       ampEnvelopeNode: null,
       crossfadeGainNode: null,
+      analyserNode: null,
     };
   }
 
@@ -164,35 +218,18 @@ export class AudioNodeManager {
       this.cleanupLFO(i);
     }
 
-    // Clean up mixer and master gain
-    if (this.mixerGainNode) {
-      try {
-        this.mixerGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting mixer:", e);
-      }
-      this.mixerGainNode = null;
-    }
+    // Clean up mixer, master gain, and filters
+    this.cleanupNodes(
+      this.mixerGainNode,
+      this.masterGainNode,
+      this.filterEnvelopeNode,
+      ...this.filterNodes
+    );
 
-    if (this.masterGainNode) {
-      try {
-        this.masterGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting master gain:", e);
-      }
-      this.masterGainNode = null;
-    }
-
+    this.mixerGainNode = null;
+    this.masterGainNode = null;
     this.filterNodes = [];
-
-    if (this.filterEnvelopeNode) {
-      try {
-        this.filterEnvelopeNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting filter envelope:", e);
-      }
-      this.filterEnvelopeNode = null;
-    }
+    this.filterEnvelopeNode = null;
   }
 
   /**
@@ -338,28 +375,7 @@ export class AudioNodeManager {
     if (lfoIndex < 0 || lfoIndex >= this.lfoNodes.length) return;
 
     const lfo = this.lfoNodes[lfoIndex];
-    if (lfo.oscillator) {
-      try {
-        lfo.oscillator.stop();
-        lfo.oscillator.disconnect();
-      } catch (e) {
-        console.warn(`Error stopping LFO ${lfoIndex}:`, e);
-      }
-    }
-    if (lfo.gainNode) {
-      try {
-        lfo.gainNode.disconnect();
-      } catch (e) {
-        console.warn(`Error disconnecting LFO gain node ${lfoIndex}:`, e);
-      }
-    }
-    if (lfo.analyser) {
-      try {
-        lfo.analyser.disconnect();
-      } catch (e) {
-        console.warn(`Error disconnecting LFO analyser ${lfoIndex}:`, e);
-      }
-    }
+    this.cleanupNodes(lfo.oscillator, lfo.gainNode, lfo.analyser);
 
     this.lfoNodes[lfoIndex] = {
       oscillator: null,
@@ -369,8 +385,30 @@ export class AudioNodeManager {
   }
 
   /**
-   * Read the current value of an LFO (normalized -1 to +1)
+   * Generic method to read an analyser node value
    * Uses reusable buffer to avoid allocations
+   *
+   * @param analyser The analyser node to read from
+   * @param buffer The reusable Float32Array buffer
+   * @returns Normalized value (-1 to +1), or 0 if analyser is null
+   */
+  private readAnalyserValue(
+    analyser: AnalyserNode | null,
+    buffer: Float32Array
+  ): number {
+    if (!analyser) return 0;
+
+    // Read time-domain data from analyser
+    // @ts-ignore - TypeScript strictness issue with Float32Array buffer types
+    analyser.getFloatTimeDomainData(buffer);
+
+    // Use the first sample as the current value
+    // (could also use average, but first sample is efficient and accurate enough)
+    return buffer[0]; // Already normalized to -1 to +1 range
+  }
+
+  /**
+   * Read the current value of an LFO (normalized -1 to +1)
    * This method will be called by the master modulation loop (Task 5.2)
    *
    * @param lfoIndex Index of the LFO to read (0 or 1)
@@ -383,23 +421,150 @@ export class AudioNodeManager {
     }
 
     const lfo = this.lfoNodes[lfoIndex];
-    if (!lfo.analyser || !lfo.oscillator) {
-      // LFO not active, return 0
+    if (!lfo.oscillator) return 0; // LFO not active
+
+    return this.readAnalyserValue(lfo.analyser, this.lfoBuffers[lfoIndex]);
+  }
+
+  /**
+   * Read the current value of an oscillator (normalized -1 to +1)
+   * Only called when oscillator is actively used as a modulation source (lazy reading)
+   * This method will be called by the master modulation loop (Task 5.2)
+   *
+   * @param oscIndex Index of the oscillator to read (0-3)
+   * @returns Normalized oscillator value (-1 to +1), or 0 if oscillator is inactive
+   */
+  readOscillatorValue(oscIndex: number): number {
+    if (oscIndex < 0 || oscIndex >= this.oscillators.length) {
+      console.warn(`Invalid oscillator index: ${oscIndex}`);
       return 0;
     }
 
-    // Get the reusable buffer for this LFO
-    const buffer = this.lfoBuffers[lfoIndex];
+    const osc = this.oscillators[oscIndex];
+    if (!osc.sourceNode) return 0; // Oscillator not active
 
-    // Read time-domain data from analyser
-    // @ts-ignore - TypeScript strictness issue with Float32Array buffer types
-    lfo.analyser.getFloatTimeDomainData(buffer);
+    return this.readAnalyserValue(
+      osc.analyserNode,
+      this.oscillatorBuffers[oscIndex]
+    );
+  }
 
-    // Use the first sample as the current value
-    // (could also use average, but first sample is efficient and accurate enough)
-    const value = buffer[0];
+  /**
+   * Update envelope state when a note is triggered
+   * Called from triggerNoteOn in audioEngineStore
+   *
+   * @param oscIndex Index of the oscillator
+   * @param attackTime Attack time in seconds
+   * @param decayTime Decay time in seconds
+   * @param sustainLevel Sustain level (0-1)
+   * @param releaseTime Release time in seconds
+   */
+  setEnvelopeNoteOn(
+    oscIndex: number,
+    attackTime: number,
+    decayTime: number,
+    sustainLevel: number,
+    releaseTime: number
+  ): void {
+    if (oscIndex < 0 || oscIndex >= this.envelopeStates.length) return;
 
-    // Value is already normalized to -1 to +1 range by the analyser
-    return value;
+    const currentTime = this.audioContext?.currentTime || 0;
+
+    this.envelopeStates[oscIndex] = {
+      stage: "attack",
+      stageStartTime: currentTime,
+      attackTime,
+      decayTime,
+      sustainLevel,
+      releaseTime,
+    };
+  }
+
+  /**
+   * Update envelope state when a note is released
+   * Called from triggerNoteOff in audioEngineStore
+   *
+   * @param oscIndex Index of the oscillator
+   */
+  setEnvelopeNoteOff(oscIndex: number): void {
+    if (oscIndex < 0 || oscIndex >= this.envelopeStates.length) return;
+
+    const currentTime = this.audioContext?.currentTime || 0;
+    const state = this.envelopeStates[oscIndex];
+
+    // Only transition to release if not already in release or idle
+    if (state.stage !== "release" && state.stage !== "idle") {
+      this.envelopeStates[oscIndex] = {
+        ...state,
+        stage: "release",
+        stageStartTime: currentTime,
+      };
+    }
+  }
+
+  /**
+   * Get the current envelope value for an oscillator (0-1 range)
+   * This method calculates the envelope value based on the current time and stage
+   *
+   * @param oscIndex Index of the oscillator
+   * @returns Current envelope amplitude (0-1), or 0 if idle
+   */
+  getEnvelopeValue(oscIndex: number): number {
+    if (oscIndex < 0 || oscIndex >= this.envelopeStates.length) return 0;
+    if (!this.audioContext) return 0;
+
+    const state = this.envelopeStates[oscIndex];
+    const currentTime = this.audioContext.currentTime;
+    const elapsed = currentTime - state.stageStartTime;
+
+    switch (state.stage) {
+      case "idle":
+        return 0;
+
+      case "attack":
+        if (elapsed >= state.attackTime) {
+          // Transition to decay stage
+          this.envelopeStates[oscIndex] = {
+            ...state,
+            stage: "decay",
+            stageStartTime: currentTime,
+          };
+          return 1.0;
+        }
+        // Linear ramp from 0 to 1 during attack
+        return elapsed / state.attackTime;
+
+      case "decay":
+        if (elapsed >= state.decayTime) {
+          // Transition to sustain stage
+          this.envelopeStates[oscIndex] = {
+            ...state,
+            stage: "sustain",
+            stageStartTime: currentTime,
+          };
+          return state.sustainLevel;
+        }
+        // Linear ramp from 1 to sustain level during decay
+        return 1.0 - (1.0 - state.sustainLevel) * (elapsed / state.decayTime);
+
+      case "sustain":
+        return state.sustainLevel;
+
+      case "release":
+        if (elapsed >= state.releaseTime) {
+          // Release complete, go to idle
+          this.envelopeStates[oscIndex] = {
+            ...state,
+            stage: "idle",
+            stageStartTime: currentTime,
+          };
+          return 0;
+        }
+        // Linear ramp from sustain level to 0 during release
+        return state.sustainLevel * (1.0 - elapsed / state.releaseTime);
+
+      default:
+        return 0;
+    }
   }
 }
