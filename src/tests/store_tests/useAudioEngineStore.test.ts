@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import {
   useAudioEngineStore,
   audioNodes,
-} from "../../stores/useAudioEngineStore";
+} from "../../stores/AudioEngine/audioEngineStore";
 
 // Mock Web Audio API
 const mockAudioContext = {

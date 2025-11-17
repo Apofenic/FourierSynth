@@ -1,7 +1,7 @@
 import React from "react";
 import { Paper, Typography, Box, Tooltip, Stack } from "@mui/material";
 import { Dial, ModDial } from "../";
-import { useAudioEngineStore } from "../../stores/useAudioEngineStore";
+import { useAudioEngineStore } from "../../stores";
 
 interface FilterControlsProps {
   cutoffFrequency: number;

@@ -10,11 +10,48 @@ export interface OscillatorNodeSet {
 }
 
 /**
+ * Represents a single LFO's audio nodes
+ */
+export interface LFONodeSet {
+  oscillator: OscillatorNode | null;
+  gainNode: GainNode | null;
+  analyser: AnalyserNode | null;
+}
+
+/**
  * Represents a single oscillator's state in the store
  */
 export interface OscillatorState {
   frequency: number;
   volume: number; // 0-1 range for audio
+  isActive: boolean;
+}
+
+/**
+ * LFO waveform types
+ */
+export enum LFOWaveform {
+  SINE = "sine",
+  TRIANGLE = "triangle",
+  SAWTOOTH = "sawtooth",
+  SQUARE = "square",
+  RANDOM = "random", // Sample & hold noise
+}
+
+/**
+ * LFO state
+ */
+export interface LFOState {
+  /** LFO frequency in Hz (0.01 - 20 Hz range) */
+  frequency: number;
+
+  /** LFO waveform type */
+  waveform: LFOWaveform;
+
+  /** Phase offset in degrees (0-360) */
+  phase: number;
+
+  /** Whether this LFO is active/running */
   isActive: boolean;
 }
 
@@ -26,6 +63,7 @@ export interface AudioEngineState {
   isPlaying: boolean;
   isNoteHeld: boolean; // Track if a note is currently being held
   oscillators: OscillatorState[];
+  lfos: LFOState[]; // LFO states (2 LFOs)
   masterVolume: number; // 0-100 range
   cutoffFrequency: number;
   resonance: number;

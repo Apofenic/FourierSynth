@@ -1,407 +1,23 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { useEquationBuilderStore } from "./useEquationBuilderStore";
-import { useSynthControlsStore } from "./useSynthControlsStore";
+import { useEquationBuilderStore } from "../useEquationBuilderStore";
+import { useSynthControlsStore } from "../useSynthControlsStore";
 import {
   AudioEngineState,
-  OscillatorNodeSet,
   ADSRTimes,
   EnvelopeOperation,
-} from "../types";
-
-/**
- * External manager class for Web Audio API nodes
- * Refs are kept outside the store since they're non-serializable
- */
-class AudioNodeManager {
-  audioContext: AudioContext | null = null;
-  oscillators: OscillatorNodeSet[] = [];
-  mixerGainNode: GainNode | null = null;
-  masterGainNode: GainNode | null = null;
-  filterNodes: BiquadFilterNode[] = [];
-  filterEnvelopeNode: GainNode | null = null; // For filter envelope modulation
-
-  constructor() {
-    // Initialize 4 empty oscillator slots
-    this.oscillators = Array(4)
-      .fill(null)
-      .map(() => ({
-        sourceNode: null,
-        gainNode: null,
-        waveformBuffer: null,
-        ampEnvelopeNode: null,
-        crossfadeGainNode: null,
-      }));
-  }
-
-  /**
-   * Initialize audio context if not already created
-   */
-  initializeAudioContext(): AudioContext {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
-    }
-    return this.audioContext;
-  }
-
-  /**
-   * Create an oscillator chain (source + gain + envelope nodes)
-   */
-  createOscillatorChain(
-    audioContext: AudioContext,
-    waveformData: Float32Array,
-    frequency: number,
-    volume: number
-  ): OscillatorNodeSet {
-    // Validate waveformData
-    if (!waveformData || waveformData.length === 0) {
-      console.warn("Cannot create oscillator: waveformData is empty");
-      return {
-        sourceNode: null,
-        gainNode: null,
-        waveformBuffer: null,
-        ampEnvelopeNode: null,
-        crossfadeGainNode: null,
-      };
-    }
-
-    // Create AudioBuffer
-    const buffer = audioContext.createBuffer(
-      1, // mono
-      waveformData.length,
-      audioContext.sampleRate
-    );
-    // Copy waveform data - create new Float32Array to ensure proper type
-    const bufferData = new Float32Array(waveformData);
-    buffer.copyToChannel(bufferData, 0);
-
-    // Create BufferSourceNode
-    const sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = buffer;
-    sourceNode.loop = true;
-
-    // Calculate playback rate for frequency control
-    const baseCycleFrequency = audioContext.sampleRate / waveformData.length;
-    sourceNode.playbackRate.value = frequency / baseCycleFrequency;
-
-    // Create GainNode for volume control
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = volume;
-
-    // Create GainNode for ADSR envelope (starts at 0)
-    const ampEnvelopeNode = audioContext.createGain();
-    ampEnvelopeNode.gain.value = 0;
-
-    // Create GainNode for crossfade control (starts at 1.0)
-    const crossfadeGainNode = audioContext.createGain();
-    crossfadeGainNode.gain.value = 1.0;
-
-    // Connect source -> gain -> crossfade -> envelope
-    sourceNode.connect(gainNode);
-    gainNode.connect(crossfadeGainNode);
-    crossfadeGainNode.connect(ampEnvelopeNode);
-
-    return {
-      sourceNode,
-      gainNode,
-      waveformBuffer: buffer,
-      ampEnvelopeNode,
-      crossfadeGainNode,
-    };
-  }
-
-  /**
-   * Clean up a specific oscillator
-   */
-  cleanupOscillator(oscIndex: number): void {
-    if (oscIndex < 0 || oscIndex >= this.oscillators.length) return;
-
-    const osc = this.oscillators[oscIndex];
-    if (osc.sourceNode) {
-      try {
-        osc.sourceNode.stop();
-        osc.sourceNode.disconnect();
-      } catch (e) {
-        console.warn(`Error stopping oscillator ${oscIndex}:`, e);
-      }
-    }
-    if (osc.gainNode) {
-      try {
-        osc.gainNode.disconnect();
-      } catch (e) {
-        console.warn(`Error disconnecting gain node ${oscIndex}:`, e);
-      }
-    }
-
-    this.oscillators[oscIndex] = {
-      sourceNode: null,
-      gainNode: null,
-      waveformBuffer: null,
-      ampEnvelopeNode: null,
-      crossfadeGainNode: null,
-    };
-  }
-
-  /**
-   * Clean up all audio nodes
-   */
-  cleanup(): void {
-    // Clean up all oscillators
-    for (let i = 0; i < this.oscillators.length; i++) {
-      this.cleanupOscillator(i);
-    }
-
-    // Clean up mixer and master gain
-    if (this.mixerGainNode) {
-      try {
-        this.mixerGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting mixer:", e);
-      }
-      this.mixerGainNode = null;
-    }
-
-    if (this.masterGainNode) {
-      try {
-        this.masterGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting master gain:", e);
-      }
-      this.masterGainNode = null;
-    }
-
-    this.filterNodes = [];
-
-    if (this.filterEnvelopeNode) {
-      try {
-        this.filterEnvelopeNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting filter envelope:", e);
-      }
-      this.filterEnvelopeNode = null;
-    }
-  }
-
-  /**
-   * Crossfade to a new waveform for a specific oscillator
-   * Creates a new oscillator with the new waveform and smoothly transitions
-   */
-  crossfadeWaveform(
-    oscIndex: number,
-    waveformData: Float32Array,
-    frequency: number,
-    volume: number,
-    crossfadeTimeMs: number = 30
-  ): void {
-    if (!this.audioContext || !this.mixerGainNode) {
-      console.warn("Cannot crossfade: audio context not initialized");
-      return;
-    }
-
-    const oldNodeSet = this.oscillators[oscIndex];
-    if (!oldNodeSet || !oldNodeSet.sourceNode) {
-      console.warn(`Cannot crossfade: oscillator ${oscIndex} not active`);
-      return;
-    }
-
-    // Create new oscillator chain with new waveform
-    const newNodeSet = this.createOscillatorChain(
-      this.audioContext,
-      waveformData,
-      frequency,
-      volume
-    );
-
-    if (!newNodeSet.sourceNode || !newNodeSet.crossfadeGainNode) {
-      console.warn(`Failed to create new oscillator chain for ${oscIndex}`);
-      return;
-    }
-
-    const time = this.audioContext.currentTime;
-    const crossfadeTime = crossfadeTimeMs / 1000;
-
-    // New oscillator starts at 0 volume and fades in
-    newNodeSet.crossfadeGainNode.gain.setValueAtTime(0, time);
-    newNodeSet.crossfadeGainNode.gain.linearRampToValueAtTime(
-      1.0,
-      time + crossfadeTime
-    );
-
-    // Copy envelope state from old to new oscillator
-    if (oldNodeSet.ampEnvelopeNode && newNodeSet.ampEnvelopeNode) {
-      const currentEnvValue = oldNodeSet.ampEnvelopeNode.gain.value;
-      newNodeSet.ampEnvelopeNode.gain.setValueAtTime(currentEnvValue, time);
-    }
-
-    // Connect new oscillator to mixer
-    newNodeSet.ampEnvelopeNode!.connect(this.mixerGainNode);
-
-    // Start new oscillator
-    newNodeSet.sourceNode.start();
-
-    // Old oscillator fades out
-    if (oldNodeSet.crossfadeGainNode) {
-      oldNodeSet.crossfadeGainNode.gain.setValueAtTime(1.0, time);
-      oldNodeSet.crossfadeGainNode.gain.linearRampToValueAtTime(
-        0,
-        time + crossfadeTime
-      );
-    }
-
-    // Store new node set
-    this.oscillators[oscIndex] = newNodeSet;
-
-    // Clean up old oscillator after crossfade completes
-    setTimeout(() => {
-      if (oldNodeSet.sourceNode) {
-        try {
-          oldNodeSet.sourceNode.stop();
-          oldNodeSet.sourceNode.disconnect();
-        } catch (e) {
-          console.warn("Error stopping old oscillator:", e);
-        }
-      }
-      if (oldNodeSet.gainNode) {
-        try {
-          oldNodeSet.gainNode.disconnect();
-        } catch (e) {
-          console.warn("Error disconnecting old gain node:", e);
-        }
-      }
-      if (oldNodeSet.crossfadeGainNode) {
-        try {
-          oldNodeSet.crossfadeGainNode.disconnect();
-        } catch (e) {
-          console.warn("Error disconnecting old crossfade node:", e);
-        }
-      }
-    }, crossfadeTimeMs + 50);
-  }
-}
+  LFOWaveform,
+} from "../../types";
+import { AudioNodeManager } from "./audioNodeManager";
+import {
+  convertADSRToTimes,
+  createAmpEnvelopeOps,
+  createFilterEnvelopeOps,
+  applyEnvelopeOps,
+} from "./helperFunctions";
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
-
-/**
- * Convert ADSR parameters (0-100) to time values in seconds
- */
-const convertADSRToTimes = (adsr: {
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
-}): ADSRTimes => ({
-  attack: 0.001 + (adsr.attack / 100) * 1.999,
-  decay: 0.001 + (adsr.decay / 100) * 1.999,
-  sustain: adsr.sustain / 100,
-  release: 0.001 + (adsr.release / 100) * 3.999,
-});
-
-/**
- * Generate amplitude envelope operations
- */
-const createAmpEnvelopeOps = (
-  times: ADSRTimes,
-  startTime: number,
-  isNoteOn: boolean,
-  envelopeAmount: number = 1.0 // 0-1 range, where 0 = no envelope effect, 1 = full envelope
-): EnvelopeOperation[] => {
-  if (isNoteOn) {
-    // Calculate the envelope range based on envelope amount
-    // At 0% (envelopeAmount=0): envelope stays at 1.0 (no modulation)
-    // At 100% (envelopeAmount=1): envelope goes from 0 to 1.0 (full modulation)
-    // At 50% (envelopeAmount=0.5): envelope goes from 0.5 to 1.0
-    const minValue = 1.0 - envelopeAmount;
-    const peakValue = 1.0;
-    const sustainValue = minValue + (peakValue - minValue) * times.sustain;
-
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [minValue, startTime] },
-      {
-        method: "linearRampToValueAtTime",
-        args: [peakValue, startTime + times.attack],
-      },
-      {
-        method: "linearRampToValueAtTime",
-        args: [sustainValue, startTime + times.attack + times.decay],
-      },
-    ];
-  } else {
-    // For release, always ramp to the minimum value based on envelope amount
-    const minValue = 1.0 - envelopeAmount;
-
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [startTime] }, // Will use current value
-      {
-        method: "linearRampToValueAtTime",
-        args: [minValue, startTime + times.release],
-      },
-    ];
-  }
-};
-
-/**
- * Generate filter envelope operations
- */
-const createFilterEnvelopeOps = (
-  times: ADSRTimes,
-  startTime: number,
-  baseCutoff: number,
-  envelopeAmount: number,
-  isNoteOn: boolean
-): EnvelopeOperation[] => {
-  if (isNoteOn) {
-    const maxCutoff = Math.min(20000, baseCutoff * 4);
-    const targetCutoff = baseCutoff + (maxCutoff - baseCutoff) * envelopeAmount;
-    const sustainCutoff =
-      baseCutoff + (targetCutoff - baseCutoff) * times.sustain;
-
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [baseCutoff, startTime] },
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [Math.max(20, targetCutoff), startTime + times.attack],
-      },
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [
-          Math.max(20, sustainCutoff),
-          startTime + times.attack + times.decay,
-        ],
-      },
-    ];
-  } else {
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [startTime] }, // Will use current value
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [Math.max(20, baseCutoff), startTime + times.release],
-      },
-    ];
-  }
-};
-
-/**
- * Apply envelope operations to an AudioParam
- */
-const applyEnvelopeOps = (
-  param: AudioParam,
-  operations: EnvelopeOperation[]
-): void => {
-  operations.forEach((op) => {
-    if (op.method === "setValueAtTime" && op.args.length === 1) {
-      // Special case: use current value
-      param.setValueAtTime(param.value, op.args[0]);
-    } else {
-      (param[op.method] as any)(...op.args);
-    }
-  });
-};
 
 /**
  * Zustand store for AudioEngine
@@ -418,6 +34,20 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         { frequency: 220, volume: 1.0, isActive: true },
         { frequency: 220, volume: 1.0, isActive: true },
         { frequency: 220, volume: 1.0, isActive: true },
+      ],
+      lfos: [
+        {
+          frequency: 1.0, // 1 Hz default
+          waveform: LFOWaveform.SINE,
+          phase: 0,
+          isActive: false,
+        },
+        {
+          frequency: 2.0, // 2 Hz default
+          waveform: LFOWaveform.TRIANGLE,
+          phase: 0,
+          isActive: false,
+        },
       ],
       masterVolume: 100,
       cutoffFrequency: 632,
