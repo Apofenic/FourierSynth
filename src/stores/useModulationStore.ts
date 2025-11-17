@@ -217,21 +217,23 @@ export const useModulationStore = create<ModulationStore>()(
           // Get source value (normalized -1 to +1)
           const sourceValue = state.sourceValues[route.source] || 0;
 
-          // Scale by amount (0-100 percentage)
-          const scaledValue = sourceValue * (route.amount / 100);
+          // Scale by amount (0-100 percentage) and parameter range
+          // This gives modulation depth as a fraction of the full parameter range
+          const modAmount =
+            sourceValue * (route.amount / 100) * (metadata.max - metadata.min);
 
           // Apply bipolar/unipolar
-          const modValue = route.bipolar
-            ? scaledValue // Bipolar: -amount to +amount
-            : Math.max(0, scaledValue); // Unipolar: 0 to +amount
-
-          // Accumulate modulation
-          modulationSum += modValue;
+          if (route.bipolar) {
+            // Bipolar: use full range (-modAmount to +modAmount)
+            modulationSum += modAmount;
+          } else {
+            // Unipolar: clamp negative values to 0 (0 to +modAmount)
+            modulationSum += Math.max(0, modAmount);
+          }
         });
 
         // Calculate final modulated value
-        const modulatedValue =
-          baseValue + modulationSum * (metadata.max - metadata.min);
+        const modulatedValue = baseValue + modulationSum;
 
         // Clamp to parameter range
         const clampedValue = Math.max(

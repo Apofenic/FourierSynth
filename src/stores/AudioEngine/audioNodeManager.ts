@@ -27,6 +27,16 @@ export class AudioNodeManager {
     releaseTime: number;
   }>;
 
+  // Track dedicated modulation envelope state
+  private modEnvelopeState: {
+    stage: "idle" | "attack" | "decay" | "sustain" | "release";
+    stageStartTime: number;
+    attackTime: number;
+    decayTime: number;
+    sustainLevel: number;
+    releaseTime: number;
+  };
+
   constructor() {
     // Initialize 4 empty oscillator slots
     this.oscillators = Array(4)
@@ -71,6 +81,16 @@ export class AudioNodeManager {
         sustainLevel: 0,
         releaseTime: 0,
       }));
+
+    // Initialize dedicated modulation envelope state
+    this.modEnvelopeState = {
+      stage: "idle",
+      stageStartTime: 0,
+      attackTime: 0,
+      decayTime: 0,
+      sustainLevel: 0,
+      releaseTime: 0,
+    };
   }
 
   /**
@@ -554,6 +574,115 @@ export class AudioNodeManager {
         if (elapsed >= state.releaseTime) {
           // Release complete, go to idle
           this.envelopeStates[oscIndex] = {
+            ...state,
+            stage: "idle",
+            stageStartTime: currentTime,
+          };
+          return 0;
+        }
+        // Linear ramp from sustain level to 0 during release
+        return state.sustainLevel * (1.0 - elapsed / state.releaseTime);
+
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Update modulation envelope state when a note is triggered
+   * Called from triggerNoteOn in audioEngineStore
+   *
+   * @param attackTime Attack time in seconds
+   * @param decayTime Decay time in seconds
+   * @param sustainLevel Sustain level (0-1)
+   * @param releaseTime Release time in seconds
+   */
+  setModEnvelopeNoteOn(
+    attackTime: number,
+    decayTime: number,
+    sustainLevel: number,
+    releaseTime: number
+  ): void {
+    const currentTime = this.audioContext?.currentTime || 0;
+
+    this.modEnvelopeState = {
+      stage: "attack",
+      stageStartTime: currentTime,
+      attackTime,
+      decayTime,
+      sustainLevel,
+      releaseTime,
+    };
+  }
+
+  /**
+   * Update modulation envelope state when a note is released
+   * Called from triggerNoteOff in audioEngineStore
+   */
+  setModEnvelopeNoteOff(): void {
+    const currentTime = this.audioContext?.currentTime || 0;
+    const state = this.modEnvelopeState;
+
+    // Only transition to release if not already in release or idle
+    if (state.stage !== "release" && state.stage !== "idle") {
+      this.modEnvelopeState = {
+        ...state,
+        stage: "release",
+        stageStartTime: currentTime,
+      };
+    }
+  }
+
+  /**
+   * Get the current modulation envelope value (0-1 range)
+   * This method calculates the envelope value based on the current time and stage
+   *
+   * @returns Current envelope amplitude (0-1), or 0 if idle
+   */
+  getModEnvelopeValue(): number {
+    if (!this.audioContext) return 0;
+
+    const state = this.modEnvelopeState;
+    const currentTime = this.audioContext.currentTime;
+    const elapsed = currentTime - state.stageStartTime;
+
+    switch (state.stage) {
+      case "idle":
+        return 0;
+
+      case "attack":
+        if (elapsed >= state.attackTime) {
+          // Transition to decay stage
+          this.modEnvelopeState = {
+            ...state,
+            stage: "decay",
+            stageStartTime: currentTime,
+          };
+          return 1.0;
+        }
+        // Linear ramp from 0 to 1 during attack
+        return elapsed / state.attackTime;
+
+      case "decay":
+        if (elapsed >= state.decayTime) {
+          // Transition to sustain stage
+          this.modEnvelopeState = {
+            ...state,
+            stage: "sustain",
+            stageStartTime: currentTime,
+          };
+          return state.sustainLevel;
+        }
+        // Linear ramp from 1 to sustain level during decay
+        return 1.0 - (1.0 - state.sustainLevel) * (elapsed / state.decayTime);
+
+      case "sustain":
+        return state.sustainLevel;
+
+      case "release":
+        if (elapsed >= state.releaseTime) {
+          // Release complete, go to idle
+          this.modEnvelopeState = {
             ...state,
             stage: "idle",
             stageStartTime: currentTime,

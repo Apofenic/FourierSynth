@@ -2,11 +2,13 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { useEquationBuilderStore } from "../useEquationBuilderStore";
 import { useSynthControlsStore } from "../useSynthControlsStore";
+import { useModulationStore } from "../useModulationStore";
 import {
   AudioEngineState,
   ADSRTimes,
   EnvelopeOperation,
   LFOWaveform,
+  ModulationSource,
 } from "../../types";
 import { AudioNodeManager } from "./audioNodeManager";
 import {
@@ -18,6 +20,108 @@ import {
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
+
+// Master modulation loop control
+let masterModulationLoopId: number | null = null;
+
+/**
+ * Master Modulation Update Loop
+ * Consolidated requestAnimationFrame loop that:
+ * 1. Reads all modulation sources (LFOs, envelopes, oscillators)
+ * 2. Updates modulation store with source values
+ * 3. Applies modulations to all registered parameters
+ *
+ * This is the ONLY modulation update loop in the system.
+ * Performance target: <10ms per frame with full modulation matrix
+ */
+const masterModulationLoop = () => {
+  // Performance monitoring (dev mode)
+  const frameStartTime = performance.now();
+
+  // Get modulation store
+  const modStore = useModulationStore.getState();
+  const activeSources = modStore.getActiveSources();
+
+  // Skip if no active modulation routes
+  if (activeSources.size === 0) {
+    masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+    return;
+  }
+
+  // ==========================================
+  // PHASE 1: Read all modulation sources
+  // ==========================================
+
+  // Read LFO values (always read if active, regardless of routing)
+  if (activeSources.has(ModulationSource.LFO1)) {
+    const lfo1Value = audioNodes.readLFOValue(0);
+    modStore.updateSourceValue(ModulationSource.LFO1, lfo1Value);
+  }
+
+  if (activeSources.has(ModulationSource.LFO2)) {
+    const lfo2Value = audioNodes.readLFOValue(1);
+    modStore.updateSourceValue(ModulationSource.LFO2, lfo2Value);
+  }
+
+  // Read envelope values (modulation envelope)
+  // Use the dedicated modulation envelope from SynthControls
+  if (activeSources.has(ModulationSource.MOD_ENV)) {
+    const envValue = audioNodes.getModEnvelopeValue();
+    // Normalize from 0-1 to -1 to +1 for consistency with other mod sources
+    const normalizedEnvValue = envValue * 2 - 1;
+    modStore.updateSourceValue(ModulationSource.MOD_ENV, normalizedEnvValue);
+  }
+
+  // Read oscillator values (LAZY - only if actively routed)
+  for (let i = 0; i < 4; i++) {
+    const oscSource = [
+      ModulationSource.OSC1,
+      ModulationSource.OSC2,
+      ModulationSource.OSC3,
+      ModulationSource.OSC4,
+    ][i];
+
+    if (activeSources.has(oscSource)) {
+      const oscValue = audioNodes.readOscillatorValue(i);
+      modStore.updateSourceValue(oscSource, oscValue);
+    }
+  }
+
+  // ==========================================
+  // PHASE 2: Apply modulations
+  // ==========================================
+  // This phase will be implemented in Task 5.3/5.4
+  // For now, we're just updating source values
+
+  // Performance monitoring
+  const frameTime = performance.now() - frameStartTime;
+  if (frameTime > 14) {
+    console.warn(
+      `Modulation loop exceeded 14ms: ${frameTime.toFixed(2)}ms (target: <10ms)`
+    );
+  }
+
+  // Continue loop
+  masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+};
+
+/**
+ * Start the master modulation loop
+ */
+const startMasterModulationLoop = () => {
+  if (masterModulationLoopId !== null) return; // Already running
+  masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+};
+
+/**
+ * Stop the master modulation loop
+ */
+const stopMasterModulationLoop = () => {
+  if (masterModulationLoopId !== null) {
+    cancelAnimationFrame(masterModulationLoopId);
+    masterModulationLoopId = null;
+  }
+};
 
 /**
  * Zustand store for AudioEngine
@@ -174,12 +278,16 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         audioNodes.initializeAudioContext();
         set({ isPlaying: true });
         get()._recreateAudio();
+        // Start master modulation loop
+        startMasterModulationLoop();
       },
 
       /**
        * Stop audio playback and cleanup
        */
       stopAudio: () => {
+        // Stop master modulation loop
+        stopMasterModulationLoop();
         audioNodes.cleanup();
         set({ isPlaying: false });
       },
@@ -386,13 +494,15 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         set({ isNoteHeld: true });
 
         const synthControls = useSynthControlsStore.getState();
-        const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
+        const { ampADSR, filterADSR, modADSR, ampEnvelopeAmount } =
+          synthControls;
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
         // Convert ADSR parameters to time values
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
+        const modTimes = convertADSRToTimes(modADSR);
 
         // Convert amp envelope amount from 0-100 to 0-1 range
         const envelopeAmount = ampEnvelopeAmount / 100;
@@ -409,6 +519,14 @@ export const useAudioEngineStore = create<AudioEngineState>()(
             );
           }
         }
+
+        // Update modulation envelope state tracking
+        audioNodes.setModEnvelopeNoteOn(
+          modTimes.attack,
+          modTimes.decay,
+          modTimes.sustain,
+          modTimes.release
+        );
 
         // Generate and apply amplitude envelope operations
         const ampOps = createAmpEnvelopeOps(
@@ -463,6 +581,9 @@ export const useAudioEngineStore = create<AudioEngineState>()(
             audioNodes.setEnvelopeNoteOff(i);
           }
         }
+
+        // Update modulation envelope state tracking
+        audioNodes.setModEnvelopeNoteOff();
 
         // Convert ADSR parameters to time values
         const ampTimes = convertADSRToTimes(ampADSR);
