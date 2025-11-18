@@ -1,301 +1,175 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { useEquationBuilderStore } from "./useEquationBuilderStore";
-import { useSynthControlsStore } from "./useSynthControlsStore";
+import { useEquationBuilderStore } from "../useEquationBuilderStore";
+import { useSynthControlsStore } from "../useSynthControlsStore";
+import { useModulationStore } from "../useModulationStore";
 import {
   AudioEngineState,
-  OscillatorNodeSet,
   ADSRTimes,
   EnvelopeOperation,
-} from "../types";
-
-/**
- * External manager class for Web Audio API nodes
- * Refs are kept outside the store since they're non-serializable
- */
-class AudioNodeManager {
-  audioContext: AudioContext | null = null;
-  oscillators: OscillatorNodeSet[] = [];
-  mixerGainNode: GainNode | null = null;
-  masterGainNode: GainNode | null = null;
-  filterNodes: BiquadFilterNode[] = [];
-  filterEnvelopeNode: GainNode | null = null; // For filter envelope modulation
-
-  constructor() {
-    // Initialize 4 empty oscillator slots
-    this.oscillators = Array(4)
-      .fill(null)
-      .map(() => ({
-        sourceNode: null,
-        gainNode: null,
-        waveformBuffer: null,
-        ampEnvelopeNode: null,
-      }));
-  }
-
-  /**
-   * Initialize audio context if not already created
-   */
-  initializeAudioContext(): AudioContext {
-    if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
-    }
-    return this.audioContext;
-  }
-
-  /**
-   * Create an oscillator chain (source + gain + envelope nodes)
-   */
-  createOscillatorChain(
-    audioContext: AudioContext,
-    waveformData: Float32Array,
-    frequency: number,
-    volume: number
-  ): OscillatorNodeSet {
-    // Validate waveformData
-    if (!waveformData || waveformData.length === 0) {
-      console.warn("Cannot create oscillator: waveformData is empty");
-      return {
-        sourceNode: null,
-        gainNode: null,
-        waveformBuffer: null,
-        ampEnvelopeNode: null,
-      };
-    }
-
-    // Create AudioBuffer
-    const buffer = audioContext.createBuffer(
-      1, // mono
-      waveformData.length,
-      audioContext.sampleRate
-    );
-    // Copy waveform data - create new Float32Array to ensure proper type
-    const bufferData = new Float32Array(waveformData);
-    buffer.copyToChannel(bufferData, 0);
-
-    // Create BufferSourceNode
-    const sourceNode = audioContext.createBufferSource();
-    sourceNode.buffer = buffer;
-    sourceNode.loop = true;
-
-    // Calculate playback rate for frequency control
-    const baseCycleFrequency = audioContext.sampleRate / waveformData.length;
-    sourceNode.playbackRate.value = frequency / baseCycleFrequency;
-
-    // Create GainNode for volume control
-    const gainNode = audioContext.createGain();
-    gainNode.gain.value = volume;
-
-    // Create GainNode for ADSR envelope (starts at 0)
-    const ampEnvelopeNode = audioContext.createGain();
-    ampEnvelopeNode.gain.value = 0;
-
-    // Connect source -> gain -> envelope
-    sourceNode.connect(gainNode);
-    gainNode.connect(ampEnvelopeNode);
-
-    return {
-      sourceNode,
-      gainNode,
-      waveformBuffer: buffer,
-      ampEnvelopeNode,
-    };
-  }
-
-  /**
-   * Clean up a specific oscillator
-   */
-  cleanupOscillator(oscIndex: number): void {
-    if (oscIndex < 0 || oscIndex >= this.oscillators.length) return;
-
-    const osc = this.oscillators[oscIndex];
-    if (osc.sourceNode) {
-      try {
-        osc.sourceNode.stop();
-        osc.sourceNode.disconnect();
-      } catch (e) {
-        console.warn(`Error stopping oscillator ${oscIndex}:`, e);
-      }
-    }
-    if (osc.gainNode) {
-      try {
-        osc.gainNode.disconnect();
-      } catch (e) {
-        console.warn(`Error disconnecting gain node ${oscIndex}:`, e);
-      }
-    }
-
-    this.oscillators[oscIndex] = {
-      sourceNode: null,
-      gainNode: null,
-      waveformBuffer: null,
-      ampEnvelopeNode: null,
-    };
-  }
-
-  /**
-   * Clean up all audio nodes
-   */
-  cleanup(): void {
-    // Clean up all oscillators
-    for (let i = 0; i < this.oscillators.length; i++) {
-      this.cleanupOscillator(i);
-    }
-
-    // Clean up mixer and master gain
-    if (this.mixerGainNode) {
-      try {
-        this.mixerGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting mixer:", e);
-      }
-      this.mixerGainNode = null;
-    }
-
-    if (this.masterGainNode) {
-      try {
-        this.masterGainNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting master gain:", e);
-      }
-      this.masterGainNode = null;
-    }
-
-    this.filterNodes = [];
-
-    if (this.filterEnvelopeNode) {
-      try {
-        this.filterEnvelopeNode.disconnect();
-      } catch (e) {
-        console.warn("Error disconnecting filter envelope:", e);
-      }
-      this.filterEnvelopeNode = null;
-    }
-  }
-}
+  LFOWaveform,
+  ModulationSource,
+} from "../../types";
+import { AudioNodeManager } from "./audioNodeManager";
+import {
+  convertADSRToTimes,
+  createAmpEnvelopeOps,
+  createFilterEnvelopeOps,
+  applyEnvelopeOps,
+} from "./helperFunctions";
+import { registerAllParameters } from "./parameterRegistry";
 
 // Export singleton instance for external use
 export const audioNodes = new AudioNodeManager();
 
-/**
- * Convert ADSR parameters (0-100) to time values in seconds
- */
-const convertADSRToTimes = (adsr: {
-  attack: number;
-  decay: number;
-  sustain: number;
-  release: number;
-}): ADSRTimes => ({
-  attack: 0.001 + (adsr.attack / 100) * 1.999,
-  decay: 0.001 + (adsr.decay / 100) * 1.999,
-  sustain: adsr.sustain / 100,
-  release: 0.001 + (adsr.release / 100) * 3.999,
-});
+// Master modulation loop control
+let masterModulationLoopId: number | null = null;
+
+// Cached array to avoid allocations in hot loop
+const OSC_SOURCES = [
+  ModulationSource.OSC1,
+  ModulationSource.OSC2,
+  ModulationSource.OSC3,
+  ModulationSource.OSC4,
+];
 
 /**
- * Generate amplitude envelope operations
+ * Master Modulation Update Loop
+ * Consolidated requestAnimationFrame loop that:
+ * 1. Reads all modulation sources (LFOs, envelopes, oscillators)
+ * 2. Updates modulation store with source values
+ * 3. Applies modulations to all registered parameters
+ *
+ * This is the ONLY modulation update loop in the system.
+ * Performance target: <10ms per frame with full modulation matrix
  */
-const createAmpEnvelopeOps = (
-  times: ADSRTimes,
-  startTime: number,
-  isNoteOn: boolean,
-  envelopeAmount: number = 1.0 // 0-1 range, where 0 = no envelope effect, 1 = full envelope
-): EnvelopeOperation[] => {
-  if (isNoteOn) {
-    // Calculate the envelope range based on envelope amount
-    // At 0% (envelopeAmount=0): envelope stays at 1.0 (no modulation)
-    // At 100% (envelopeAmount=1): envelope goes from 0 to 1.0 (full modulation)
-    // At 50% (envelopeAmount=0.5): envelope goes from 0.5 to 1.0
-    const minValue = 1.0 - envelopeAmount;
-    const peakValue = 1.0;
-    const sustainValue = minValue + (peakValue - minValue) * times.sustain;
+const masterModulationLoop = () => {
+  // Get modulation store
+  const modStore = useModulationStore.getState();
+  const activeSources = modStore.getActiveSources();
 
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [minValue, startTime] },
-      {
-        method: "linearRampToValueAtTime",
-        args: [peakValue, startTime + times.attack],
-      },
-      {
-        method: "linearRampToValueAtTime",
-        args: [sustainValue, startTime + times.attack + times.decay],
-      },
-    ];
-  } else {
-    // For release, always ramp to the minimum value based on envelope amount
-    const minValue = 1.0 - envelopeAmount;
-
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [startTime] }, // Will use current value
-      {
-        method: "linearRampToValueAtTime",
-        args: [minValue, startTime + times.release],
-      },
-    ];
+  // Stop loop if no active modulation routes
+  if (activeSources.size === 0) {
+    masterModulationLoopId = null;
+    return;
   }
-};
 
-/**
- * Generate filter envelope operations
- */
-const createFilterEnvelopeOps = (
-  times: ADSRTimes,
-  startTime: number,
-  baseCutoff: number,
-  envelopeAmount: number,
-  isNoteOn: boolean
-): EnvelopeOperation[] => {
-  if (isNoteOn) {
-    const maxCutoff = Math.min(20000, baseCutoff * 4);
-    const targetCutoff = baseCutoff + (maxCutoff - baseCutoff) * envelopeAmount;
-    const sustainCutoff =
-      baseCutoff + (targetCutoff - baseCutoff) * times.sustain;
+  // ==========================================
+  // PHASE 1: Read all modulation sources
+  // ==========================================
 
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [baseCutoff, startTime] },
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [Math.max(20, targetCutoff), startTime + times.attack],
-      },
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [
-          Math.max(20, sustainCutoff),
-          startTime + times.attack + times.decay,
-        ],
-      },
-    ];
-  } else {
-    return [
-      { method: "cancelScheduledValues", args: [startTime] },
-      { method: "setValueAtTime", args: [startTime] }, // Will use current value
-      {
-        method: "exponentialRampToValueAtTime",
-        args: [Math.max(20, baseCutoff), startTime + times.release],
-      },
-    ];
+  // Read LFO values (always read if active, regardless of routing)
+  if (activeSources.has(ModulationSource.LFO1)) {
+    const lfo1Value = audioNodes.readLFOValue(0);
+    modStore.updateSourceValue(ModulationSource.LFO1, lfo1Value);
   }
-};
 
-/**
- * Apply envelope operations to an AudioParam
- */
-const applyEnvelopeOps = (
-  param: AudioParam,
-  operations: EnvelopeOperation[]
-): void => {
-  operations.forEach((op) => {
-    if (op.method === "setValueAtTime" && op.args.length === 1) {
-      // Special case: use current value
-      param.setValueAtTime(param.value, op.args[0]);
-    } else {
-      (param[op.method] as any)(...op.args);
+  if (activeSources.has(ModulationSource.LFO2)) {
+    const lfo2Value = audioNodes.readLFOValue(1);
+    modStore.updateSourceValue(ModulationSource.LFO2, lfo2Value);
+  }
+
+  // Read envelope values (modulation envelope)
+  // Use the dedicated modulation envelope from SynthControls
+  if (activeSources.has(ModulationSource.MOD_ENV)) {
+    const envValue = audioNodes.getModEnvelopeValue();
+    // Normalize from 0-1 to -1 to +1 for consistency with other mod sources
+    const normalizedEnvValue = envValue * 2 - 1;
+    modStore.updateSourceValue(ModulationSource.MOD_ENV, normalizedEnvValue);
+  }
+
+  // Read oscillator values (LAZY - only if actively routed)
+  for (let i = 0; i < 4; i++) {
+    const oscSource = OSC_SOURCES[i];
+
+    if (activeSources.has(oscSource)) {
+      const oscValue = audioNodes.readOscillatorValue(i);
+      modStore.updateSourceValue(oscSource, oscValue);
     }
-  });
+  }
+
+  // ==========================================
+  // PHASE 2: Apply modulations to parameters
+  // ==========================================
+
+  // Get only parameters that have active modulation routes
+  const routes = modStore.routes;
+  const registeredParams = modStore.parameters;
+  const synthState = useSynthControlsStore.getState();
+  const engineState = useAudioEngineStore.getState();
+
+  // Iterate through only parameters with active routes (not all registered params)
+  for (const paramId in routes) {
+    const metadata = registeredParams[paramId];
+    if (!metadata) continue;
+
+    // Get base value from state
+    let baseValue = metadata.default; // Fallback to default
+
+    // Get current base value from stores based on parameter ID
+    if (paramId.startsWith("osc")) {
+      const oscMatch = paramId.match(/^osc(\d+)_(.+)$/);
+      if (oscMatch) {
+        const oscIndex = parseInt(oscMatch[1]) - 1;
+        const paramName = oscMatch[2];
+
+        if (paramName === "frequency") {
+          baseValue = engineState.oscillators[oscIndex].frequency;
+        } else if (paramName === "volume") {
+          baseValue = engineState.oscillators[oscIndex].volume;
+        } else if (paramName.startsWith("detune_")) {
+          // Detune values come from synthControls
+          const synthOsc = synthState.oscillators[oscIndex];
+          const detuneType = paramName.replace("detune_", "") as
+            | "octave"
+            | "semitone"
+            | "cent";
+          baseValue = synthOsc.detune[detuneType];
+        }
+      }
+    } else if (paramId.startsWith("filter_")) {
+      const paramName = paramId.replace("filter_", "");
+      if (paramName === "cutoff") baseValue = engineState.cutoffFrequency;
+      else if (paramName === "resonance") baseValue = engineState.resonance;
+    } else if (paramId.startsWith("lfo")) {
+      const lfoMatch = paramId.match(/^lfo(\d+)_(.+)$/);
+      if (lfoMatch) {
+        const lfoIndex = parseInt(lfoMatch[1]) - 1;
+        const paramName = lfoMatch[2];
+
+        if (paramName === "frequency")
+          baseValue = engineState.lfos[lfoIndex].frequency;
+      }
+    }
+
+    // Calculate modulated value (this handles all routing, scaling, clamping)
+    const modulatedValue = modStore.getModulatedValue(paramId, baseValue);
+
+    // Apply modulated value using the parameter's update function
+    metadata.updateFn(modulatedValue);
+  }
+
+  // Continue loop
+  masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+};
+
+/**
+ * Start the master modulation loop
+ * Exported so modulation store can restart loop when routes are added
+ */
+export const startMasterModulationLoop = () => {
+  if (masterModulationLoopId !== null) return; // Already running
+  masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+};
+
+/**
+ * Stop the master modulation loop
+ */
+const stopMasterModulationLoop = () => {
+  if (masterModulationLoopId !== null) {
+    cancelAnimationFrame(masterModulationLoopId);
+    masterModulationLoopId = null;
+  }
 };
 
 /**
@@ -313,6 +187,20 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         { frequency: 220, volume: 1.0, isActive: true },
         { frequency: 220, volume: 1.0, isActive: true },
         { frequency: 220, volume: 1.0, isActive: true },
+      ],
+      lfos: [
+        {
+          frequency: 1.0, // 1 Hz default
+          waveform: LFOWaveform.SINE,
+          phase: 0,
+          isActive: false,
+        },
+        {
+          frequency: 2.0, // 2 Hz default
+          waveform: LFOWaveform.TRIANGLE,
+          phase: 0,
+          isActive: false,
+        },
       ],
       masterVolume: 100,
       cutoffFrequency: 632,
@@ -439,13 +327,20 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         audioNodes.initializeAudioContext();
         set({ isPlaying: true });
         get()._recreateAudio();
+        // Start master modulation loop only if there are active routes
+        const modStore = useModulationStore.getState();
+        if (modStore.activeSources.size > 0) {
+          startMasterModulationLoop();
+        }
       },
 
       /**
        * Stop audio playback and cleanup
        */
       stopAudio: () => {
-        audioNodes.cleanup();
+        // Stop master modulation loop
+        stopMasterModulationLoop();
+        audioNodes.cleanupAll(); // Use cleanupAll to include LFOs
         set({ isPlaying: false });
       },
 
@@ -651,16 +546,39 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         set({ isNoteHeld: true });
 
         const synthControls = useSynthControlsStore.getState();
-        const { ampADSR, filterADSR, ampEnvelopeAmount } = synthControls;
+        const { ampADSR, filterADSR, modADSR, ampEnvelopeAmount } =
+          synthControls;
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
         // Convert ADSR parameters to time values
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
+        const modTimes = convertADSRToTimes(modADSR);
 
         // Convert amp envelope amount from 0-100 to 0-1 range
         const envelopeAmount = ampEnvelopeAmount / 100;
+
+        // Update envelope state tracking for modulation (per oscillator)
+        for (let i = 0; i < state.oscillators.length; i++) {
+          if (state.oscillators[i].isActive) {
+            audioNodes.setEnvelopeNoteOn(
+              i,
+              ampTimes.attack,
+              ampTimes.decay,
+              ampTimes.sustain,
+              ampTimes.release
+            );
+          }
+        }
+
+        // Update modulation envelope state tracking
+        audioNodes.setModEnvelopeNoteOn(
+          modTimes.attack,
+          modTimes.decay,
+          modTimes.sustain,
+          modTimes.release
+        );
 
         // Generate and apply amplitude envelope operations
         const ampOps = createAmpEnvelopeOps(
@@ -679,7 +597,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           });
 
         // Generate and apply filter envelope operations
-        if (audioNodes.filterNodes.length === 4) {
+        // Skip if filter cutoff has active modulation (to avoid conflicts)
+        const modStore = useModulationStore.getState();
+        const hasFilterModulation =
+          modStore.routes["filter_cutoff"]?.length > 0;
+
+        if (audioNodes.filterNodes.length === 4 && !hasFilterModulation) {
           const filterEnvelopeAmount = state.filterEnvelopeAmount / 100;
           const filterOps = createFilterEnvelopeOps(
             filterTimes,
@@ -709,6 +632,16 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         const state = get();
         const time = audioNodes.audioContext.currentTime;
 
+        // Update envelope state tracking for modulation (per oscillator)
+        for (let i = 0; i < state.oscillators.length; i++) {
+          if (state.oscillators[i].isActive) {
+            audioNodes.setEnvelopeNoteOff(i);
+          }
+        }
+
+        // Update modulation envelope state tracking
+        audioNodes.setModEnvelopeNoteOff();
+
         // Convert ADSR parameters to time values
         const ampTimes = convertADSRToTimes(ampADSR);
         const filterTimes = convertADSRToTimes(filterADSR);
@@ -733,7 +666,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           });
 
         // Generate and apply filter release operations
-        if (audioNodes.filterNodes.length === 4) {
+        // Skip if filter cutoff has active modulation (to avoid conflicts)
+        const modStore = useModulationStore.getState();
+        const hasFilterModulation =
+          modStore.routes["filter_cutoff"]?.length > 0;
+
+        if (audioNodes.filterNodes.length === 4 && !hasFilterModulation) {
           const filterOps = createFilterEnvelopeOps(
             filterTimes,
             time,
@@ -745,6 +683,82 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           audioNodes.filterNodes.forEach((filter) => {
             applyEnvelopeOps(filter.frequency, filterOps);
           });
+        }
+      },
+
+      /**
+       * Update LFO frequency in real-time
+       */
+      updateLFOFrequency: (lfoIndex: number, frequency: number) => {
+        set((state) => ({
+          lfos: state.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, frequency } : lfo
+          ),
+        }));
+
+        // If LFO is currently playing, update oscillator frequency in real-time
+        const lfoNodes = audioNodes.lfoNodes[lfoIndex];
+        if (lfoNodes && lfoNodes.oscillator && audioNodes.audioContext) {
+          const time = audioNodes.audioContext.currentTime;
+          lfoNodes.oscillator.frequency.setValueAtTime(frequency, time);
+        }
+      },
+
+      /**
+       * Update LFO waveform by recreating the oscillator
+       */
+      updateLFOWaveform: (lfoIndex: number, waveform: LFOWaveform) => {
+        const state = get();
+        const currentLFO = state.lfos[lfoIndex];
+
+        set((prevState) => ({
+          lfos: prevState.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, waveform } : lfo
+          ),
+        }));
+
+        // If LFO is currently playing, recreate it with new waveform
+        if (currentLFO.isActive && audioNodes.audioContext) {
+          audioNodes.cleanupLFO(lfoIndex);
+          const lfoNodes = audioNodes.createLFO(
+            audioNodes.audioContext,
+            currentLFO.frequency,
+            waveform
+          );
+          audioNodes.lfoNodes[lfoIndex] = lfoNodes;
+        }
+      },
+
+      /**
+       * Toggle LFO on/off
+       */
+      toggleLFO: (lfoIndex: number, isActive: boolean) => {
+        set((state) => ({
+          lfos: state.lfos.map((lfo, i) =>
+            i === lfoIndex ? { ...lfo, isActive } : lfo
+          ),
+        }));
+
+        if (!audioNodes.audioContext) {
+          audioNodes.initializeAudioContext();
+        }
+
+        const state = get();
+        const lfo = state.lfos[lfoIndex];
+
+        if (isActive) {
+          // Enable LFO: create and start nodes
+          if (audioNodes.audioContext) {
+            const lfoNodes = audioNodes.createLFO(
+              audioNodes.audioContext,
+              lfo.frequency,
+              lfo.waveform
+            );
+            audioNodes.lfoNodes[lfoIndex] = lfoNodes;
+          }
+        } else {
+          // Disable LFO: cleanup nodes
+          audioNodes.cleanupLFO(lfoIndex);
         }
       },
     }),
@@ -774,17 +788,44 @@ export const selectAudioParameters = (
 useEquationBuilderStore.subscribe((state, prevState) => {
   const audioEngineState = useAudioEngineStore.getState();
   if (audioEngineState.isPlaying) {
-    // Check if any oscillator's waveform data changed
-    const waveformChanged = state.oscillators.some(
-      (osc, index) =>
-        osc.waveformData !== prevState.oscillators[index].waveformData
-    );
-    if (waveformChanged) {
-      // Only recreate if no note is currently being held (to avoid cutting out sustained notes)
-      if (!audioEngineState.isNoteHeld) {
+    // Check which oscillators had waveform changes
+    const changedOscillators = state.oscillators
+      .map((osc, index) => ({
+        index,
+        changed: osc.waveformData !== prevState.oscillators[index].waveformData,
+        waveformData: osc.waveformData,
+      }))
+      .filter((osc) => osc.changed && osc.waveformData.length > 0);
+
+    if (changedOscillators.length > 0) {
+      if (audioEngineState.isNoteHeld) {
+        // Note is being held: use crossfade for smooth transition
+        const synthControls = useSynthControlsStore.getState();
+
+        changedOscillators.forEach(({ index, waveformData }) => {
+          const oscState = audioEngineState.oscillators[index];
+          const oscParams = synthControls.oscillators[index];
+
+          if (oscState.isActive && oscParams?.waveformData) {
+            // Convert waveformData to Float32Array if needed
+            const waveformFloat32 =
+              waveformData instanceof Float32Array
+                ? waveformData
+                : new Float32Array(waveformData);
+
+            audioNodes.crossfadeWaveform(
+              index,
+              waveformFloat32,
+              oscState.frequency,
+              oscState.volume,
+              30 // 30ms crossfade
+            );
+          }
+        });
+      } else {
+        // No note held: recreate audio (existing behavior)
         audioEngineState._recreateAudio();
       }
-      // If a note is being held, the waveform change will take effect on next note trigger
     }
   }
 });
@@ -845,3 +886,6 @@ useSynthControlsStore.subscribe((state, prevState) => {
 
 // Initialize audio context on module load
 audioNodes.initializeAudioContext();
+
+// Register all modulatable parameters
+registerAllParameters();

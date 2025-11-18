@@ -8,12 +8,19 @@
 // Import stores for selector type inference
 import { useSynthControlsStore } from "./useSynthControlsStore";
 import { useEquationBuilderStore } from "./useEquationBuilderStore";
-import { useAudioEngineStore } from "./useAudioEngineStore";
+import { useAudioEngineStore } from "./AudioEngine/audioEngineStore";
+import { useSettingsStore } from "./useSettingsStore";
+import { useModulationStore } from "./useModulationStore";
 
 // Store exports
 export { useSynthControlsStore } from "./useSynthControlsStore";
 export { useEquationBuilderStore } from "./useEquationBuilderStore";
-export { useAudioEngineStore, audioNodes } from "./useAudioEngineStore";
+export {
+  useAudioEngineStore,
+  audioNodes,
+} from "./AudioEngine/audioEngineStore";
+export { useSettingsStore } from "./useSettingsStore";
+export { useModulationStore } from "./useModulationStore";
 
 // Re-export types for convenience
 export type { HarmonicParam, KeyboardNote } from "../types/synthControlsTypes";
@@ -40,4 +47,15 @@ export {
   selectHasWaveformData,
 } from "./useEquationBuilderStore";
 
-export { selectIsPlaying, selectAudioParameters } from "./useAudioEngineStore";
+export {
+  selectIsPlaying,
+  selectAudioParameters,
+} from "./AudioEngine/audioEngineStore";
+
+export { selectBufferSize } from "./useSettingsStore";
+
+export {
+  selectHasModulation,
+  selectTotalRouteCount,
+  selectIsSourceActive,
+} from "./useModulationStore";

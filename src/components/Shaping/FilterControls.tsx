@@ -1,7 +1,8 @@
 import React from "react";
 import { Paper, Typography, Box, Tooltip, Stack } from "@mui/material";
 import { Dial, ModDial } from "../";
-import { useAudioEngineStore } from "../../stores/useAudioEngineStore";
+import { useAudioEngineStore } from "../../stores";
+import { PARAM_IDS } from "../../types";
 
 interface FilterControlsProps {
   cutoffFrequency: number;
@@ -104,7 +105,10 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#3498db"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
+            paramId={PARAM_IDS.FILTER_CUTOFF}
+            paramMin={20}
+            paramMax={20000}
+            bipolar={false}
           />
           <ModDial
             value={resonanceDialValue}
@@ -116,7 +120,10 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#9b59b6"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
+            paramId={PARAM_IDS.FILTER_RESONANCE}
+            paramMin={0}
+            paramMax={30}
+            bipolar={false}
           />
           <Dial
             value={filterEnvelopeAmount}
@@ -128,7 +135,6 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
             ringColor="#e67e22"
             numberFontSize={18}
             minMaxFontSize={10}
-            hideCenterNumber={true}
           />
         </Stack>
       </Box>

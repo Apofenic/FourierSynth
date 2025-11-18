@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback, useRef, useState } from "react";
 import "./App.css";
 import {
   Typography,
@@ -8,7 +8,10 @@ import {
   Box,
   Tabs,
   Tab,
+  IconButton,
+  Dialog,
 } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   SubtractiveControls,
   KeyboardControls,
@@ -18,6 +21,7 @@ import {
   EffectsControls,
 } from "./components";
 import { PatchPresetControls } from "./components/PatchPresetControls";
+import { Settings } from "./components/Settings";
 import {
   useSynthControlsStore,
   useAudioEngineStore,
@@ -29,6 +33,7 @@ import { calculateDetunedFrequency } from "./utils/helperFunctions";
 function App() {
   const [activeTab, setActiveTab] = React.useState(0);
   const [activeOsc, setActiveOsc] = React.useState(0);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const isPlaying = useAudioEngineStore((state) => state.isPlaying);
   const startAudio = useAudioEngineStore((state) => state.startAudio);
@@ -197,7 +202,7 @@ function App() {
           overflowY: "auto",
           overflowX: "auto",
           "@media (max-width: 1999px)": {
-            gridTemplateRows: "auto auto auto",
+            gridTemplateRows: "auto 1fr auto",
             height: "auto",
           },
         }}
@@ -211,7 +216,7 @@ function App() {
             justifyContent: "space-between",
             alignItems: "center",
             gap: 2,
-            minWidth: "600px",
+            minWidth: "800px",
             flexWrap: "nowrap",
             "@media (max-width: 800px)": {
               flexDirection: "column",
@@ -227,7 +232,7 @@ function App() {
             sx={{
               margin: 0,
               whiteSpace: "nowrap",
-              minWidth: "fit-content",
+              minWidth: "400px",
               "@media (max-width: 800px)": {
                 textAlign: "center",
               },
@@ -237,17 +242,47 @@ function App() {
           </Typography>
           <Box
             sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
               minWidth: "250px",
               "@media (max-width: 800px)": {
                 width: "100%",
-                display: "flex",
                 justifyContent: "center",
               },
             }}
           >
             <PatchPresetControls />
+            <IconButton
+              onClick={() => setSettingsOpen(true)}
+              sx={{
+                color: "#61dafb",
+                "&:hover": {
+                  backgroundColor: "rgba(97, 218, 251, 0.1)",
+                },
+              }}
+              aria-label="settings"
+            >
+              <SettingsIcon />
+            </IconButton>
           </Box>
         </Box>
+
+        {/* Settings Modal */}
+        <Dialog
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: {
+              backgroundColor: "#282c34",
+              backgroundImage: "none",
+            },
+          }}
+        >
+          <Settings />
+        </Dialog>
         {/* Oscillator and Mixer Section - Row 2, spans all 12 columns */}
         <Paper
           sx={{

@@ -24,6 +24,7 @@ interface DialProps {
   baselineResolution?: number; // total number of baseline positions for rotation (creates quantized "clicky" feel)
   minLabel?: string; // custom label for min value (overrides numeric display)
   maxLabel?: string; // custom label for max value (overrides numeric display)
+  enableCenterDoubleClick?: boolean; // enables double-click on center to toggle between min and max values
 }
 
 export const Dial: React.FC<DialProps> = ({
@@ -49,6 +50,7 @@ export const Dial: React.FC<DialProps> = ({
   baselineResolution = 100,
   minLabel,
   maxLabel,
+  enableCenterDoubleClick = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentValue, setCurrentValue] = useState(value);
@@ -56,6 +58,8 @@ export const Dial: React.FC<DialProps> = ({
   const startBaselinePosition = useRef(0);
   const currentValueRef = useRef(value);
   const onChangeRef = useRef(onChange);
+  const lastClickTimeRef = useRef(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Keep refs in sync
   useEffect(() => {
@@ -164,13 +168,42 @@ export const Dial: React.FC<DialProps> = ({
     (e: React.MouseEvent) => {
       if (disabled) return;
       e.preventDefault();
+
+      // Handle double-click on center circle if enabled
+      if (enableCenterDoubleClick) {
+        const currentTime = Date.now();
+        const timeSinceLastClick = currentTime - lastClickTimeRef.current;
+
+        // Check if this is a double-click (within 300ms)
+        if (timeSinceLastClick < 300) {
+          // Clear any pending single-click timeout
+          if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+          }
+
+          // Toggle between min and max
+          const newValue = currentValueRef.current >= max ? min : max;
+          setCurrentValue(newValue);
+          onChangeRef.current?.(newValue);
+
+          // Reset click time to prevent triple-click from triggering another toggle
+          lastClickTimeRef.current = 0;
+          return;
+        }
+
+        // Update last click time
+        lastClickTimeRef.current = currentTime;
+      }
+
+      // Start dragging
       setIsDragging(true);
       startY.current = e.clientY;
       startBaselinePosition.current = valueToBaselinePosition(
         currentValueRef.current
       );
     },
-    [disabled, valueToBaselinePosition]
+    [disabled, valueToBaselinePosition, enableCenterDoubleClick, min, max]
   );
 
   // Handle mouse move
@@ -234,6 +267,15 @@ export const Dial: React.FC<DialProps> = ({
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Cleanup click timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Calculate indicator triangle position (inside the inner circle, near the top)
   const indicatorAngle = currentAngle - 90; // Adjust for SVG coordinate system
