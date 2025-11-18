@@ -77,7 +77,7 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
               sx={{
                 height: { xs: "auto", md: "auto", lg: "100%" },
                 maxHeight: { xs: "300px", md: "300px", lg: "100%" },
-                overflow: "auto",
+                overflow: { xs: "auto", md: "auto", lg: "visible" },
 
                 borderBottom: { xs: 1, md: 1, lg: 0 },
                 borderColor: "divider",
@@ -91,7 +91,7 @@ const EquationBuilderInner: React.FC<EquationBuilderProps> = ({
               size={{ xs: 12, md: 12, lg: 6 }}
               sx={{
                 height: { xs: "auto", md: "auto", lg: "100%" },
-                overflow: "auto",
+                overflow: "visible",
                 display: "flex",
                 flexDirection: "column",
               }}

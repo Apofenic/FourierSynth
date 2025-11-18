@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { Dial, ModDial } from "..";
 import { useSynthControlsStore } from "../../stores";
+import { getOscParamId } from "../../types";
 
 interface TunerControlsProps {
   oscillatorIndex: number;
@@ -85,6 +86,10 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             numberFontSize={18}
             minMaxFontSize={10}
             baselineResolution={100}
+            paramId={getOscParamId(oscillatorIndex, "detune_octave")}
+            paramMin={-2}
+            paramMax={2}
+            bipolar={true}
           />
           <ModDial
             value={detune.semitone}
@@ -98,6 +103,10 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             ringColor="#2ecc71"
             numberFontSize={18}
             minMaxFontSize={10}
+            paramId={getOscParamId(oscillatorIndex, "detune_semitone")}
+            paramMin={-12}
+            paramMax={12}
+            bipolar={true}
           />
           <ModDial
             value={detune.cent}
@@ -110,6 +119,10 @@ export const TunerControls: React.FC<TunerControlsProps> = ({
             numberFontSize={18}
             minMaxFontSize={10}
             baselineResolution={201}
+            paramId={getOscParamId(oscillatorIndex, "detune_cent")}
+            paramMin={-100}
+            paramMax={100}
+            bipolar={true}
           />
         </Box>
       </Box>

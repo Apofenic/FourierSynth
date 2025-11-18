@@ -11,6 +11,7 @@ import {
   ModulationActions,
   ModulationStore,
 } from "../types";
+import { startMasterModulationLoop } from "./AudioEngine/audioEngineStore";
 
 /**
  * Initialize source values with all sources set to 0
@@ -119,6 +120,11 @@ export const useModulationStore = create<ModulationStore>()(
           // Update active sources
           const newActiveSources = updateActiveSources(newRoutesMap);
 
+          // Restart modulation loop if we now have active sources
+          if (newActiveSources.size > 0) {
+            startMasterModulationLoop();
+          }
+
           return {
             routes: newRoutesMap,
             activeSources: newActiveSources,
@@ -217,10 +223,29 @@ export const useModulationStore = create<ModulationStore>()(
           // Get source value (normalized -1 to +1)
           const sourceValue = state.sourceValues[route.source] || 0;
 
-          // Scale by amount (0-100 percentage) and parameter range
-          // This gives modulation depth as a fraction of the full parameter range
-          const modAmount =
-            sourceValue * (route.amount / 100) * (metadata.max - metadata.min);
+          // Calculate modulation amount based on parameter type
+          const modDepth = route.amount / 100; // 0-1 scale
+
+          let modAmount: number;
+
+          if (metadata.type === "exponential") {
+            // For exponential parameters (frequency, filter cutoff):
+            // Use multiplicative modulation for musical results
+            // ±0.5 octave range at 100% modulation depth (reduced from 1.0 for safety)
+            const octaveRange = 0.5; // ±0.5 octave at 100% depth
+            const semitoneOffset = sourceValue * modDepth * octaveRange * 12;
+            // Convert semitone offset to frequency multiplier
+            const frequencyMultiplier = Math.pow(2, semitoneOffset / 12);
+            // Calculate modulation as offset from base value
+            modAmount = baseValue * (frequencyMultiplier - 1);
+          } else {
+            // For linear parameters (volume, resonance, etc.):
+            // Use additive modulation
+            const paramRange = metadata.max - metadata.min;
+            // Use 10% of parameter range as maximum modulation depth at 100%
+            const maxModRange = paramRange * 0.1;
+            modAmount = sourceValue * modDepth * maxModRange;
+          }
 
           // Apply bipolar/unipolar
           if (route.bipolar) {

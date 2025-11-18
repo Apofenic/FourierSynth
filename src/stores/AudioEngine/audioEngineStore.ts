@@ -25,6 +25,14 @@ export const audioNodes = new AudioNodeManager();
 // Master modulation loop control
 let masterModulationLoopId: number | null = null;
 
+// Cached array to avoid allocations in hot loop
+const OSC_SOURCES = [
+  ModulationSource.OSC1,
+  ModulationSource.OSC2,
+  ModulationSource.OSC3,
+  ModulationSource.OSC4,
+];
+
 /**
  * Master Modulation Update Loop
  * Consolidated requestAnimationFrame loop that:
@@ -36,16 +44,13 @@ let masterModulationLoopId: number | null = null;
  * Performance target: <10ms per frame with full modulation matrix
  */
 const masterModulationLoop = () => {
-  // Performance monitoring (dev mode)
-  const frameStartTime = performance.now();
-
   // Get modulation store
   const modStore = useModulationStore.getState();
   const activeSources = modStore.getActiveSources();
 
-  // Skip if no active modulation routes
+  // Stop loop if no active modulation routes
   if (activeSources.size === 0) {
-    masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
+    masterModulationLoopId = null;
     return;
   }
 
@@ -75,12 +80,7 @@ const masterModulationLoop = () => {
 
   // Read oscillator values (LAZY - only if actively routed)
   for (let i = 0; i < 4; i++) {
-    const oscSource = [
-      ModulationSource.OSC1,
-      ModulationSource.OSC2,
-      ModulationSource.OSC3,
-      ModulationSource.OSC4,
-    ][i];
+    const oscSource = OSC_SOURCES[i];
 
     if (activeSources.has(oscSource)) {
       const oscValue = audioNodes.readOscillatorValue(i);
@@ -92,13 +92,17 @@ const masterModulationLoop = () => {
   // PHASE 2: Apply modulations to parameters
   // ==========================================
 
-  // Get all registered parameters
+  // Get only parameters that have active modulation routes
+  const routes = modStore.routes;
   const registeredParams = modStore.parameters;
   const synthState = useSynthControlsStore.getState();
   const engineState = useAudioEngineStore.getState();
 
-  // Iterate through all registered parameters and apply modulation
-  Object.entries(registeredParams).forEach(([paramId, metadata]) => {
+  // Iterate through only parameters with active routes (not all registered params)
+  for (const paramId in routes) {
+    const metadata = registeredParams[paramId];
+    if (!metadata) continue;
+
     // Get base value from state
     let baseValue = metadata.default; // Fallback to default
 
@@ -143,14 +147,6 @@ const masterModulationLoop = () => {
 
     // Apply modulated value using the parameter's update function
     metadata.updateFn(modulatedValue);
-  });
-
-  // Performance monitoring
-  const frameTime = performance.now() - frameStartTime;
-  if (frameTime > 14) {
-    console.warn(
-      `Modulation loop exceeded 14ms: ${frameTime.toFixed(2)}ms (target: <10ms)`
-    );
   }
 
   // Continue loop
@@ -159,8 +155,9 @@ const masterModulationLoop = () => {
 
 /**
  * Start the master modulation loop
+ * Exported so modulation store can restart loop when routes are added
  */
-const startMasterModulationLoop = () => {
+export const startMasterModulationLoop = () => {
   if (masterModulationLoopId !== null) return; // Already running
   masterModulationLoopId = requestAnimationFrame(masterModulationLoop);
 };
@@ -330,8 +327,11 @@ export const useAudioEngineStore = create<AudioEngineState>()(
         audioNodes.initializeAudioContext();
         set({ isPlaying: true });
         get()._recreateAudio();
-        // Start master modulation loop
-        startMasterModulationLoop();
+        // Start master modulation loop only if there are active routes
+        const modStore = useModulationStore.getState();
+        if (modStore.activeSources.size > 0) {
+          startMasterModulationLoop();
+        }
       },
 
       /**
@@ -340,7 +340,7 @@ export const useAudioEngineStore = create<AudioEngineState>()(
       stopAudio: () => {
         // Stop master modulation loop
         stopMasterModulationLoop();
-        audioNodes.cleanup();
+        audioNodes.cleanupAll(); // Use cleanupAll to include LFOs
         set({ isPlaying: false });
       },
 
@@ -597,7 +597,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           });
 
         // Generate and apply filter envelope operations
-        if (audioNodes.filterNodes.length === 4) {
+        // Skip if filter cutoff has active modulation (to avoid conflicts)
+        const modStore = useModulationStore.getState();
+        const hasFilterModulation =
+          modStore.routes["filter_cutoff"]?.length > 0;
+
+        if (audioNodes.filterNodes.length === 4 && !hasFilterModulation) {
           const filterEnvelopeAmount = state.filterEnvelopeAmount / 100;
           const filterOps = createFilterEnvelopeOps(
             filterTimes,
@@ -661,7 +666,12 @@ export const useAudioEngineStore = create<AudioEngineState>()(
           });
 
         // Generate and apply filter release operations
-        if (audioNodes.filterNodes.length === 4) {
+        // Skip if filter cutoff has active modulation (to avoid conflicts)
+        const modStore = useModulationStore.getState();
+        const hasFilterModulation =
+          modStore.routes["filter_cutoff"]?.length > 0;
+
+        if (audioNodes.filterNodes.length === 4 && !hasFilterModulation) {
           const filterOps = createFilterEnvelopeOps(
             filterTimes,
             time,

@@ -215,10 +215,9 @@ export const registerAllParameters = () => {
     // Oscillator volume (linear, 0 to 1)
     registerOscillatorParam(i, "volume", 0, 1, 1, "linear", (value: number) => {
       const nodeSet = audioNodes.oscillators[i];
-      if (nodeSet && nodeSet.gainNode && audioNodes.audioContext) {
-        const time = audioNodes.audioContext.currentTime;
-        // Volume parameter: 10ms linear ramp for smooth transitions
-        nodeSet.gainNode.gain.linearRampToValueAtTime(value, time + 0.01);
+      if (nodeSet && nodeSet.gainNode) {
+        // Set directly to avoid canceling envelope automation
+        nodeSet.gainNode.gain.value = value;
       }
     });
   }
@@ -232,14 +231,10 @@ export const registerAllParameters = () => {
     632,
     "exponential",
     (value: number) => {
-      if (audioNodes.filterNodes.length === 4 && audioNodes.audioContext) {
-        const time = audioNodes.audioContext.currentTime;
-        // Filter frequency: 10ms exponential ramp for smooth, musical sweeps
+      if (audioNodes.filterNodes.length === 4) {
+        // Set value directly - allows coexistence with envelope automation
         audioNodes.filterNodes.forEach((filter) => {
-          filter.frequency.exponentialRampToValueAtTime(
-            Math.max(20, value), // Prevent zero for exponential
-            time + 0.01 // 10ms ramp
-          );
+          filter.frequency.value = Math.max(20, value);
         });
       }
     }
@@ -247,14 +242,13 @@ export const registerAllParameters = () => {
 
   // Filter resonance (linear, 0-30)
   registerFilterParam("resonance", 0, 30, 0, "linear", (value: number) => {
-    if (audioNodes.filterNodes.length === 4 && audioNodes.audioContext) {
-      const time = audioNodes.audioContext.currentTime;
+    if (audioNodes.filterNodes.length === 4) {
       // Calculate Q values using same formula as filter creation
       const baseQ = 0.5 + (value / 20) * 3.5;
       const qValues = [baseQ * 0.7, baseQ * 0.85, baseQ * 1.0, baseQ * 1.15];
-      // Filter Q: 10ms linear ramp for smooth resonance changes
+      // Set directly to avoid canceling any automation
       audioNodes.filterNodes.forEach((filter, index) => {
-        filter.Q.linearRampToValueAtTime(qValues[index], time + 0.01); // 10ms ramp
+        filter.Q.value = qValues[index];
       });
     }
   });

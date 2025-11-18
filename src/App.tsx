@@ -202,7 +202,7 @@ function App() {
           overflowY: "auto",
           overflowX: "auto",
           "@media (max-width: 1999px)": {
-            gridTemplateRows: "auto auto auto",
+            gridTemplateRows: "auto 1fr auto",
             height: "auto",
           },
         }}
@@ -216,7 +216,7 @@ function App() {
             justifyContent: "space-between",
             alignItems: "center",
             gap: 2,
-            minWidth: "600px",
+            minWidth: "800px",
             flexWrap: "nowrap",
             "@media (max-width: 800px)": {
               flexDirection: "column",
@@ -232,7 +232,7 @@ function App() {
             sx={{
               margin: 0,
               whiteSpace: "nowrap",
-              minWidth: "fit-content",
+              minWidth: "400px",
               "@media (max-width: 800px)": {
                 textAlign: "center",
               },

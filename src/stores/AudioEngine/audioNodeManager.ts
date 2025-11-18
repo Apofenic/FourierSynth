@@ -226,9 +226,36 @@ export class AudioNodeManager {
 
   /**
    * Clean up all audio nodes
+   * Note: Does NOT clean up LFOs - they are independent and persist across audio recreation
    */
   cleanup(): void {
     // Clean up all oscillators
+    for (let i = 0; i < this.oscillators.length; i++) {
+      this.cleanupOscillator(i);
+    }
+
+    // NOTE: DO NOT clean up LFOs here - they should persist independently
+    // LFOs are only cleaned up when explicitly toggled off or on full stopAudio
+
+    // Clean up mixer, master gain, and filters
+    this.cleanupNodes(
+      this.mixerGainNode,
+      this.masterGainNode,
+      this.filterEnvelopeNode,
+      ...this.filterNodes
+    );
+
+    this.mixerGainNode = null;
+    this.masterGainNode = null;
+    this.filterNodes = [];
+    this.filterEnvelopeNode = null;
+  }
+
+  /**
+   * Clean up ALL nodes including LFOs (called on full stopAudio)
+   */
+  cleanupAll(): void {
+    // Clean up oscillators
     for (let i = 0; i < this.oscillators.length; i++) {
       this.cleanupOscillator(i);
     }
@@ -441,7 +468,9 @@ export class AudioNodeManager {
     }
 
     const lfo = this.lfoNodes[lfoIndex];
-    if (!lfo.oscillator) return 0; // LFO not active
+    if (!lfo.oscillator) {
+      return 0;
+    }
 
     return this.readAnalyserValue(lfo.analyser, this.lfoBuffers[lfoIndex]);
   }

@@ -6,6 +6,7 @@ import {
   Stack,
   ToggleButtonGroup,
   ToggleButton,
+  Switch,
 } from "@mui/material";
 import { Dial } from "../Custom_UI_Components/Dial";
 import { WaveformIcon } from "../Custom_UI_Components/WaveformIcon";
@@ -65,18 +66,39 @@ export const LFOControls = ({ id }: { id: number }) => {
         transition: "opacity 0.3s",
       }}
     >
-      <Typography variant="h3" align="center">
-        LFO {id}
-        {lfo.isActive && (
-          <Typography
-            component="span"
-            variant="caption"
-            sx={{ ml: 1, color: "success.main" }}
-          >
-            ●
-          </Typography>
-        )}
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Typography variant="h3" sx={{ flex: 1, textAlign: "center" }}>
+          LFO {id}
+          {lfo.isActive && (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{ ml: 1, color: "success.main" }}
+            >
+              ●
+            </Typography>
+          )}
+        </Typography>
+        <Switch
+          checked={lfo.isActive}
+          onChange={(e) => toggleLFO(lfoIndex, e.target.checked)}
+          size="small"
+          sx={{
+            "& .MuiSwitch-switchBase.Mui-checked": {
+              color: "success.main",
+            },
+            "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+              backgroundColor: "success.main",
+            },
+          }}
+        />
+      </Box>
 
       {/* LFO Rate Control */}
       <Stack

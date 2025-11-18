@@ -9,6 +9,7 @@ import {
 } from "@mui/material";
 import { useAudioEngineStore, useSynthControlsStore } from "../stores";
 import { Dial, ModDial } from "./";
+import { getOscParamId } from "../types";
 
 export const Mixer: React.FC = () => {
   // Connect to stores
@@ -148,6 +149,10 @@ export const Mixer: React.FC = () => {
           numberFontSize={18}
           minMaxFontSize={10}
           enableCenterDoubleClick={true}
+          paramId={getOscParamId(0, "volume")}
+          paramMin={0}
+          paramMax={1}
+          bipolar={false}
         />
         <ModDial
           value={oscillators[1].volume * 100}
@@ -160,6 +165,10 @@ export const Mixer: React.FC = () => {
           numberFontSize={18}
           minMaxFontSize={10}
           enableCenterDoubleClick={true}
+          paramId={getOscParamId(1, "volume")}
+          paramMin={0}
+          paramMax={1}
+          bipolar={false}
         />
         <ModDial
           value={oscillators[2].volume * 100}
@@ -172,6 +181,10 @@ export const Mixer: React.FC = () => {
           numberFontSize={18}
           minMaxFontSize={10}
           enableCenterDoubleClick={true}
+          paramId={getOscParamId(2, "volume")}
+          paramMin={0}
+          paramMax={1}
+          bipolar={false}
         />
         <ModDial
           value={oscillators[3].volume * 100}
@@ -184,6 +197,10 @@ export const Mixer: React.FC = () => {
           numberFontSize={18}
           minMaxFontSize={10}
           enableCenterDoubleClick={true}
+          paramId={getOscParamId(3, "volume")}
+          paramMin={0}
+          paramMax={1}
+          bipolar={false}
         />
       </Box>
 
